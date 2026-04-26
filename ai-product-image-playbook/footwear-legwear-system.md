@@ -1,6 +1,6 @@
 # Footwear Legwear System
 
-Last updated: 2026-04-26
+Last updated: 2026-04-27
 
 For shoe product pages, every worn image should deliberately choose one of three foot/leg states:
 
@@ -33,6 +33,10 @@ Prompt block:
 ```text
 Bare natural foot and leg skin, realistic pores, faint veins around foot and ankle, subtle ankle bones and tendons, natural tonal variation, slight skin compression where the shoe touches the foot, no plastic skin, no waxy doll skin, no beauty blur.
 ```
+
+Deep dive file:
+
+- `bare-foot-detail-study.md`
 
 ## 2. Socks
 
@@ -130,6 +134,10 @@ Prompt block:
 Thick cushioned sports socks, visible terry knit texture, soft cotton loops, ribbed cuff, padded volume around ankle and shoe collar, natural compression and folds where the sneaker collar presses into the sock.
 ```
 
+Deep dive file:
+
+- `sock-detail-study.md`
+
 ## 3. Hosiery / Stockings / Tights
 
 Use for:
@@ -151,13 +159,25 @@ Short prompt block:
 Nude sheer 10-15 denier pantyhose, translucent nylon over natural skin, fine knit fibers visible around ankle, instep, and shoe opening, faint veins/tendons/toe contours visible underneath, subtle matte-satin sheen, slight fabric tension and compression where the shoe touches the foot, not bare skin, not opaque tights, not beauty blur.
 ```
 
+## Interaction-layer grammar (Use for all worn images)
+
+To prevent blur/decal failures, use the three-layer approach:
+
+- underlayer (body)
+- fabric layer
+- contact layer (shoe pressure)
+
+Deep dive file:
+
+- `interaction-layering-skin-fabric-shoe.md`
+
 ## Decision Rules By Shoe Type
 
 ### Pumps
 
 Best matches:
 
-- nude sheer pantyhose;
+- nude sheer pantyhose (explicit toe type: shadow toe vs unreinforced/sandal toe);
 - black sheer tights;
 - bare legs for summer/evening styling;
 - thin no-show socks only for special concept shots.
@@ -232,8 +252,6 @@ Accept if:
 
 ## Reference Links
 
+- Denier categories and visual expectations: https://www.journelle.com/pages/hosiery-guide
 - Sock texture guide: https://custom.sockclub.com/blogs/sock-texture-guide
-- Ribbed sock texture and compression discussion: https://soxytoes.com/a/buy/ribbed-socks-textured
-- Mercerized cotton dress sock texture: https://www.blacksocks.com/en-us/pages/mercerized-cotton
 - Nordstrom ribbed mercerized cotton dress socks reference: https://www.nordstrom.com/s/nordstrom-ribbed-mercerized-cotton-blend-dress-socks/7988629
-- Tuxedos Online dress socks thin construction note: https://www.tuxedosonline.com/mens-black-dress-socks-100-percent-mercerized-cotton.html/
