@@ -1,6 +1,6 @@
 # AI Product Image Playbook
 
-Last updated: 2026-04-26
+Last updated: 2026-04-27
 
 This folder is the shared rulebook for generating ecommerce fashion product images with AI, especially worn shoe photos. The goal is not just to make pretty images. The goal is to make images that survive zoomed product-page inspection: believable material, believable anatomy, consistent styling, and no obvious AI artifacts.
 
@@ -119,6 +119,10 @@ Avoid:
 - Opaque tights when asking for sheer pantyhose.
 - Blur language that hides skin detail.
 
+Deep dive:
+
+- [Microscopy: nude sheer hosiery (10D/15D/20D) + foot contact layers](microscopy/hosiery-nude-sheer-denier-foot-contact.md)
+
 ## Leather Pump Crease Lessons
 
 Pumps and leather shoes crease according to foot mechanics. Creases should appear where the material flexes, especially around the ball-of-foot / metatarsal flex point.
@@ -157,6 +161,10 @@ Then convert what you learn into explicit prompt language. Do not rely on generi
 - FALKE tights inspiration and denier guidance: https://www.falke.com/us_en/inspiration/tights/
 - Calzedonia sheer tights category references: https://www.calzedonia.com/us/women/tights_and_stockings/sheer_tights/
 - Hosieree sheer/reinforced toe product references: https://www.hosieree.com/products/CalzitalySheerCushion.html
+- Hosieree toe construction explainer: https://www.hosieree.com/Articles/Toes.html
+- UK Tights sandal toe explanation: https://www.uktights.com/tights/sheer-tights/sandal-toe-tights
+- Denier definition (textile units): https://en.wikipedia.org/wiki/Units_of_textile_measurement
+- Fogal All Nude (10D) product detail references: https://fogal.com/products/all-nude-tights
 - Shoe Snob leather creasing guidance: https://theshoesnobblog.com/guide-to-leather-creasing/
 - Grant Stone vamp crease discussion: https://www.grantstoneshoes.com/blogs/journal/123192833-creating-a-clean-vamp-crease
 - Shoe Tease high heel anatomy overview: https://www.shoe-tease.com/parts-of-a-high-heel-anatomy/
