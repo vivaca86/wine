@@ -1,6 +1,6 @@
 # Priority Study: Sheer Nude Hosiery Foot Details
 
-Last updated: 2026-04-26
+Last updated: 2026-04-27
 
 This is the current first-priority learning area for AI ecommerce footwear images: realistic nude sheer stockings with pumps, especially close-up worn shots.
 
@@ -206,9 +206,58 @@ Hosiery priority: nude sheer 10-15 denier sandal-toe or subtly reinforced-toe pa
 7. Does the nylon sheen follow leg/foot curvature instead of looking like pasted texture?
 8. Is the foot/shoe contact physically believable?
 
+## 2026-04-27 Additions (High-signal upgrades)
+
+### Toe vocabulary (Use exact terms)
+
+When you need close-up accuracy, don’t say only “reinforced toe.” Choose one of these in prompts:
+
+- **Shadow toe / invisible toe reinforcement**: toe reinforcement exists but is designed to be almost invisible.
+- **Unreinforced toe / sandal toe**: no reinforced toe (intended for open-toed styles).
+- **Toeless**: open-toe hosiery designed to expose toes.
+
+Prompt cues:
+
+```text
+almost invisible shadow-toe reinforcement (not a sock cap), or explicitly unreinforced/sandal-toe hosiery for open-toed styling
+```
+
+### Denier → expected anatomy visibility (Calibration)
+
+Use denier to set expectations for what should still show under fabric:
+
+- **Ultra sheer (3–7D)**: skin reads almost bare-leg; micro anatomy still visible (but softened).
+- **Sheer (8–15D)**: veins/tendons/toe knuckles can still be visible; the nylon layer must be obvious in macro.
+- **Semi-opaque (20–30D)**: more smoothing; anatomy cues become subtle; toe reinforcement reads more if present.
+
+Prompt add-on for 10–15D macro:
+
+```text
+at macro scale the nylon is visible as fine knit fibers with matte-satin sheen; under-fabric anatomy remains visible but softened (veins/tendons/toe knuckles)
+```
+
+### Micro nylon cues (Avoid blur)
+
+Demand *structure*:
+
+- fine knit fibers that follow curvature
+- sheen that rolls smoothly over the instep (not a flat beige overlay)
+- toe area continuity (no abrupt “cap line” unless specifically reinforced)
+
+Fixes by failure:
+
+- If hosiery becomes a blur: add `fine nylon knit fibers visible`, `explicit denier`, `no beauty blur`.
+- If toe becomes sock-like: add `shadow toe / almost invisible reinforcement`, `not opaque`, `no thick toe cap`.
+- If fabric stops at vamp: add `hosiery continues into shoe opening with slight tension`.
+
 ## References
 
+- Wolford Pure 10 Tights (matte look + Shadow Toe): https://www.wolford.com/en-us/pure-10-tights-14497.4273.html
+- Wolford Individual 10 Tights (Shadow Toe mention): https://www.wolford.com/en-us/individual-10-tights-18382.outlet.html
+- FALKE Shelina 12 DEN (unreinforced toe for open-toed shoes): https://www.falke.com/si_en/ts/falke-shelina/tights/
+- Denier guide with 10-15D and 20D behavior: https://www.girlsandnylons.com/guides/denier-guide.html
+- Denier range table and category explanation: https://www.journelle.com/pages/hosiery-guide
+- Hosiery denier visual differences: https://estylingerie.com/2019/12/16/hosiery-denier-guide-what-do-different-deniers-look-like/
 - Hosieree Calzitaly 10 denier high-heel pantyhose with reinforced toe: https://www.hosieree.com/products/CalzitalySheerCushion.html
 - On The Go Hosiery 20 denier ultra sheer reinforced toe: https://onthegohosiery.com/products/reinforced-toe-ultra-sheer
-- Reinforced toe and sandal-foot explanation: https://sage-advices.com/what-is-reinforced-toe-hosiery/
 - Toe cleavage definition and low-vamp pump context: https://carets.com/blogs/faq/toe-cleavage
