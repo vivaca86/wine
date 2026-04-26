@@ -186,12 +186,12 @@ Materials + construction:
 
 The study process should update or add Markdown files under `ai-product-image-playbook`:
 
-- `priority-hosiery-foot-study.md`
-- `sock-detail-study.md`
-- `footwear-legwear-system.md`
-- `bare-foot-detail-study.md`
-- `shoe-material-texture-study.md`
-- `interaction-layering-skin-fabric-shoe.md`
+- `hosiery-sheer-denier-microtexture.md`
+- `socks-knit-structures-microtexture.md`
+- `bare-skin-feet-legs-micro-details.md`
+- `materials-footwear-worn-closeups.md`
+- `interaction-layers-skin-fabric-shoe-contact.md`
+- `microscopy/hosiery-nude-sheer-denier-foot-contact.md`
 
 Each update should include:
 
