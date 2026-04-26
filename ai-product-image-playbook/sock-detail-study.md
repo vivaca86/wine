@@ -1,6 +1,6 @@
 # Sock Detail Study
 
-Last updated: 2026-04-26
+Last updated: 2026-04-27
 
 This study covers sock texture and shoe interaction for AI ecommerce footwear images.
 
@@ -242,6 +242,53 @@ If no-show sock shows too much:
 true no-show cut, edge hidden below loafer opening, only a tiny heel edge may be visible
 ```
 
+## 2026-04-27 Additions (Toe seam + heel pocket realism)
+
+### Toe seam types (High zoom tells the truth)
+
+At product zoom, toe seams are a common giveaway:
+
+- **Regular toe seam**: can show a small ridge.
+- **Flat toe seam**: lies flatter; looks cleaner in slim shoes.
+- **Hand-linked / hand-kettled toe**: intended to reduce seam feel; in imagery it often reads as a cleaner, flatter join (not a big bulky ridge).
+
+Prompt cues:
+
+```text
+flat toe seam construction (not bulky), clean toe seam line with no raised ridge, toe area smoothly stretched without melted texture
+```
+
+Reject if:
+
+- toe seam is a thick rope-like band
+- seam line is randomly placed or inconsistent left vs right
+
+### Heel pocket depth + no-show sock grip
+
+No-show socks often rely on a **deep heel pocket** and **internal silicone/gel grips** to prevent slipping. In product images, the grip itself is usually not visible, but the *fit behavior* is: heel edge stays seated and doesn’t collapse.
+
+Prompt cues:
+
+```text
+deep heel pocket that cups the heel, no slipping, heel edge stays seated, no-show sock remains mostly hidden with a clean low-cut edge
+```
+
+If the model keeps inventing a visible “heel grip strip,” add:
+
+```text
+heel grip is internal (not visible), fit stays in place without adding a visible external strip
+```
+
+### Thin sock translucency (Only subtle)
+
+Thin dress socks can show **very subtle under-fabric shaping** at toe knuckles under tension. They should not show explicit bare toes.
+
+Prompt cue:
+
+```text
+thin dress sock shows only subtle under-fabric shaping at toe knuckles (not individual toes), neat fit, no see-through bare toes
+```
+
 ## Sources
 
 - Sock texture guide: https://custom.sockclub.com/blogs/sock-texture-guide
@@ -249,3 +296,8 @@ true no-show cut, edge hidden below loafer opening, only a tiny heel edge may be
 - Mercerized cotton texture: https://www.blacksocks.com/en-us/pages/mercerized-cotton
 - Thin dress sock construction: https://www.tuxedosonline.com/mens-black-dress-socks-100-percent-mercerized-cotton.html/
 - Compression sock fit cautions and pressure behavior: https://time.com/7358172/do-compression-socks-work/
+- Hand-linked toe vs regular toe seams: https://www.icompressionsocks.com/is-seamless-toe-necessary/
+- Flat toe seam definition: https://julien-deluxe.com/en/pages/wat-is-een-flat-toe-seam
+- Toe seam comfort + construction discussion: https://ecosox.com/blog/sock-talk-toe-seams/
+- No-show socks silicone heel grips (fit behavior context): https://www.sheec.com/pages/no-show-socks
+- Heel pocket fit concept: https://www.fitsok.com/blogs/news/what-is-a-heel-pocket
