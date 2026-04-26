@@ -23,6 +23,7 @@ Suggested files to update:
 - `priority-hosiery-foot-study.md`
 - `sock-detail-study.md`
 - `footwear-legwear-system.md`
+- `wrinkle-tension-pressure-study.md`
 - `research-notes.md`
 - `qa-checklist.md`
 - new focused files when needed
@@ -256,7 +257,30 @@ Completion output:
 - [ ] Add or update `shoe-deformation-physics.md`.
 - [ ] Add pose-specific prompt phrases and QA checks.
 
-## 11. Color + Thickness + Material Combination Tables
+## 11. Wrinkle, Tension, And Pressure Realism
+
+Study wrinkles as physical results, not decorative lines. Use `wrinkle-tension-pressure-study.md` as the main file.
+
+Core rule:
+
+- [ ] Every wrinkle must have a cause: compression, stretch, contact, gravity, seam tension, material thickness, body anatomy, motion/pose, shoe pressure, or elastic pressure.
+
+Study zones:
+
+- [ ] Hosiery: ankle bend, toe base, ball of foot, low-vamp opening, heel curve, reinforced/shadow toe transition.
+- [ ] Socks: cuff, ankle bend, shoe collar contact, heel pocket, toe seam, ball of foot, arch area, no-show edge.
+- [ ] Bare feet: toe joints, ball of foot, heel contact, ankle bend, shoe straps/vamps/sandal edges.
+- [ ] Shoes: pump vamp flex line, sneaker toe-box flex, lace tension, tongue compression, sole/floor contact.
+- [ ] Clothing near shoes: pants hem, leggings ankle hem, skirt length consistency, boot shaft compression.
+
+Completion output:
+
+- [ ] Add source-backed notes to `wrinkle-tension-pressure-study.md`.
+- [ ] Add prompt phrases for cause-based wrinkles.
+- [ ] Add negative constraints for random decorative wrinkles, melted folds, and painted-on lines.
+- [ ] Add 4x zoom QA checks for wrinkle coherence.
+
+## 12. Color + Thickness + Material Combination Tables
 
 Build comparison tables for common ecommerce cases.
 
@@ -283,7 +307,7 @@ Completion output:
 
 - [ ] Add a combination table file or section.
 
-## 12. Failure Case Dictionary
+## 13. Failure Case Dictionary
 
 Document common failures and how to fix them.
 
@@ -301,12 +325,13 @@ Document common failures and how to fix them.
 - [ ] Leather grain rendered as random noise.
 - [ ] Pump creases in impossible locations.
 - [ ] Shoe pressure/contact missing.
+- [ ] Wrinkles that cannot be explained by pose, contact, gravity, seam tension, or material thickness.
 
 Completion output:
 
 - [ ] Add failure -> prompt fix entries to `qa-checklist.md` or a dedicated failure dictionary.
 
-## 13. Test Image Prompt Templates
+## 14. Test Image Prompt Templates
 
 Create dedicated test prompts to verify learning visually.
 
@@ -315,13 +340,14 @@ Create dedicated test prompts to verify learning visually.
 - [ ] Bare foot 4-panel inspection prompt.
 - [ ] Shoe material macro inspection prompt.
 - [ ] Pressure/deformation physics prompt.
+- [ ] Wrinkle/tension/pressure inspection prompt.
 - [ ] Full 8-shot product set prompt family.
 
 Completion output:
 
 - [ ] Add test prompts to `prompt-templates.md` or a dedicated `inspection-test-prompts.md`.
 
-## 14. Final Acceptance Criteria
+## 15. Final Acceptance Criteria
 
 The learning pass is complete only when the playbook can support prompts that produce:
 
@@ -332,4 +358,5 @@ The learning pass is complete only when the playbook can support prompts that pr
 - [ ] bare feet with realistic but ecommerce-appropriate detail;
 - [ ] shoe materials with category-specific texture and light behavior;
 - [ ] foot/shoe/fabric pressure and deformation that match the pose;
+- [ ] wrinkles, folds, and tension lines that have a clear physical cause under 4x zoom;
 - [ ] repeatable 8-shot product image sets with consistent product identity.
