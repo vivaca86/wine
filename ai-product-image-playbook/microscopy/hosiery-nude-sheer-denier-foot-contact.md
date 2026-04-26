@@ -26,7 +26,7 @@ Use toe construction terms *as visible construction cues*, not as vague style wo
 - “no dark reinforced toe patch unless requested”
 - “no thick toe seam crossing the nail line”
 
-**Sources**: Hosieree toe-types guide; UK Tights sandal-toe explanation; Wikipedia tights toe terminology. 
+**Sources**: UK Tights sandal-toe explanation; VienneMilano (invisible vs reinforced toe); Hosieree toe construction explainer.
 
 ---
 
@@ -68,7 +68,7 @@ Denier (DEN) controls perceived thickness/transparency. It’s *not* the only fa
 **Corrective prompt**
 - “20 den matte sheer tights; natural finish; subtle fabric grain; still translucent—no opaque tights”
 
-**Sources**: FALKE denier guide; Oroblù 15D “make-up effect” + invisible toe language; 20D product detail pages referencing matte/natural finish.
+**Sources**: Wolford tights guide (denier ranges and examples); FALKE denier guide; textile denier definition.
 
 ---
 
@@ -157,10 +157,11 @@ At 200–400% zoom on the ankle/instep/toes:
 ## Reference links (visual + terminology)
 
 - Denier definition (linear mass density, 9,000 m basis): https://en.wikipedia.org/wiki/Units_of_textile_measurement
-- FALKE denier guide (sheer vs opaque ranges, matte vs shiny): https://www.falke.com/us_en/inspiration/denier-tights-guide/
-- Oroblù 15D “make-up effect” + invisible toe wording: https://oroblu.com/en-us/products/ultrasheer-tights-pearl-15-nude-obh001890000000000236
-- Hosieree toe construction explainer (open toe / invisible toe / sandal toe / reinforced toe): https://www.hosieree.com/Articles/Toes.html
+- Wolford tights guide (sheer/semi-sheer/opaque denier ranges + examples): https://www.wolford.com/our-tights-guide.html
+- FALKE denier guide (what denier means; low denier = sheer): https://www.falke.com/us_en/inspiration/denier-tights-guide/
 - UK Tights sandal toe explanation (seam placement + subtle toe treatment): https://www.uktights.com/tights/sheer-tights/sandal-toe-tights
-- Fogal 10D “All Nude” product detail (invisible toe seam language): https://fogal.com/products/all-nude-tights
+- VienneMilano invisible toe vs reinforced toe explanation: https://viennemilano.com/blogs/tights/invisible-toe
+- Hosieree toe construction explainer (open toe / invisible toe / sandal toe / reinforced toe): https://www.hosieree.com/Articles/Toes.html
+- Fogal 10D “All Nude” product detail (ultra-sheer close-up reference set): https://fogal.com/products/all-nude-tights
 - Fogal 10D toeless option (open-toe use case): https://fogal.com/products/all-nude-toeless-tights
 - Example 20D product detail (matte/natural finish + reinforced toe / flat seam terminology): https://calzitaly.us/product/sheer-shaping-tights-20-den/
