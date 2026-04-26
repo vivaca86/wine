@@ -16,6 +16,16 @@ AI image generation should be treated like a product photo pipeline:
 
 For development-stage products without real samples, the AI image is a concept rendering, not final product proof. Once real samples exist, replace main product and detail proof shots with real photography. AI styling shots can still be used as clearly labeled styling/reference images.
 
+## Microscopic Study Notes (Index)
+
+These are prompt-ready micro cues + negative constraints + QA checks focused on worn footwear close-ups:
+
+- [Footwear materials (worn close-ups)](materials-footwear-worn-closeups.md)
+- [Bare skin: feet & legs micro details](bare-skin-feet-legs-micro-details.md)
+- [Nude sheer hosiery: 10D/15D/20D microtexture + toe types](hosiery-sheer-denier-microtexture.md)
+- [Socks: knit structures, seams, pressure marks](socks-knit-structures-microtexture.md)
+- [Layered prompting: skin + fabric + shoe contact](interaction-layers-skin-fabric-shoe-contact.md)
+
 ## Standard Shot Set: 1 Product = 8 Images
 
 ### 1. Worn Shoe Close-ups: 4 Images
@@ -122,6 +132,7 @@ Avoid:
 Deep dive:
 
 - [Microscopy: nude sheer hosiery (10D/15D/20D) + foot contact layers](microscopy/hosiery-nude-sheer-denier-foot-contact.md)
+- [Nude sheer hosiery: 10D/15D/20D microtexture + toe types](hosiery-sheer-denier-microtexture.md)
 
 ## Leather Pump Crease Lessons
 
@@ -168,3 +179,12 @@ Then convert what you learn into explicit prompt language. Do not rely on generi
 - Shoe Snob leather creasing guidance: https://theshoesnobblog.com/guide-to-leather-creasing/
 - Grant Stone vamp crease discussion: https://www.grantstoneshoes.com/blogs/journal/123192833-creating-a-clean-vamp-crease
 - Shoe Tease high heel anatomy overview: https://www.shoe-tease.com/parts-of-a-high-heel-anatomy/
+
+Additional micro-study anchors:
+
+- Wolford Individual 10 (Shadow Toe reference): https://www.wolfordshop.com/products/individual-10-tights-18382
+- Terry loop sock structure reference: https://darntough.com/blogs/the-alternate-stitch/what-is-terry-loop
+- Heel counter construction reference: https://shoemaking.wiki/Heel_Counter
+- Patent leather finish context (care/finish behavior): https://saphir.paris/en/pages/leather-guide
+- Nike Flyknit material/knit concept references: https://www.nike.com/flyknit/
+- adidas Primeknit references: https://www.adidas.com/us/primeknit-shoes
