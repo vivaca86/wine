@@ -1,6 +1,6 @@
 # 5-Hour Learning Plan: Microscopic Footwear Detail
 
-Last updated: 2026-04-26
+Last updated: 2026-04-27
 
 This is the active study plan for improving AI-generated worn footwear images. The goal is to learn visual detail deeply enough that future prompts can describe thread-level texture, skin-under-fabric behavior, material deformation, and realistic shoe contact.
 
@@ -20,10 +20,10 @@ This is the highest-priority study area.
 
 Study targets:
 
-- 10D, 15D, 20D nude sheer pantyhose.
+- 10D, 12D, 15D, 20D nude sheer pantyhose.
 - How much skin should show at each denier.
 - How veins, tendons, ankle bones, toe knuckles, and toe outlines show through the fabric.
-- Difference between reinforced toe and sandal toe.
+- Toe vocabulary: shadow toe (almost invisible reinforcement) vs unreinforced/sandal toe.
 - Toe seam placement and visibility.
 - How the fabric behaves around the pump opening.
 - How much toe cleavage or base-of-toe contour should show in low-vamp closed pumps.
@@ -66,7 +66,7 @@ Detail targets:
 - rib knit direction;
 - cuff pressure;
 - heel pocket shape;
-- toe seam;
+- toe seam type (flat seam / hand-linked vs bulky seam);
 - terry loops;
 - fabric thickness;
 - sock edge and shoe collar interaction;
@@ -87,6 +87,7 @@ Layer model:
 Study targets:
 
 - foot pores and skin texture;
+- vellus hair (“peach fuzz”) on legs (subtle, not noisy fuzz);
 - faint veins on instep and ankle;
 - tendons and ankle bones;
 - toe knuckles and toenails when visible;
@@ -111,24 +112,15 @@ Study targets:
 - knit uppers;
 - canvas;
 - rubber soles;
-- outsole edges;
+- outsole edges / foxing;
 - stitching;
-- folded leather edges;
+- folded leather edges / edge paint;
 - heel counters;
-- shoe openings;
-- laces and eyelets.
+- shoe openings.
 
 Prompt objective:
 
 Each material must have its own visual language. Do not rely on generic words like `premium` or `realistic` alone.
-
-Examples:
-
-- calf leather: fine grain, shallow flex creases, curved highlights, folded edge finishing;
-- patent leather: crisp specular highlights and reflections, not cloudy plastic;
-- suede: short nap, directional pile, matte surface, subtle color shifts;
-- mesh: breathable woven grid, panel depth, not random noise;
-- rubber sole: matte molded edge, tread hint, floor contact compression.
 
 ## Priority 5: Shoe Deformation and Physics
 
@@ -148,17 +140,47 @@ Prompt objective:
 
 Wrinkles must follow pose physics. Random decorative wrinkles should be rejected.
 
-## First Source Set
+## Source Set (Anchors + close-up references)
 
-Initial sources used to anchor the study:
+Hosiery:
 
 - Denier guide with 10-15D and 20D behavior: https://www.girlsandnylons.com/guides/denier-guide.html
+- Denier category table: https://www.journelle.com/pages/hosiery-guide
 - Hosiery denier visual differences: https://estylingerie.com/2019/12/16/hosiery-denier-guide-what-do-different-deniers-look-like/
+- Wolford Pure 10 Tights (matte look + Shadow Toe): https://www.wolford.com/en-us/pure-10-tights-14497.4273.html
+- Wolford Individual 10 Tights (Shadow Toe mention): https://www.wolford.com/en-us/individual-10-tights-18382.outlet.html
+- FALKE Shelina 12 DEN (unreinforced toe): https://www.falke.com/si_en/ts/falke-shelina/tights/
+- Toe cleavage definition and low-vamp pump context: https://carets.com/blogs/faq/toe-cleavage
+
+Feet + skin:
+
 - Foot and ankle anatomy: https://www.physio-pedia.com/Comprehensive_Anatomy_of_the_Foot_and_Ankle
 - Foot anatomy: https://www.kenhub.com/en/library/anatomy/ankle-and-foot-anatomy
-- Sock structure and heel pocket: https://www.icompressionsocks.com/5-basic-structures-of-socks-you-should-know-2/
+- MTP joints (“toe knuckles”): https://www.kenhub.com/en/library/anatomy/metatarsophalangeal-mtp-joints
+- Vellus hair (“peach fuzz”) definition: https://my.clevelandclinic.org/health/body/23098-vellus-hair-peach-fuzz
+
+Socks:
+
+- Sock texture guide: https://custom.sockclub.com/blogs/sock-texture-guide
 - Sock construction and toe seams: https://deadsoxy.com/blogs/sock-knowledge-base/sock-construction-methods-explained
-- Shoe material guide: https://footinst.com/identify-right-shoe-material/
+- Flat toe seam definition: https://julien-deluxe.com/en/pages/wat-is-een-flat-toe-seam
+- Toe seam comfort discussion: https://ecosox.com/blog/sock-talk-toe-seams/
+- Heel pocket fit concept: https://www.fitsok.com/blogs/news/what-is-a-heel-pocket
+
+Materials + construction:
+
+- Shoe materials overview: https://footinst.com/identify-right-shoe-material/
+- Foxing definition: https://www.heddels.com/dictionary/foxing/
+- Heel counter definition: https://shoemaking.wiki/Heel_Counter
+- Lugs definition: https://shoemaking.wiki/Lugs
+- Patent leather characteristics: https://www.schuhe-lueke.com/guidebook/shoe-care/lacquered-leather/
+- Suede brushing + nap behavior: https://www.bdpumps.com/why-suede-loafers-need-special-treatment-the-10-minute-maintenance-routine/
+- Fabric nap direction concept (maps to suede): https://stitched.info/tips/the-importance-of-fabric-nap-and-pile-direction/
+- Nike Flyknit (engineered knit zones): https://www.nike.com/flyknit/
+- adidas Primeknit overview/category: https://www.adidas.com/us/primeknit
+- Vibram traction lug tech: https://www.vibram.com/us/technology/lifestyle/TECH_traction-lug.html
+- Vibram outsole vocabulary (AKU guide): https://www.aku.co.uk/aku-academy/vibram
+- Construction methods (Hanwag): https://www.hanwag.com/us/en-us/our-story/production/construction/
 
 ## Output Plan During Study
 
@@ -167,7 +189,9 @@ The study process should update or add Markdown files under `ai-product-image-pl
 - `priority-hosiery-foot-study.md`
 - `sock-detail-study.md`
 - `footwear-legwear-system.md`
-- future material-specific files such as `bare-foot-detail-study.md`, `shoe-material-texture-study.md`, and `shoe-deformation-physics.md`
+- `bare-foot-detail-study.md`
+- `shoe-material-texture-study.md`
+- `interaction-layering-skin-fabric-shoe.md`
 
 Each update should include:
 
