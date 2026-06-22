@@ -13,7 +13,7 @@
     { id: "red", label: "레드", emoji: "🍷", color: "#8f2634" },
     { id: "white", label: "화이트", emoji: "🥂", color: "#f6df9a" },
     { id: "rose", label: "로제", emoji: "🌸", color: "#ef86a3" },
-    { id: "sparkling", label: "스파클링", emoji: "🍾", color: "#f1c84e" },
+    { id: "sparkling", label: "샴페인", emoji: "🍾", color: "#f1c84e" },
     { id: "dessert", label: "디저트", emoji: "🍯", color: "#d98712" },
     { id: "etc", label: "기타", emoji: "🍇", color: "#6a5577" },
   ];
@@ -195,7 +195,15 @@ drunk	white	IT	이탈리아	브리꼬 꽐리아	2022
 drunk	white	IT	이탈리아	브리꼬 꽐리아	2022`;
 
   /* ---------- State ---------- */
-  let state = { wines: [], tab: "cellar", groupBy: "none", sortDir: "desc" };
+  let state = {
+    wines: [],
+    tab: "cellar",
+    typeFilter: "all",
+    countryFilter: "all",
+    filterPanel: null,
+    sortBy: "name",
+    sortDir: "asc",
+  };
 
   function seedWines() {
     return SEED_TSV.trim()
@@ -241,8 +249,12 @@ drunk	white	IT	이탈리아	브리꼬 꽐리아	2022`;
         if (raw) state.wines = JSON.parse(raw) || [];
       }
       const pref = JSON.parse(localStorage.getItem(PREF_KEY) || "{}");
-      if (pref.groupBy) state.groupBy = pref.groupBy;
-      if (pref.sortDir) state.sortDir = pref.sortDir;
+      if (pref.sortBy === "name" || pref.sortBy === "price") {
+        state.sortBy = pref.sortBy;
+        if (pref.sortDir === "asc" || pref.sortDir === "desc") {
+          state.sortDir = pref.sortDir;
+        }
+      }
     } catch (e) {
       state.wines = seedWines();
     }
@@ -251,7 +263,7 @@ drunk	white	IT	이탈리아	브리꼬 꽐리아	2022`;
     try {
       localStorage.setItem(
         PREF_KEY,
-        JSON.stringify({ groupBy: state.groupBy, sortDir: state.sortDir })
+        JSON.stringify({ sortBy: state.sortBy, sortDir: state.sortDir })
       );
     } catch (e) {}
   }
@@ -432,9 +444,13 @@ drunk	white	IT	이탈리아	브리꼬 꽐리아	2022`;
   /* ---------- Tabs ---------- */
   function setTab(tab) {
     state.tab = tab;
+    state.typeFilter = "all";
+    state.countryFilter = "all";
+    state.filterPanel = null;
     document.querySelectorAll(".tab").forEach((b) => {
       b.classList.toggle("is-active", b.dataset.tab === tab);
     });
+    savePref();
     render();
   }
 
@@ -452,98 +468,152 @@ drunk	white	IT	이탈리아	브리꼬 꽐리아	2022`;
     $("#headerSub").textContent = `보유 ${cellar}병 · 마심 ${drunk}병`;
   }
 
-  /* ---------- Grouping ---------- */
-  function groupWines(wines, by, dateField) {
-    if (by === "none") return [{ key: null, wines: wines }];
-    const map = {};
-    wines.forEach((w) => {
-      const k = by === "type" ? w.type || "etc" : w.country || "ETC";
-      (map[k] = map[k] || []).push(w);
+  /* ---------- Filtering + sorting ---------- */
+  function sortArrow(key) {
+    if (state.sortBy !== key) return "";
+    return `<span class="chip__sort" aria-hidden="true">${
+      state.sortDir === "asc" ? "&uarr;" : "&darr;"
+    }</span>`;
+  }
+
+  function countBy(wines, keyFn) {
+    return wines.reduce((acc, w) => {
+      const key = keyFn(w) || "all";
+      acc[key] = (acc[key] || 0) + 1;
+      return acc;
+    }, {});
+  }
+
+  function optionBaseWines(wines, skip) {
+    return wines.filter((w) => {
+      if (skip !== "type" && state.typeFilter !== "all" && w.type !== state.typeFilter) {
+        return false;
+      }
+      if (
+        skip !== "country" &&
+        state.countryFilter !== "all" &&
+        (w.country || "ETC") !== state.countryFilter
+      ) {
+        return false;
+      }
+      return true;
     });
-    const dir = state.sortDir === "asc" ? 1 : -1;
-    return Object.keys(map)
-      .sort((a, b) => {
-        if (by === "type") return typeRank(a) - typeRank(b);
-        const countSort = map[a].length - map[b].length;
-        if (countSort) return countSort * dir;
-        return a.localeCompare(b, "ko") * dir;
-      })
-      .map((k) => ({
-        key: k,
-        by: by,
-        wines: map[k]
-          .slice()
-          .sort((x, y) => compareWineList(x, y, dateField)),
-      }));
   }
 
-  function groupBarHTML() {
-    const opts = [
-      ["none", "전체"],
-      ["type", "종류별"],
-      ["country", "국가별"],
-    ];
-    const sortMark = state.sortDir === "asc" ? "&uarr;" : "&darr;";
-    return `<div class="groupbar">${opts
-      .map(
-        (o) =>
-          `<button class="chip ${
-            state.groupBy === o[0] ? "is-active" : ""
-          }" data-group="${o[0]}">${o[1]}${
-            state.groupBy === o[0]
-              ? `<span class="chip__sort" aria-hidden="true">${sortMark}</span>`
-              : ""
-          }</button>`
-      )
-      .join("")}</div>`;
+  function applyListFilters(wines) {
+    return optionBaseWines(wines, null);
   }
 
-  function groupHeaderHTML(g) {
-    if (g.by === "type") {
-      const t = typeOf(g.key);
-      return `<div class="group-h"><span class="group-h__left">${typeIconHTML(
-        t.id,
-        "group"
-      )}${t.label}</span><span class="group-h__n">${g.wines.length}</span></div>`;
-    }
-    const c = countryOf(g.key);
-    return `<div class="group-h"><span class="group-h__left">${flagBadge(
-      g.key
-    )}${c ? esc(c.name) : "기타"}</span><span class="group-h__n">${
-      g.wines.length
-    }</span></div>`;
+  function typeOptionsHTML(wines) {
+    const base = optionBaseWines(wines, "type");
+    const counts = countBy(base, (w) => w.type || "etc");
+    const ids = Object.keys(counts).sort((a, b) => typeRank(a) - typeRank(b));
+    return filterOptionButton("type", "all", "전체", state.typeFilter === "all", base.length)
+      + ids
+        .map((id) => {
+          const t = typeOf(id);
+          return filterOptionButton(
+            "type",
+            id,
+            `${typeIconHTML(id, "option")}<span>${t.label}</span>`,
+            state.typeFilter === id,
+            counts[id]
+          );
+        })
+        .join("");
   }
 
-  function compareByOptionalDate(a, b, field) {
-    const av = a[field] || "";
-    const bv = b[field] || "";
-    if (!av && !bv) return a.name.localeCompare(b.name, "ko");
-    if (!av) return 1;
-    if (!bv) return -1;
-    const dateSort =
-      state.sortDir === "asc" ? av.localeCompare(bv) : bv.localeCompare(av);
-    return dateSort || a.name.localeCompare(b.name, "ko");
+  function countryOptionsHTML(wines) {
+    const base = optionBaseWines(wines, "country");
+    const counts = countBy(base, (w) => w.country || "ETC");
+    const codes = Object.keys(counts).sort((a, b) => {
+      const ac = countryOf(a);
+      const bc = countryOf(b);
+      return (ac ? ac.name : "기타").localeCompare(bc ? bc.name : "기타", "ko");
+    });
+    return filterOptionButton("country", "all", "전체", state.countryFilter === "all", base.length)
+      + codes
+        .map((code) => {
+          const c = countryOf(code);
+          const label = `${flagBadge(code)}<span>${c ? esc(c.name) : "기타"}</span>`;
+          return filterOptionButton(
+            "country",
+            code,
+            label,
+            state.countryFilter === code,
+            counts[code]
+          );
+        })
+        .join("");
   }
 
-  function compareWineList(a, b, dateField) {
+  function filterOptionButton(kind, value, labelHTML, active, count) {
+    const attr = kind === "type" ? "data-type-filter" : "data-country-filter";
+    return `<button class="filter-option ${active ? "is-active" : ""}" ${attr}="${esc(
+      value
+    )}">${labelHTML}<span class="filter-option__count">${count}</span></button>`;
+  }
+
+  function filterPanelHTML(wines) {
+    if (!state.filterPanel) return "";
+    const options =
+      state.filterPanel === "type"
+        ? typeOptionsHTML(wines)
+        : countryOptionsHTML(wines);
+    return `<div class="filter-options">${options}</div>`;
+  }
+
+  function listControlsHTML(wines) {
+    const activeType = state.typeFilter !== "all";
+    const activeCountry = state.countryFilter !== "all";
+    const typeLabel = activeType ? typeOf(state.typeFilter).label : "종류";
+    const c = activeCountry ? countryOf(state.countryFilter) : null;
+    const countryLabel = activeCountry ? (c ? c.name : "기타") : "국가";
+    return `
+      <div class="filterbar">
+        <button class="chip ${
+          !activeType && !activeCountry ? "is-active" : ""
+        }" data-filter-reset>전체</button>
+        <button class="chip ${
+          state.filterPanel === "type" || activeType ? "is-active" : ""
+        }" data-filter-panel="type">${typeLabel}</button>
+        <button class="chip ${
+          state.filterPanel === "country" || activeCountry ? "is-active" : ""
+        }" data-filter-panel="country">${countryLabel}</button>
+        <button class="chip ${
+          state.sortBy === "name" ? "is-active" : ""
+        }" data-sort="name">이름순${sortArrow("name")}</button>
+        <button class="chip ${
+          state.sortBy === "price" ? "is-active" : ""
+        }" data-sort="price">금액순${sortArrow("price")}</button>
+      </div>
+      ${filterPanelHTML(wines)}`;
+  }
+
+  function compareWineList(a, b) {
     const typeSort = typeRank(a.type) - typeRank(b.type);
     if (typeSort) return typeSort;
-    return compareByOptionalDate(a, b, dateField);
+    const dir = state.sortDir === "asc" ? 1 : -1;
+    if (state.sortBy === "price") {
+      const ap = a.price == null || a.price === "" || isNaN(a.price) ? null : Number(a.price);
+      const bp = b.price == null || b.price === "" || isNaN(b.price) ? null : Number(b.price);
+      if (ap == null && bp == null) return a.name.localeCompare(b.name, "ko");
+      if (ap == null) return 1;
+      if (bp == null) return -1;
+      return (ap - bp) * dir || a.name.localeCompare(b.name, "ko");
+    }
+    return a.name.localeCompare(b.name, "ko") * dir;
   }
 
   /* shared list renderer for cellar / drunk tabs */
-  function renderList(wines, kind, dateField) {
-    const groups = groupWines(wines, state.groupBy, dateField);
-    let html = groupBarHTML();
-    groups.forEach((g) => {
-      if (g.key !== null) html += groupHeaderHTML(g);
-      html +=
-        '<div class="list">' +
-        g.wines.map((w) => wineRow(w, kind)).join("") +
-        "</div>";
-    });
+  function renderList(wines, kind) {
+    const filtered = applyListFilters(wines).sort(compareWineList);
+    let html = listControlsHTML(wines);
+    html += filtered.length
+      ? '<div class="list">' + filtered.map((w) => wineRow(w, kind)).join("") + "</div>"
+      : `<div class="filtered-empty">조건에 맞는 와인이 없어요.</div>`;
     view.innerHTML = html;
-    bindGroupBar();
+    bindListControls();
     bindCards();
   }
 
@@ -552,10 +622,7 @@ drunk	white	IT	이탈리아	브리꼬 꽐리아	2022`;
     const vint = w.vintage
       ? `<span class="card__vint">· ${esc(w.vintage)}</span>`
       : "";
-    const typeMark =
-      kind !== "drunk" && state.groupBy === "type"
-        ? ""
-        : typeIconHTML(w.type);
+    const typeMark = typeIconHTML(w.type);
     const right =
       kind === "drunk"
         ? `<span class="card__rating">${starsHTML(w.rating || 0)}</span>`
@@ -573,14 +640,41 @@ drunk	white	IT	이탈리아	브리꼬 꽐리아	2022`;
       </button>`;
   }
 
-  function bindGroupBar() {
-    view.querySelectorAll(".chip[data-group]").forEach((b) => {
+  function bindListControls() {
+    view.querySelector("[data-filter-reset]")?.addEventListener("click", () => {
+      state.typeFilter = "all";
+      state.countryFilter = "all";
+      state.filterPanel = null;
+      render();
+    });
+    view.querySelectorAll("[data-filter-panel]").forEach((b) => {
       b.addEventListener("click", () => {
-        if (state.groupBy === b.dataset.group) {
+        state.filterPanel =
+          state.filterPanel === b.dataset.filterPanel ? null : b.dataset.filterPanel;
+        render();
+      });
+    });
+    view.querySelectorAll("[data-type-filter]").forEach((b) => {
+      b.addEventListener("click", () => {
+        state.typeFilter = b.dataset.typeFilter;
+        state.filterPanel = null;
+        render();
+      });
+    });
+    view.querySelectorAll("[data-country-filter]").forEach((b) => {
+      b.addEventListener("click", () => {
+        state.countryFilter = b.dataset.countryFilter;
+        state.filterPanel = null;
+        render();
+      });
+    });
+    view.querySelectorAll("[data-sort]").forEach((b) => {
+      b.addEventListener("click", () => {
+        if (state.sortBy === b.dataset.sort) {
           state.sortDir = state.sortDir === "asc" ? "desc" : "asc";
         } else {
-          state.groupBy = b.dataset.group;
-          state.sortDir = "desc";
+          state.sortBy = b.dataset.sort;
+          state.sortDir = state.sortBy === "price" ? "desc" : "asc";
         }
         savePref();
         render();
@@ -591,8 +685,7 @@ drunk	white	IT	이탈리아	브리꼬 꽐리아	2022`;
   /* ---------- Cellar tab ---------- */
   function renderCellar() {
     const wines = state.wines
-      .filter((w) => w.status === "cellar")
-      .sort((a, b) => compareWineList(a, b, "purchaseDate"));
+      .filter((w) => w.status === "cellar");
     if (!wines.length) {
       view.innerHTML = emptyState(
         "🍇",
@@ -601,14 +694,13 @@ drunk	white	IT	이탈리아	브리꼬 꽐리아	2022`;
       );
       return;
     }
-    renderList(wines, "cellar", "purchaseDate");
+    renderList(wines, "cellar");
   }
 
   /* ---------- Drunk tab ---------- */
   function renderDrunk() {
     const wines = state.wines
-      .filter((w) => w.status === "drunk")
-      .sort((a, b) => compareWineList(a, b, "drunkDate"));
+      .filter((w) => w.status === "drunk");
     if (!wines.length) {
       view.innerHTML = emptyState(
         "🍷",
@@ -617,7 +709,7 @@ drunk	white	IT	이탈리아	브리꼬 꽐리아	2022`;
       );
       return;
     }
-    renderList(wines, "drunk", "drunkDate");
+    renderList(wines, "drunk");
   }
 
   /* ---------- Stats tab ---------- */
