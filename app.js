@@ -1127,8 +1127,9 @@ drunk	white	IT	이탈리아	브리꼬 꽐리아	2022`;
     if (!w) return;
     const t = typeOf(w.type);
     const isDrunk = w.status === "drunk";
+    const typeValue = `${typeIconHTML(w.type, "detail")}<span>${t.label}</span>`;
     const titleRow = isDrunk
-      ? `<span class="detail__title-side detail__title-side--type">${t.emoji} ${t.label}</span>
+      ? `<span class="detail__title-side detail__title-side--type">${typeValue}</span>
          <span class="detail__name">${esc(w.name)}</span>
          <span class="detail__title-side detail__title-side--vintage">${
            w.vintage ? esc(w.vintage) : ""
@@ -1148,10 +1149,10 @@ drunk	white	IT	이탈리아	브리꼬 꽐리아	2022`;
       );
     } else {
       if (w.vintage) {
-        cells.push(cell("종류", `${t.emoji} ${t.label}`));
+        cells.push(cell("종류", typeValue));
         cells.push(cell("빈티지", esc(w.vintage)));
       } else {
-        cells.push(cell("종류", `${t.emoji} ${t.label}`, true));
+        cells.push(cell("종류", typeValue, true));
       }
       cells.push(cell("구입일", fmtDate(w.purchaseDate)));
       cells.push(cell("구입 가격", won(w.price)));

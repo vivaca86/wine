@@ -834,6 +834,7 @@ body.is-refreshing .pull-refresh__ring {
 /* ---------- Forms ---------- */
 .field {
   margin-bottom: 16px;
+  min-width: 0;
 }
 .field__label {
   display: block;
@@ -849,6 +850,8 @@ body.is-refreshing .pull-refresh__ring {
 .input,
 .textarea {
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   background: rgba(255, 253, 248, 0.86);
   color: var(--charcoal);
   border: 1px solid var(--border);
@@ -858,6 +861,20 @@ body.is-refreshing .pull-refresh__ring {
   font-family: inherit;
   line-height: 1.4;
   box-shadow: rgba(23, 22, 20, 0.03) 0 1px 0 inset;
+}
+.input[type="date"] {
+  height: 42px;
+  min-height: 42px;
+  padding: 0 10px;
+  line-height: 42px;
+}
+.input[type="date"]::-webkit-date-and-time-value {
+  min-height: 42px;
+  text-align: left;
+}
+.input[type="date"]::-webkit-calendar-picker-indicator {
+  margin: 0;
+  padding: 4px;
 }
 .input::placeholder,
 .textarea::placeholder {
@@ -900,6 +917,9 @@ body.is-refreshing .pull-refresh__ring {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
+}
+.row-2 > .field {
+  min-width: 0;
 }
 
 /* Pill-choice group (wine type) */
@@ -986,9 +1006,10 @@ body.is-refreshing .pull-refresh__ring {
   border: 1px solid rgba(23, 22, 20, 0.18);
 }
 .btn--quiet {
-  background: transparent;
-  color: var(--muted);
-  border: none;
+  background: rgba(255, 253, 248, 0.82);
+  color: var(--ink-82);
+  border-color: rgba(23, 22, 20, 0.12);
+  box-shadow: rgba(39, 33, 24, 0.04) 0 1px 0 inset;
 }
 .btn--danger {
   background: transparent;
@@ -996,10 +1017,19 @@ body.is-refreshing .pull-refresh__ring {
   border: none;
 }
 .btn-stack {
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
-  margin-top: 18px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 6px;
+  margin-top: 16px;
+  padding: 5px;
+  background: rgba(23, 22, 20, 0.045);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+}
+.btn-stack .btn {
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: 12px;
 }
 
 .detail-actions {
@@ -1096,6 +1126,9 @@ body.is-refreshing .pull-refresh__ring {
   white-space: nowrap;
 }
 .detail__title-side--type {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   justify-self: end;
 }
 .detail__title-side--vintage {
@@ -1425,6 +1458,11 @@ img.card__photo {
   height: 18px;
   flex-basis: 18px;
 }
+.type-icon--detail {
+  width: 18px;
+  height: 18px;
+  flex-basis: 18px;
+}
 .group-h__n {
   font-size: 12px;
   color: var(--muted);
@@ -1439,30 +1477,48 @@ img.card__photo {
 .dgrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  gap: 0;
+  background: rgba(255, 253, 248, 0.6);
+  border: 1px solid rgba(23, 22, 20, 0.08);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: rgba(39, 33, 24, 0.04) 0 8px 22px;
+}
+.dgrid--compact {
+  gap: 0;
+}
+.dcell {
+  position: relative;
+  min-width: 0;
+  min-height: 46px;
   background: transparent;
   border: 0;
   border-radius: 0;
-  overflow: visible;
-}
-.dgrid--compact {
-  gap: 6px;
-}
-.dcell {
-  background: rgba(255, 253, 248, 0.7);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 11px 12px;
-  box-shadow: rgba(39, 33, 24, 0.04) 0 6px 16px;
+  padding: 8px 11px;
+  box-shadow: none;
 }
 .dgrid--compact .dcell {
-  padding: 7px 10px;
+  min-height: 44px;
+  padding: 7px 11px;
 }
 .dcell--full {
   grid-column: 1 / -1;
 }
+.dcell:nth-child(odd):not(.dcell--full) {
+  border-right: 1px solid rgba(23, 22, 20, 0.07);
+}
+.dcell:nth-child(n + 3),
+.dcell--full + .dcell,
+.dcell--full + .dcell + .dcell {
+  border-top: 1px solid rgba(23, 22, 20, 0.07);
+}
+.dcell--full + .dcell + .dcell {
+  border-right: 0;
+}
 .dlabel {
-  font-size: 12px;
+  font-size: 11px;
+  font-weight: 720;
+  line-height: 1.05;
   color: var(--muted);
   margin-bottom: 3px;
 }
@@ -1472,8 +1528,13 @@ img.card__photo {
   margin-bottom: 1px;
 }
 .dvalue {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
   font-size: 15px;
   font-weight: 760;
+  line-height: 1.16;
 }
 .dgrid--compact .dvalue {
   font-size: 13px;
