@@ -8,13 +8,13 @@
 
   const STORE_KEY = "wine-cellar-v1";
 
-  /* Wine types: id, label, emoji swatch, dot color */
+  /* Wine types: id, label, emoji swatch, icon color */
   const TYPES = [
-    { id: "red", label: "레드", emoji: "🍷", color: "#7a2e35" },
-    { id: "white", label: "화이트", emoji: "🥂", color: "#cbb56b" },
-    { id: "rose", label: "로제", emoji: "🌸", color: "#d68a9a" },
-    { id: "sparkling", label: "스파클링", emoji: "🍾", color: "#b59b5e" },
-    { id: "dessert", label: "디저트", emoji: "🍯", color: "#a9743b" },
+    { id: "red", label: "레드", emoji: "🍷", color: "#8f2634" },
+    { id: "white", label: "화이트", emoji: "🥂", color: "#f6df9a" },
+    { id: "rose", label: "로제", emoji: "🌸", color: "#ef86a3" },
+    { id: "sparkling", label: "스파클링", emoji: "🍾", color: "#f1c84e" },
+    { id: "dessert", label: "디저트", emoji: "🍯", color: "#d98712" },
     { id: "etc", label: "기타", emoji: "🍇", color: "#6a5577" },
   ];
 
@@ -333,6 +333,39 @@ drunk	white	IT	이탈리아	브리꼬 꽐리아	2022`;
     return out + "</span>";
   }
 
+  function typeIconHTML(typeId, variant) {
+    const t = typeOf(typeId);
+    const label = esc(t.label);
+    const cls = variant ? ` type-icon--${variant}` : "";
+    const fill = t.color;
+    const isFlute = t.id === "rose" || t.id === "sparkling";
+    if (isFlute) {
+      const bubbles =
+        t.id === "sparkling"
+          ? `<circle class="type-icon__bubble" cx="11" cy="8" r=".65" />
+             <circle class="type-icon__bubble" cx="12.8" cy="10.6" r=".52" />`
+          : "";
+      return `<span class="type-icon${cls}" title="${label}" aria-label="${label}" role="img">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path class="type-icon__glass" d="M8.2 2.4h7.6L14.6 15.1a2.65 2.65 0 0 1-5.2 0L8.2 2.4Z" />
+          <path d="M9.1 4.8h5.8L14 14.2a2 2 0 0 1-4 0L9.1 4.8Z" fill="${fill}" />
+          ${bubbles}
+          <path class="type-icon__outline" d="M8.2 2.4h7.6L14.6 15.1a2.65 2.65 0 0 1-5.2 0L8.2 2.4Z" />
+          <path class="type-icon__outline" d="M12 17v3.1M8.9 21h6.2" />
+        </svg>
+      </span>`;
+    }
+    return `<span class="type-icon${cls}" title="${label}" aria-label="${label}" role="img">
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path class="type-icon__glass" d="M6.3 2.4h11.4c-.25 7.65-2 12.8-5.7 12.8S6.55 10.05 6.3 2.4Z" />
+        <path d="M7.25 4.8h9.5c-.48 6.5-1.98 9.25-4.75 9.25S7.73 11.3 7.25 4.8Z" fill="${fill}" />
+        <path class="type-icon__shine" d="M8.8 4.1c-.28 2.25-.08 5 .72 7.3" />
+        <path class="type-icon__outline" d="M6.3 2.4h11.4c-.25 7.65-2 12.8-5.7 12.8S6.55 10.05 6.3 2.4Z" />
+        <path class="type-icon__outline" d="M12 15v5.1M8.7 21h6.6" />
+      </svg>
+    </span>`;
+  }
+
   function starInputHTML() {
     return `<div class="star-input" id="starInput">
       ${[1, 2, 3, 4, 5]
@@ -462,7 +495,10 @@ drunk	white	IT	이탈리아	브리꼬 꽐리아	2022`;
   function groupHeaderHTML(g) {
     if (g.by === "type") {
       const t = typeOf(g.key);
-      return `<div class="group-h"><span class="group-h__left"><span class="dot" style="background:${t.color}"></span>${t.label}</span><span class="group-h__n">${g.wines.length}</span></div>`;
+      return `<div class="group-h"><span class="group-h__left">${typeIconHTML(
+        t.id,
+        "group"
+      )}${t.label}</span><span class="group-h__n">${g.wines.length}</span></div>`;
     }
     const c = countryOf(g.key);
     return `<div class="group-h"><span class="group-h__left">${flagBadge(
@@ -504,10 +540,10 @@ drunk	white	IT	이탈리아	브리꼬 꽐리아	2022`;
     const vint = w.vintage
       ? `<span class="card__vint">· ${esc(w.vintage)}</span>`
       : "";
-    const dot =
+    const typeMark =
       kind !== "drunk" && state.groupBy === "type"
         ? ""
-        : `<span class="type-dot" style="background:${t.color}" title="${t.label}"></span>`;
+        : typeIconHTML(w.type);
     const right =
       kind === "drunk"
         ? `<span class="card__rating">${starsHTML(w.rating || 0)}</span>`
@@ -520,7 +556,7 @@ drunk	white	IT	이탈리아	브리꼬 꽐리아	2022`;
           )}<span class="card__name-vintage"><span class="card__name">${esc(
             w.name
           )}</span>${vint}</span></span>
-          <span class="card__right">${dot}${right}</span>
+          <span class="card__right">${typeMark}${right}</span>
         </span>
       </button>`;
   }
