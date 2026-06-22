@@ -17,6 +17,7 @@
     { id: "dessert", label: "디저트", emoji: "🍯", color: "#d98712" },
     { id: "etc", label: "기타", emoji: "🍇", color: "#6a5577" },
   ];
+  const TYPE_ORDER = ["red", "sparkling", "white", "rose", "dessert", "etc"];
 
   /* Wine-producing countries: code, name (ko), flag emoji */
   const COUNTRIES = [
@@ -275,6 +276,10 @@ drunk	white	IT	이탈리아	브리꼬 꽐리아	2022`;
 
   const typeOf = (id) =>
     TYPES.find((t) => t.id === id) || TYPES[TYPES.length - 1];
+  const typeRank = (id) => {
+    const rank = TYPE_ORDER.indexOf(id || "etc");
+    return rank === -1 ? TYPE_ORDER.length : rank;
+  };
   const countryOf = (code) => COUNTRIES.find((c) => c.code === code) || null;
 
   const esc = (s) =>
@@ -448,7 +453,7 @@ drunk	white	IT	이탈리아	브리꼬 꽐리아	2022`;
   }
 
   /* ---------- Grouping ---------- */
-  function groupWines(wines, by) {
+  function groupWines(wines, by, dateField) {
     if (by === "none") return [{ key: null, wines: wines }];
     const map = {};
     wines.forEach((w) => {
@@ -458,6 +463,7 @@ drunk	white	IT	이탈리아	브리꼬 꽐리아	2022`;
     const dir = state.sortDir === "asc" ? 1 : -1;
     return Object.keys(map)
       .sort((a, b) => {
+        if (by === "type") return typeRank(a) - typeRank(b);
         const countSort = map[a].length - map[b].length;
         if (countSort) return countSort * dir;
         return a.localeCompare(b, "ko") * dir;
@@ -467,7 +473,7 @@ drunk	white	IT	이탈리아	브리꼬 꽐리아	2022`;
         by: by,
         wines: map[k]
           .slice()
-          .sort((x, y) => x.name.localeCompare(y.name, "ko") * dir),
+          .sort((x, y) => compareWineList(x, y, dateField)),
       }));
   }
 
@@ -519,9 +525,15 @@ drunk	white	IT	이탈리아	브리꼬 꽐리아	2022`;
     return dateSort || a.name.localeCompare(b.name, "ko");
   }
 
+  function compareWineList(a, b, dateField) {
+    const typeSort = typeRank(a.type) - typeRank(b.type);
+    if (typeSort) return typeSort;
+    return compareByOptionalDate(a, b, dateField);
+  }
+
   /* shared list renderer for cellar / drunk tabs */
-  function renderList(wines, kind) {
-    const groups = groupWines(wines, state.groupBy);
+  function renderList(wines, kind, dateField) {
+    const groups = groupWines(wines, state.groupBy, dateField);
     let html = groupBarHTML();
     groups.forEach((g) => {
       if (g.key !== null) html += groupHeaderHTML(g);
@@ -580,7 +592,7 @@ drunk	white	IT	이탈리아	브리꼬 꽐리아	2022`;
   function renderCellar() {
     const wines = state.wines
       .filter((w) => w.status === "cellar")
-      .sort((a, b) => compareByOptionalDate(a, b, "purchaseDate"));
+      .sort((a, b) => compareWineList(a, b, "purchaseDate"));
     if (!wines.length) {
       view.innerHTML = emptyState(
         "🍇",
@@ -589,14 +601,14 @@ drunk	white	IT	이탈리아	브리꼬 꽐리아	2022`;
       );
       return;
     }
-    renderList(wines, "cellar");
+    renderList(wines, "cellar", "purchaseDate");
   }
 
   /* ---------- Drunk tab ---------- */
   function renderDrunk() {
     const wines = state.wines
       .filter((w) => w.status === "drunk")
-      .sort((a, b) => compareByOptionalDate(a, b, "drunkDate"));
+      .sort((a, b) => compareWineList(a, b, "drunkDate"));
     if (!wines.length) {
       view.innerHTML = emptyState(
         "🍷",
@@ -605,7 +617,7 @@ drunk	white	IT	이탈리아	브리꼬 꽐리아	2022`;
       );
       return;
     }
-    renderList(wines, "drunk");
+    renderList(wines, "drunk", "drunkDate");
   }
 
   /* ---------- Stats tab ---------- */
