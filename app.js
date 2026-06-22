@@ -43,7 +43,7 @@
 
   const PREF_KEY = "wine-cellar-pref";
   const SEED_KEY = "wine-cellar-seed-version";
-  const SEED_VERSION = "user-wine-list-2026-06-23-country-classification";
+  const SEED_VERSION = "user-wine-list-2026-06-23-champagne-sparkling-nav";
   const SEED_TSV = `status	type	country_code	country_name	name	vintage
 cellar	red	FR	프랑스	프리에르 로크, 르 끌라우드	2019
 cellar	red	FR	프랑스	모알라 제브리 샹베르땅	2018
@@ -103,44 +103,44 @@ cellar	red	IT	이탈리아	사시까이아	2019
 cellar	red	IT	이탈리아	라 스피네따 바르바레스코 스타데리	2014
 drunk	red	NZ	뉴질랜드	클라우디베이 피노누아	2018
 drunk	red	NZ	뉴질랜드	맨패밀리 피노타쥐
-cellar	white	FR	프랑스	크리스탈	2012
-cellar	white	FR	프랑스	크리스탈	2014
-cellar	white	FR	프랑스	크리스탈	2015
-cellar	white	FR	프랑스	자크셀로스 V.O
-cellar	white	FR	프랑스	자크셀로스 V.O
-cellar	white	FR	프랑스	크룩 170
-cellar	white	FR	프랑스	크룩 170
-cellar	white	FR	프랑스	크룩 171
-cellar	white	FR	프랑스	크룩 171
-cellar	white	FR	프랑스	크룩 171
-cellar	white	FR	프랑스	크룩 172
-cellar	white	FR	프랑스	돔페르뇽	2012
-cellar	white	FR	프랑스	돔페르뇽	2013
-cellar	white	FR	프랑스	돔페르뇽	2013
-cellar	white	FR	프랑스	돔페르뇽	2013
-drunk	white	FR	프랑스	돔페르뇽	2013
-cellar	white	FR	프랑스	앙리지로 MV17
-cellar	white	FR	프랑스	레어 08
-drunk	white	FR	프랑스	떼땅져
-drunk	white	FR	프랑스	떼땅져
-cellar	white	FR	프랑스	떼땅져
-drunk	white	FR	프랑스	떼땅져
-drunk	white	FR	프랑스	필리조 에피스
-cellar	white	FR	프랑스	뽀므리
-drunk	white	FR	프랑스	플뢰리
-drunk	white	FR	프랑스	파이퍼 하이직
-cellar	white	FR	프랑스	파이퍼하이직	2014
-drunk	white	FR	프랑스	폴로져
-drunk	white	FR	프랑스	뵈브 끌레꼬
-drunk	white	FR	프랑스	뵈브 끌레꼬
-drunk	white	FR	프랑스	뵈브 끌레꼬
-cellar	white	FR	프랑스	뵈브 끌레꼬 로제
-drunk	white	FR	프랑스	빌까르 살몽 드미섹
-cellar	white	FR	프랑스	볼랭져
-drunk	white	FR	프랑스	멈 그랑 꼬르똥
-drunk	white	FR	프랑스	페리에 주에
-drunk	white	FR	프랑스	앙드레 끌루에
-drunk	white	FR	프랑스	도츠
+cellar	sparkling	FR	프랑스	크리스탈	2012
+cellar	sparkling	FR	프랑스	크리스탈	2014
+cellar	sparkling	FR	프랑스	크리스탈	2015
+cellar	sparkling	FR	프랑스	자크셀로스 V.O
+cellar	sparkling	FR	프랑스	자크셀로스 V.O
+cellar	sparkling	FR	프랑스	크룩 170
+cellar	sparkling	FR	프랑스	크룩 170
+cellar	sparkling	FR	프랑스	크룩 171
+cellar	sparkling	FR	프랑스	크룩 171
+cellar	sparkling	FR	프랑스	크룩 171
+cellar	sparkling	FR	프랑스	크룩 172
+cellar	sparkling	FR	프랑스	돔페르뇽	2012
+cellar	sparkling	FR	프랑스	돔페르뇽	2013
+cellar	sparkling	FR	프랑스	돔페르뇽	2013
+cellar	sparkling	FR	프랑스	돔페르뇽	2013
+drunk	sparkling	FR	프랑스	돔페르뇽	2013
+cellar	sparkling	FR	프랑스	앙리지로 MV17
+cellar	sparkling	FR	프랑스	레어 08
+drunk	sparkling	FR	프랑스	떼땅져
+drunk	sparkling	FR	프랑스	떼땅져
+cellar	sparkling	FR	프랑스	떼땅져
+drunk	sparkling	FR	프랑스	떼땅져
+drunk	sparkling	FR	프랑스	필리조 에피스
+cellar	sparkling	FR	프랑스	뽀므리
+drunk	sparkling	FR	프랑스	플뢰리
+drunk	sparkling	FR	프랑스	파이퍼 하이직
+cellar	sparkling	FR	프랑스	파이퍼하이직	2014
+drunk	sparkling	FR	프랑스	폴로져
+drunk	sparkling	FR	프랑스	뵈브 끌레꼬
+drunk	sparkling	FR	프랑스	뵈브 끌레꼬
+drunk	sparkling	FR	프랑스	뵈브 끌레꼬
+cellar	sparkling	FR	프랑스	뵈브 끌레꼬 로제
+drunk	sparkling	FR	프랑스	빌까르 살몽 드미섹
+cellar	sparkling	FR	프랑스	볼랭져
+drunk	sparkling	FR	프랑스	멈 그랑 꼬르똥
+drunk	sparkling	FR	프랑스	페리에 주에
+drunk	sparkling	FR	프랑스	앙드레 끌루에
+drunk	sparkling	FR	프랑스	도츠
 drunk	white	FR	프랑스	게뷔르츠트라미너 그로씨 로에	2011
 cellar	white	FR	프랑스	휘겔 게뷔리츠트라미너
 drunk	white	DE	독일	스모켓 리슬링
@@ -194,7 +194,7 @@ drunk	white	IT	이탈리아	브리꼬 꽐리아	2022
 drunk	white	IT	이탈리아	브리꼬 꽐리아	2022`;
 
   /* ---------- State ---------- */
-  let state = { wines: [], tab: "cellar", groupBy: "none" };
+  let state = { wines: [], tab: "cellar", groupBy: "none", sortDir: "desc" };
 
   function seedWines() {
     return SEED_TSV.trim()
@@ -241,13 +241,17 @@ drunk	white	IT	이탈리아	브리꼬 꽐리아	2022`;
       }
       const pref = JSON.parse(localStorage.getItem(PREF_KEY) || "{}");
       if (pref.groupBy) state.groupBy = pref.groupBy;
+      if (pref.sortDir) state.sortDir = pref.sortDir;
     } catch (e) {
       state.wines = seedWines();
     }
   }
   function savePref() {
     try {
-      localStorage.setItem(PREF_KEY, JSON.stringify({ groupBy: state.groupBy }));
+      localStorage.setItem(
+        PREF_KEY,
+        JSON.stringify({ groupBy: state.groupBy, sortDir: state.sortDir })
+      );
     } catch (e) {}
   }
   /* Persist; returns false if storage quota is exceeded. */
@@ -418,12 +422,19 @@ drunk	white	IT	이탈리아	브리꼬 꽐리아	2022`;
       const k = by === "type" ? w.type || "etc" : w.country || "ETC";
       (map[k] = map[k] || []).push(w);
     });
+    const dir = state.sortDir === "asc" ? 1 : -1;
     return Object.keys(map)
-      .sort((a, b) => map[b].length - map[a].length || a.localeCompare(b))
+      .sort((a, b) => {
+        const countSort = map[a].length - map[b].length;
+        if (countSort) return countSort * dir;
+        return a.localeCompare(b, "ko") * dir;
+      })
       .map((k) => ({
         key: k,
         by: by,
-        wines: map[k].slice().sort((x, y) => x.name.localeCompare(y.name, "ko")),
+        wines: map[k]
+          .slice()
+          .sort((x, y) => x.name.localeCompare(y.name, "ko") * dir),
       }));
   }
 
@@ -433,12 +444,17 @@ drunk	white	IT	이탈리아	브리꼬 꽐리아	2022`;
       ["type", "종류별"],
       ["country", "국가별"],
     ];
+    const sortMark = state.sortDir === "asc" ? "&uarr;" : "&darr;";
     return `<div class="groupbar">${opts
       .map(
         (o) =>
           `<button class="chip ${
             state.groupBy === o[0] ? "is-active" : ""
-          }" data-group="${o[0]}">${o[1]}</button>`
+          }" data-group="${o[0]}">${o[1]}${
+            state.groupBy === o[0]
+              ? `<span class="chip__sort" aria-hidden="true">${sortMark}</span>`
+              : ""
+          }</button>`
       )
       .join("")}</div>`;
   }
@@ -454,6 +470,17 @@ drunk	white	IT	이탈리아	브리꼬 꽐리아	2022`;
     )}${c ? esc(c.name) : "기타"}</span><span class="group-h__n">${
       g.wines.length
     }</span></div>`;
+  }
+
+  function compareByOptionalDate(a, b, field) {
+    const av = a[field] || "";
+    const bv = b[field] || "";
+    if (!av && !bv) return a.name.localeCompare(b.name, "ko");
+    if (!av) return 1;
+    if (!bv) return -1;
+    const dateSort =
+      state.sortDir === "asc" ? av.localeCompare(bv) : bv.localeCompare(av);
+    return dateSort || a.name.localeCompare(b.name, "ko");
   }
 
   /* shared list renderer for cellar / drunk tabs */
@@ -501,7 +528,12 @@ drunk	white	IT	이탈리아	브리꼬 꽐리아	2022`;
   function bindGroupBar() {
     view.querySelectorAll(".chip[data-group]").forEach((b) => {
       b.addEventListener("click", () => {
-        state.groupBy = b.dataset.group;
+        if (state.groupBy === b.dataset.group) {
+          state.sortDir = state.sortDir === "asc" ? "desc" : "asc";
+        } else {
+          state.groupBy = b.dataset.group;
+          state.sortDir = "desc";
+        }
         savePref();
         render();
       });
@@ -512,9 +544,7 @@ drunk	white	IT	이탈리아	브리꼬 꽐리아	2022`;
   function renderCellar() {
     const wines = state.wines
       .filter((w) => w.status === "cellar")
-      .sort((a, b) =>
-        (b.purchaseDate || "").localeCompare(a.purchaseDate || "")
-      );
+      .sort((a, b) => compareByOptionalDate(a, b, "purchaseDate"));
     if (!wines.length) {
       view.innerHTML = emptyState(
         "🍇",
@@ -530,7 +560,7 @@ drunk	white	IT	이탈리아	브리꼬 꽐리아	2022`;
   function renderDrunk() {
     const wines = state.wines
       .filter((w) => w.status === "drunk")
-      .sort((a, b) => (b.drunkDate || "").localeCompare(a.drunkDate || ""));
+      .sort((a, b) => compareByOptionalDate(a, b, "drunkDate"));
     if (!wines.length) {
       view.innerHTML = emptyState(
         "🍷",
@@ -782,7 +812,7 @@ drunk	white	IT	이탈리아	브리꼬 꽐리아	2022`;
         <div class="field">
           <label class="field__label">구입일</label>
           <input class="input" name="purchaseDate" type="date" value="${esc(
-            w.purchaseDate || today()
+            w.purchaseDate || ""
           )}" />
         </div>
         </div>
@@ -799,7 +829,7 @@ drunk	white	IT	이탈리아	브리꼬 꽐리아	2022`;
                 <div class="field">
                   <label class="field__label">마신 날</label>
                   <input class="input" name="drunkDate" type="date" value="${esc(
-                    w.drunkDate || today()
+                    w.drunkDate || ""
                   )}" />
                 </div>
 
@@ -878,12 +908,12 @@ drunk	white	IT	이탈리아	브리꼬 꽐리아	2022`;
         type: f.type.value,
         vintage: f.vintage.value.trim(),
         price: f.price.value.replace(/[^\d]/g, "") || null,
-        purchaseDate: f.purchaseDate.value || today(),
+        purchaseDate: f.purchaseDate.value || (isEdit ? "" : today()),
         photo: photo || null,
       };
       if (isDrunkEdit) {
         data.rating = getRating();
-        data.drunkDate = f.drunkDate.value || today();
+        data.drunkDate = f.drunkDate.value || "";
         data.note = f.note.value.trim();
       }
 
@@ -1097,7 +1127,99 @@ drunk	white	IT	이탈리아	브리꼬 꽐리아	2022`;
     if (e.target.closest("[data-close]")) closeSheet();
   });
 
+  function setupPullToRefresh() {
+    const indicator = document.createElement("div");
+    indicator.className = "pull-refresh";
+    indicator.setAttribute("aria-hidden", "true");
+    indicator.innerHTML = '<span class="pull-refresh__ring"></span>';
+    document.body.appendChild(indicator);
+
+    const threshold = 82;
+    const maxPull = 92;
+    let startY = 0;
+    let pull = 0;
+    let tracking = false;
+    let refreshing = false;
+
+    const atTop = () => {
+      const scroller = document.scrollingElement || document.documentElement;
+      return window.scrollY <= 0 && scroller.scrollTop <= 0;
+    };
+
+    const setPull = (value, pulling = true) => {
+      pull = value;
+      document.documentElement.style.setProperty("--pull-refresh-y", `${value}px`);
+      document.body.classList.toggle("is-pulling-refresh", pulling && value > 0);
+      indicator.classList.toggle("is-ready", value >= threshold);
+    };
+
+    const resetPull = () => {
+      pull = 0;
+      document.documentElement.style.setProperty("--pull-refresh-y", "0px");
+      document.body.classList.remove("is-pulling-refresh");
+      indicator.classList.remove("is-ready");
+    };
+
+    document.addEventListener(
+      "touchstart",
+      (e) => {
+        if (refreshing || sheetOpen || e.touches.length !== 1 || !atTop()) return;
+        if (e.target.closest(".sheet")) return;
+        tracking = true;
+        startY = e.touches[0].clientY;
+        pull = 0;
+      },
+      { passive: true }
+    );
+
+    document.addEventListener(
+      "touchmove",
+      (e) => {
+        if (!tracking || refreshing || e.touches.length !== 1) return;
+        const delta = e.touches[0].clientY - startY;
+        if (delta <= 0) {
+          resetPull();
+          return;
+        }
+        if (!atTop()) {
+          resetPull();
+          tracking = false;
+          return;
+        }
+        if (delta > 6) {
+          e.preventDefault();
+          setPull(Math.min(maxPull, delta * 0.55));
+        }
+      },
+      { passive: false }
+    );
+
+    const finishPull = () => {
+      if (!tracking || refreshing) return;
+      tracking = false;
+      if (pull >= threshold) {
+        refreshing = true;
+        setPull(76, false);
+        document.body.classList.add("is-refreshing");
+        setTimeout(() => window.location.reload(), 240);
+        return;
+      }
+      resetPull();
+    };
+
+    document.addEventListener("touchend", finishPull, { passive: true });
+    document.addEventListener(
+      "touchcancel",
+      () => {
+        tracking = false;
+        if (!refreshing) resetPull();
+      },
+      { passive: true }
+    );
+  }
+
   /* ---------- Boot ---------- */
   load();
   render();
+  setupPullToRefresh();
 })();
