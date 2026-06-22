@@ -249,7 +249,7 @@ drunk	white	IT	이탈리아	브리꼬 꽐리아	2022`;
         if (raw) state.wines = JSON.parse(raw) || [];
       }
       const pref = JSON.parse(localStorage.getItem(PREF_KEY) || "{}");
-      if (pref.sortBy === "name" || pref.sortBy === "price") {
+      if (["name", "price", "rating"].includes(pref.sortBy)) {
         state.sortBy = pref.sortBy;
         if (pref.sortDir === "asc" || pref.sortDir === "desc") {
           state.sortDir = pref.sortDir;
@@ -476,6 +476,29 @@ drunk	white	IT	이탈리아	브리꼬 꽐리아	2022`;
     }</span>`;
   }
 
+  function sortDefaultDir(key) {
+    return key === "name" ? "asc" : "desc";
+  }
+
+  function sortOptionsFor(kind) {
+    return kind === "drunk"
+      ? [
+          ["name", "이름순"],
+          ["rating", "별점순"],
+        ]
+      : [
+          ["name", "이름순"],
+          ["price", "금액순"],
+        ];
+  }
+
+  function normalizeSortForKind(kind) {
+    const valid = sortOptionsFor(kind).map((o) => o[0]);
+    if (valid.includes(state.sortBy)) return;
+    state.sortBy = kind === "drunk" ? "rating" : "price";
+    state.sortDir = sortDefaultDir(state.sortBy);
+  }
+
   function countBy(wines, keyFn) {
     return wines.reduce((acc, w) => {
       const key = keyFn(w) || "all";
@@ -563,12 +586,19 @@ drunk	white	IT	이탈리아	브리꼬 꽐리아	2022`;
     return `<div class="filter-options">${options}</div>`;
   }
 
-  function listControlsHTML(wines) {
+  function listControlsHTML(wines, kind) {
     const activeType = state.typeFilter !== "all";
     const activeCountry = state.countryFilter !== "all";
     const typeLabel = activeType ? typeOf(state.typeFilter).label : "종류";
     const c = activeCountry ? countryOf(state.countryFilter) : null;
     const countryLabel = activeCountry ? (c ? c.name : "기타") : "국가";
+    const sortButtons = sortOptionsFor(kind)
+      .map(
+        ([key, label]) => `<button class="chip ${
+          state.sortBy === key ? "is-active" : ""
+        }" data-sort="${key}">${label}${sortArrow(key)}</button>`
+      )
+      .join("");
     return `
       <div class="filterbar">
         <button class="chip ${
@@ -580,12 +610,7 @@ drunk	white	IT	이탈리아	브리꼬 꽐리아	2022`;
         <button class="chip ${
           state.filterPanel === "country" || activeCountry ? "is-active" : ""
         }" data-filter-panel="country">${countryLabel}</button>
-        <button class="chip ${
-          state.sortBy === "name" ? "is-active" : ""
-        }" data-sort="name">이름순${sortArrow("name")}</button>
-        <button class="chip ${
-          state.sortBy === "price" ? "is-active" : ""
-        }" data-sort="price">금액순${sortArrow("price")}</button>
+        ${sortButtons}
       </div>
       ${filterPanelHTML(wines)}`;
   }
@@ -602,13 +627,22 @@ drunk	white	IT	이탈리아	브리꼬 꽐리아	2022`;
       if (bp == null) return -1;
       return (ap - bp) * dir || a.name.localeCompare(b.name, "ko");
     }
+    if (state.sortBy === "rating") {
+      const ar = Number(a.rating) > 0 ? Number(a.rating) : null;
+      const br = Number(b.rating) > 0 ? Number(b.rating) : null;
+      if (ar == null && br == null) return a.name.localeCompare(b.name, "ko");
+      if (ar == null) return 1;
+      if (br == null) return -1;
+      return (ar - br) * dir || a.name.localeCompare(b.name, "ko");
+    }
     return a.name.localeCompare(b.name, "ko") * dir;
   }
 
   /* shared list renderer for cellar / drunk tabs */
   function renderList(wines, kind) {
+    normalizeSortForKind(kind);
     const filtered = applyListFilters(wines).sort(compareWineList);
-    let html = listControlsHTML(wines);
+    let html = listControlsHTML(wines, kind);
     html += filtered.length
       ? '<div class="list">' + filtered.map((w) => wineRow(w, kind)).join("") + "</div>"
       : `<div class="filtered-empty">조건에 맞는 와인이 없어요.</div>`;
@@ -674,7 +708,7 @@ drunk	white	IT	이탈리아	브리꼬 꽐리아	2022`;
           state.sortDir = state.sortDir === "asc" ? "desc" : "asc";
         } else {
           state.sortBy = b.dataset.sort;
-          state.sortDir = state.sortBy === "price" ? "desc" : "asc";
+          state.sortDir = sortDefaultDir(state.sortBy);
         }
         savePref();
         render();
