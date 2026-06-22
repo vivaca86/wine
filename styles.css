@@ -797,8 +797,10 @@ body.is-refreshing .pull-refresh__ring {
   transform: translate(-50%, 100%);
   width: 100%;
   max-width: var(--maxw);
+  max-inline-size: 100vw;
   max-height: 93dvh;
   overflow-y: auto;
+  overflow-x: hidden;
   background: linear-gradient(180deg, var(--off-white), var(--surface-soft));
   border: 1px solid var(--border);
   border-bottom: none;
@@ -835,6 +837,7 @@ body.is-refreshing .pull-refresh__ring {
 .field {
   margin-bottom: 16px;
   min-width: 0;
+  max-width: 100%;
 }
 .field__label {
   display: block;
@@ -849,9 +852,13 @@ body.is-refreshing .pull-refresh__ring {
 }
 .input,
 .textarea {
+  display: block;
   width: 100%;
+  inline-size: 100%;
   max-width: 100%;
+  max-inline-size: 100%;
   min-width: 0;
+  min-inline-size: 0;
   background: rgba(255, 253, 248, 0.86);
   color: var(--charcoal);
   border: 1px solid var(--border);
@@ -863,16 +870,33 @@ body.is-refreshing .pull-refresh__ring {
   box-shadow: rgba(23, 22, 20, 0.03) 0 1px 0 inset;
 }
 .input[type="date"] {
+  -webkit-appearance: none;
+  appearance: none;
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  inline-size: 100%;
+  max-width: 100%;
+  max-inline-size: 100%;
+  min-width: 0;
+  min-inline-size: 0;
   height: 42px;
   min-height: 42px;
   padding: 0 10px;
   line-height: 42px;
+  overflow: hidden;
 }
 .input[type="date"]::-webkit-date-and-time-value {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   min-height: 42px;
+  margin: 0;
+  padding: 0;
   text-align: left;
 }
 .input[type="date"]::-webkit-calendar-picker-indicator {
+  flex: 0 0 auto;
   margin: 0;
   padding: 4px;
 }
@@ -896,6 +920,9 @@ body.is-refreshing .pull-refresh__ring {
 .form-section {
   margin-bottom: 12px;
   padding: 13px;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
   background: rgba(255, 253, 248, 0.62);
   border: 1px solid var(--border);
   border-radius: var(--r-card);
@@ -917,9 +944,32 @@ body.is-refreshing .pull-refresh__ring {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
+  min-width: 0;
+  max-width: 100%;
 }
 .row-2 > .field {
   min-width: 0;
+}
+
+#wineForm,
+#drinkForm {
+  min-width: 0;
+  max-width: 100%;
+}
+
+@media (max-width: 360px) {
+  .sheet {
+    padding-inline: 12px;
+  }
+
+  .form-section {
+    padding: 12px;
+  }
+
+  .row-2 {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
 }
 
 /* Pill-choice group (wine type) */
