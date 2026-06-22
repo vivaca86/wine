@@ -18,6 +18,7 @@
     { id: "etc", label: "기타", emoji: "🍇", color: "#6a5577" },
   ];
   const TYPE_ORDER = ["red", "sparkling", "white", "rose", "dessert", "etc"];
+  const FORM_TYPE_IDS = ["red", "white", "sparkling", "dessert"];
 
   /* Wine-producing countries: code, name (ko), flag emoji */
   const COUNTRIES = [
@@ -288,6 +289,7 @@ drunk	white	IT	이탈리아	브리꼬 꽐리아	2022`;
 
   const typeOf = (id) =>
     TYPES.find((t) => t.id === id) || TYPES[TYPES.length - 1];
+  const formTypes = () => FORM_TYPE_IDS.map(typeOf);
   const typeRank = (id) => {
     const rank = TYPE_ORDER.indexOf(id || "etc");
     return rank === -1 ? TYPE_ORDER.length : rank;
@@ -913,6 +915,7 @@ drunk	white	IT	이탈리아	브리꼬 꽐리아	2022`;
     const w = existing || { type: "red", purchaseDate: today() };
     const isEdit = !!existing;
     const isDrunkEdit = isEdit && existing.status === "drunk";
+    const selectedType = FORM_TYPE_IDS.includes(w.type) ? w.type : "red";
     let photo = (existing && existing.photo) || null;
 
     openSheet(`
@@ -958,14 +961,14 @@ drunk	white	IT	이탈리아	브리꼬 꽐리아	2022`;
         <div class="field">
           <label class="field__label">종류</label>
           <div class="choices" id="typeChoices">
-            ${TYPES.map(
+            ${formTypes().map(
               (t) =>
                 `<button type="button" class="choice ${
-                  w.type === t.id ? "is-active" : ""
-                }" data-type="${t.id}">${t.emoji} ${t.label}</button>`
+                  selectedType === t.id ? "is-active" : ""
+                }" data-type="${t.id}">${t.label}</button>`
             ).join("")}
           </div>
-          <input type="hidden" name="type" value="${w.type || "red"}" />
+          <input type="hidden" name="type" value="${selectedType}" />
         </div>
 
         <div class="row-2">

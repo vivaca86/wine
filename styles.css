@@ -909,17 +909,22 @@ body.is-refreshing .pull-refresh__ring {
 
 /* Pill-choice group (wine type) */
 .choices {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
 }
 .choice {
   border: 1px solid var(--border);
   background: rgba(255, 253, 248, 0.78);
   color: var(--ink-82);
   border-radius: var(--r-pill);
-  padding: 8px 14px;
-  font-size: 14px;
+  min-width: 0;
+  padding: 8px 4px;
+  font-size: 13px;
+  font-weight: 760;
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
   transition: all 0.12s ease;
 }
 .choice.is-active {
