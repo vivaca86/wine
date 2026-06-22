@@ -88,7 +88,7 @@ button {
   margin: 0 auto;
   min-height: 100dvh;
   padding: max(18px, env(safe-area-inset-top)) 14px
-    calc(96px + env(safe-area-inset-bottom));
+    calc(132px + env(safe-area-inset-bottom));
   position: relative;
 }
 
@@ -129,15 +129,22 @@ button {
 
 /* ---------- Tabs (segmented control) ---------- */
 .tabs {
+  position: fixed;
+  left: 50%;
+  bottom: calc(12px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  z-index: 35;
   display: flex;
   gap: 5px;
   padding: 5px;
-  background: rgba(255, 253, 248, 0.7);
+  width: calc(100% - 28px);
+  max-width: calc(var(--maxw) - 28px);
+  background: rgba(255, 253, 248, 0.9);
   border: 1px solid var(--border);
-  border-radius: 15px;
-  margin-bottom: 18px;
-  box-shadow: rgba(39, 33, 24, 0.05) 0 8px 22px;
-  backdrop-filter: blur(10px);
+  border-radius: 18px;
+  margin-bottom: 0;
+  box-shadow: rgba(39, 33, 24, 0.16) 0 14px 34px;
+  backdrop-filter: blur(16px);
 }
 .tab {
   flex: 1;
@@ -602,7 +609,7 @@ button {
   position: fixed;
   left: 50%;
   transform: translateX(-50%);
-  bottom: calc(24px + env(safe-area-inset-bottom));
+  bottom: calc(82px + env(safe-area-inset-bottom));
   z-index: 30;
   border: none;
   background: linear-gradient(135deg, var(--wine), var(--wine-deep));

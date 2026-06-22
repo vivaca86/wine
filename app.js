@@ -43,7 +43,7 @@
 
   const PREF_KEY = "wine-cellar-pref";
   const SEED_KEY = "wine-cellar-seed-version";
-  const SEED_VERSION = "user-wine-list-2026-06-22";
+  const SEED_VERSION = "user-wine-list-2026-06-23-fr-champagne";
   const SEED_TSV = `status	type	country_code	country_name	name	vintage
 cellar	red	FR	프랑스	프리에르 로크, 르 끌라우드	2019
 cellar	red	FR	프랑스	모알라 제브리 샹베르땅	2018
@@ -64,19 +64,19 @@ drunk	red	FR	프랑스	샤또 르 퓌 에밀리앙	2018
 drunk	red	FR	프랑스	죠셉 드루앵 라포레 브르고뉴	2019
 drunk	red	FR	프랑스	필립 리베라 꼬뜨 드 뉘 빌라쥬	2019
 cellar	red	FR	프랑스	샤또 레오빌 라즈까즈	2018
-drunk	red	FR	프랑스	샤를 에네 꼬뜨 뒤 론	
+drunk	red	FR	프랑스	샤를 에네 꼬뜨 뒤 론
 drunk	red	US	미국	패너 애쉬	2018
 drunk	red	US	미국	덕혼 디코이	2019
-cellar	red	US	미국	덕혼 디코이 멜롯	
-cellar	red	US	미국	덕혼 디코이 멜롯	
-cellar	red	US	미국	칼레라 피노누아	
+cellar	red	US	미국	덕혼 디코이 멜롯
+cellar	red	US	미국	덕혼 디코이 멜롯
+cellar	red	US	미국	칼레라 피노누아
 drunk	red	US	미국	텍스트북	2020
 drunk	red	US	미국	텍스트북	2020
 drunk	red	US	미국	텍스트북	2020
 cellar	red	US	미국	오퍼스원	2019
 cellar	red	US	미국	오퍼스원	2019
 cellar	red	US	미국	오퍼스원	2018
-cellar	red	US	미국	오버츄어	
+cellar	red	US	미국	오버츄어
 cellar	red	US	미국	힐트	2018
 drunk	red	US	미국	힐트	2018
 drunk	red	US	미국	힐트	2018
@@ -85,8 +85,8 @@ drunk	red	AU	호주	투핸즈 벨라스 가든	2019
 drunk	red	AU	호주	투핸즈 릴리스 가든	2019
 drunk	red	AU	호주	투핸즈 릴리스 가든	2019
 drunk	red	AU	호주	투핸즈 릴리스 가든	2019
-drunk	red	AU	호주	투핸즈 찰리스 가든	
-cellar	red	AU	호주	투핸즈 찰리스 가든	
+drunk	red	AU	호주	투핸즈 찰리스 가든
+cellar	red	AU	호주	투핸즈 찰리스 가든
 drunk	red	AU	호주	킬리카눈 오라클	2016
 drunk	red	AU	호주	킬리카눈 오라클	2016
 drunk	red	AU	호주	킬리카눈 오라클	2016
@@ -102,73 +102,73 @@ cellar	red	CL	칠레	돈 멜쵸	2020
 cellar	red	IT	이탈리아	사시까이아	2019
 cellar	red	IT	이탈리아	라 스피네따 바르바레스코 스타데리	2014
 drunk	red	NZ	뉴질랜드	클라우디베이 피노누아	2018
-drunk	red	NZ	뉴질랜드	맨패밀리 피노타쥐	
-cellar	white			크리스탈	2012
-cellar	white			크리스탈	2014
-cellar	white			크리스탈	2015
-cellar	white			자크셀로스 V.O	
-cellar	white			자크셀로스 V.O	
-cellar	white			크룩 170	
-cellar	white			크룩 170	
-cellar	white			크룩 171	
-cellar	white			크룩 171	
-cellar	white			크룩 171	
-cellar	white			크룩 172	
-cellar	white			돔페르뇽	2012
-cellar	white			돔페르뇽	2013
-cellar	white			돔페르뇽	2013
-cellar	white			돔페르뇽	2013
-drunk	white			돔페르뇽	2013
-cellar	white			앙리지로 MV17	
-cellar	white			레어 08	
-drunk	white			떼땅져	
-drunk	white			떼땅져	
-cellar	white			떼땅져	
-drunk	white			떼땅져	
-drunk	white			필리조 에피스	
-cellar	white			뽀므리	
-drunk	white			플뢰리	
-drunk	white			파이퍼 하이직	
-cellar	white			파이퍼하이직	2014
-drunk	white			폴로져	
-drunk	white			뵈브 끌레꼬	
-drunk	white			뵈브 끌레꼬	
-drunk	white			뵈브 끌레꼬	
-cellar	white			뵈브 끌레꼬 로제	
-drunk	white			빌까르 살몽 드미섹	
-cellar	white			볼랭져	
-drunk	white			멈 그랑 꼬르똥	
-drunk	white			페리에 주에	
-drunk	white			앙드레 끌루에	
-drunk	white			도츠	
+drunk	red	NZ	뉴질랜드	맨패밀리 피노타쥐
+cellar	white	FR	프랑스	크리스탈	2012
+cellar	white	FR	프랑스	크리스탈	2014
+cellar	white	FR	프랑스	크리스탈	2015
+cellar	white	FR	프랑스	자크셀로스 V.O
+cellar	white	FR	프랑스	자크셀로스 V.O
+cellar	white	FR	프랑스	크룩 170
+cellar	white	FR	프랑스	크룩 170
+cellar	white	FR	프랑스	크룩 171
+cellar	white	FR	프랑스	크룩 171
+cellar	white	FR	프랑스	크룩 171
+cellar	white	FR	프랑스	크룩 172
+cellar	white	FR	프랑스	돔페르뇽	2012
+cellar	white	FR	프랑스	돔페르뇽	2013
+cellar	white	FR	프랑스	돔페르뇽	2013
+cellar	white	FR	프랑스	돔페르뇽	2013
+drunk	white	FR	프랑스	돔페르뇽	2013
+cellar	white	FR	프랑스	앙리지로 MV17
+cellar	white	FR	프랑스	레어 08
+drunk	white	FR	프랑스	떼땅져
+drunk	white	FR	프랑스	떼땅져
+cellar	white	FR	프랑스	떼땅져
+drunk	white	FR	프랑스	떼땅져
+drunk	white	FR	프랑스	필리조 에피스
+cellar	white	FR	프랑스	뽀므리
+drunk	white	FR	프랑스	플뢰리
+drunk	white	FR	프랑스	파이퍼 하이직
+cellar	white	FR	프랑스	파이퍼하이직	2014
+drunk	white	FR	프랑스	폴로져
+drunk	white	FR	프랑스	뵈브 끌레꼬
+drunk	white	FR	프랑스	뵈브 끌레꼬
+drunk	white	FR	프랑스	뵈브 끌레꼬
+cellar	white	FR	프랑스	뵈브 끌레꼬 로제
+drunk	white	FR	프랑스	빌까르 살몽 드미섹
+cellar	white	FR	프랑스	볼랭져
+drunk	white	FR	프랑스	멈 그랑 꼬르똥
+drunk	white	FR	프랑스	페리에 주에
+drunk	white	FR	프랑스	앙드레 끌루에
+drunk	white	FR	프랑스	도츠
 drunk	white			게뷔르츠트라미너 그로씨 로에	2011
-cellar	white			휘겔 게뷔리츠트라미너	
-drunk	white			스모켓 리슬링	
-drunk	white			맨패밀리 슈냉블랑	
-drunk	white			군트럼 카비넷	
-drunk	white			도스코파스	
-drunk	white			브레이크 포인트 소비뇽블랑	
-drunk	white			브레이크 포인트 소비뇽블랑	
-drunk	white			래빗 아일랜드 소비뇽블랑	
-drunk	white			베비치 블랙 소비뇽블랑	
-cellar	white			더 패스 소비뇽블랑	
-cellar	white			셀락 오리진 소비뇽블랑	
-cellar	white			셀락 오리진 소비뇽블랑	
+cellar	white			휘겔 게뷔리츠트라미너
+drunk	white			스모켓 리슬링
+drunk	white			맨패밀리 슈냉블랑
+drunk	white			군트럼 카비넷
+drunk	white			도스코파스
+drunk	white			브레이크 포인트 소비뇽블랑
+drunk	white			브레이크 포인트 소비뇽블랑
+drunk	white			래빗 아일랜드 소비뇽블랑
+drunk	white			베비치 블랙 소비뇽블랑
+cellar	white			더 패스 소비뇽블랑
+cellar	white			셀락 오리진 소비뇽블랑
+cellar	white			셀락 오리진 소비뇽블랑
 drunk	white			마르쿠스 몰리터 젤팅거 아우스레제	2018
 cellar	white			로버트 바일 리슬링	2021
 drunk	white			로버트 바일 리슬링	2021
 drunk	white			로버트 바일 리슬링	2021
 drunk	white			로버트 바일 리슬링	2021
-drunk	white			로버트 바일 리슬링 스파클링	
+drunk	white			로버트 바일 리슬링 스파클링
 drunk	white			루이자도 샤블리	2021
 drunk	white			샤블리 생마르땡	2021
 drunk	white			바이용 샤블리 1CRU	2018
 cellar	white			조셉드루앙 샤블리 1CRU	2018
-drunk	white			메종 니꼴라 뽀뗄 샤블리 1er 발롱	
-drunk	white			샤블리. 15000원 뽑기로 뽑은거	
-drunk	white			로얄토카이	
-drunk	white			로얄 토카이 블루라벨	
-cellar	white			로얄 토카이 블루라벨	
+drunk	white			메종 니꼴라 뽀뗄 샤블리 1er 발롱
+drunk	white			샤블리. 15000원 뽑기로 뽑은거
+drunk	white			로얄토카이
+drunk	white			로얄 토카이 블루라벨
+cellar	white			로얄 토카이 블루라벨
 cellar	white			샤또 꾸떼	2016
 cellar	white			샤또 꾸떼	2016
 cellar	white			샤또 기로	2016
@@ -179,7 +179,7 @@ drunk	white			클라우디베이	2022
 drunk	white			클라우디베이	2023
 cellar	white			클라우디베이	2024
 drunk	white			클라우디베이	2024
-drunk	white			오이스터베이	
+drunk	white			오이스터베이
 drunk	white			도그포인트	2018
 drunk	white			도그포인트	2020
 drunk	white			도그포인트	2021
