@@ -45,7 +45,7 @@
 
   const PREF_KEY = "wine-cellar-pref";
   const SEED_KEY = "wine-cellar-seed-version";
-  const SEED_VERSION = "user-wine-list-2026-06-23-add-drunk-records";
+  const SEED_VERSION = "user-wine-list-2026-06-23-add-sparkling-records";
   const SEED_TSV = `status	type	country_code	country_name	name	vintage
 cellar	red	FR	프랑스	프리에르 로크, 르 끌라우드	2019
 cellar	red	FR	프랑스	모알라 제브리 샹베르땅	2018
@@ -221,7 +221,12 @@ drunk	white	NZ	뉴질랜드	킴 크로포드 소비뇽 블랑
 drunk	white	NZ	뉴질랜드	오이스터 베이 소비뇽 블랑
 drunk	white	NZ	뉴질랜드	오이스터 베이 소비뇽 블랑
 drunk	white	NZ	뉴질랜드	펄리셔 소비뇽 블랑
-drunk	white	NZ	뉴질랜드	펄리셔 소비뇽 블랑`;
+drunk	white	NZ	뉴질랜드	펄리셔 소비뇽 블랑
+drunk	sparkling	FR	프랑스	페리에 주에
+drunk	sparkling	FR	프랑스	파이퍼하이직
+drunk	sparkling	FR	프랑스	파이퍼하이직
+drunk	sparkling	FR	프랑스	파이퍼하이직
+drunk	sparkling	FR	프랑스	도츠`;
 
   /* ---------- State ---------- */
   let state = {
@@ -260,16 +265,6 @@ drunk	white	NZ	뉴질랜드	펄리셔 소비뇽 블랑`;
       });
   }
 
-  function seedSignature(w) {
-    return [
-      w.status || "",
-      w.type || "",
-      w.country || "",
-      (w.name || "").trim(),
-      (w.vintage || "").trim(),
-    ].join("\t");
-  }
-
   function applySeedIfNeeded() {
     const raw = localStorage.getItem(STORE_KEY);
     const currentSeed = localStorage.getItem(SEED_KEY);
@@ -279,9 +274,8 @@ drunk	white	NZ	뉴질랜드	펄리셔 소비뇽 블랑`;
     if (raw) {
       const existing = JSON.parse(raw) || [];
       const existingIds = new Set(existing.map((w) => w.id));
-      const existingSigs = new Set(existing.map(seedSignature));
       seeds.forEach((seed) => {
-        if (!existingIds.has(seed.id) && !existingSigs.has(seedSignature(seed))) {
+        if (!existingIds.has(seed.id)) {
           existing.push(seed);
         }
       });
