@@ -45,7 +45,7 @@
 
   const PREF_KEY = "wine-cellar-pref";
   const SEED_KEY = "wine-cellar-seed-version";
-  const SEED_VERSION = "user-wine-list-2026-06-23-champagne-sparkling-nav";
+  const SEED_VERSION = "user-wine-list-2026-06-23-add-drunk-records";
   const SEED_TSV = `status	type	country_code	country_name	name	vintage
 cellar	red	FR	프랑스	프리에르 로크, 르 끌라우드	2019
 cellar	red	FR	프랑스	모알라 제브리 샹베르땅	2018
@@ -193,7 +193,35 @@ drunk	white	NZ	뉴질랜드	토후	2022
 drunk	white	IT	이탈리아	시라꼬	2021
 cellar	white	IT	이탈리아	브리꼬 꽐리아	2021
 drunk	white	IT	이탈리아	브리꼬 꽐리아	2022
-drunk	white	IT	이탈리아	브리꼬 꽐리아	2022`;
+drunk	white	IT	이탈리아	브리꼬 꽐리아	2022
+drunk	white	FR	프랑스	오렌지 카틴 피노 그리
+drunk	red	US	미국	브레드 앤 버터 피노 누아
+drunk	red	CL	칠레	몬테스 클래식 시리즈 카베르네 소비뇽
+drunk	red	IT	이탈리아	브라이다 일 바치알레
+drunk	red	FR	프랑스	루이 자도 부르고뉴 피노 누아
+drunk	red	AU	호주	체라볼로 프티 베르도
+drunk	white	DE	독일	조머 리슬링 트로켄
+drunk	red	FR	프랑스	기갈 지공다스
+drunk	red	FR	프랑스	도멘 페블리 마르사네
+drunk	red	ES	스페인	칼라미티 리오하
+drunk	sparkling	FR	프랑스	샤를 에드시크 브뤼 레제르브
+drunk	sparkling	FR	프랑스	클레망 페르스발 레 루로 블랑 드 블랑
+drunk	sparkling	FR	프랑스	클레망 페르스발 르 뤼 블랑 드 누아
+drunk	red	FR	프랑스	마르크 소야르 크라 2022 부르고뉴
+drunk	sparkling	FR	프랑스	마리 노엘 르드뤼 퀴베 뒤 굴테 그랑 크뤼
+drunk	white	NZ	뉴질랜드	머드하우스 소비뇽 블랑
+drunk	white	NZ	뉴질랜드	머드하우스 소비뇽 블랑
+drunk	white	NZ	뉴질랜드	코노 소비뇽 블랑
+drunk	white	NZ	뉴질랜드	코노 소비뇽 블랑
+drunk	white	NZ	뉴질랜드	코노 소비뇽 블랑
+drunk	white	NZ	뉴질랜드	베비치 블랙라벨 소비뇽 블랑
+drunk	white	NZ	뉴질랜드	베비치 블랙라벨 소비뇽 블랑
+drunk	white	NZ	뉴질랜드	킴 크로포드 소비뇽 블랑
+drunk	white	NZ	뉴질랜드	킴 크로포드 소비뇽 블랑
+drunk	white	NZ	뉴질랜드	오이스터 베이 소비뇽 블랑
+drunk	white	NZ	뉴질랜드	오이스터 베이 소비뇽 블랑
+drunk	white	NZ	뉴질랜드	펄리셔 소비뇽 블랑
+drunk	white	NZ	뉴질랜드	펄리셔 소비뇽 블랑`;
 
   /* ---------- State ---------- */
   let state = {
@@ -232,12 +260,36 @@ drunk	white	IT	이탈리아	브리꼬 꽐리아	2022`;
       });
   }
 
+  function seedSignature(w) {
+    return [
+      w.status || "",
+      w.type || "",
+      w.country || "",
+      (w.name || "").trim(),
+      (w.vintage || "").trim(),
+    ].join("\t");
+  }
+
   function applySeedIfNeeded() {
     const raw = localStorage.getItem(STORE_KEY);
     const currentSeed = localStorage.getItem(SEED_KEY);
     if (raw && currentSeed === SEED_VERSION) return false;
 
-    state.wines = seedWines();
+    const seeds = seedWines();
+    if (raw) {
+      const existing = JSON.parse(raw) || [];
+      const existingIds = new Set(existing.map((w) => w.id));
+      const existingSigs = new Set(existing.map(seedSignature));
+      seeds.forEach((seed) => {
+        if (!existingIds.has(seed.id) && !existingSigs.has(seedSignature(seed))) {
+          existing.push(seed);
+        }
+      });
+      state.wines = existing;
+    } else {
+      state.wines = seeds;
+    }
+
     localStorage.setItem(STORE_KEY, JSON.stringify(state.wines));
     localStorage.setItem(SEED_KEY, SEED_VERSION);
     return true;
