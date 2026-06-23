@@ -239,6 +239,7 @@ drunk	sparkling	FR	프랑스	도츠`;
     searchQuery: "",
     sortBy: "name",
     sortDir: "asc",
+    lastViewedId: null,
   };
 
   function seedWines() {
@@ -532,6 +533,12 @@ drunk	sparkling	FR	프랑스	도츠`;
     updateHeaderSub();
   }
 
+  function markViewedCard() {
+    view.querySelectorAll(".card[data-id]").forEach((card) => {
+      card.classList.toggle("is-viewed", card.dataset.id === state.lastViewedId);
+    });
+  }
+
   function updateHeaderSub() {
     const cellar = state.wines.filter((w) => w.status === "cellar").length;
     const drunk = state.wines.filter((w) => w.status === "drunk").length;
@@ -778,12 +785,13 @@ drunk	sparkling	FR	프랑스	도츠`;
       ? `<span class="card__vint">· ${esc(w.vintage)}</span>`
       : "";
     const typeMark = typeIconHTML(w.type);
+    const viewed = w.id === state.lastViewedId ? " is-viewed" : "";
     const right =
       kind === "drunk"
         ? `<span class="card__rating">${starsHTML(w.rating || 0)}</span>`
         : `<span class="card__price">${won(w.price)}</span>`;
     return `
-      <button class="card card--${kind}" data-id="${w.id}">
+      <button class="card card--${kind}${viewed}" data-id="${w.id}">
         <span class="card__main">
           <span class="card__name-wrap">${flagBadge(
             w.country
@@ -1034,7 +1042,34 @@ drunk	sparkling	FR	프랑스	도츠`;
 
   /* ---------- Sheet (bottom modal) ---------- */
   let sheetOpen = false;
+  let lockedScrollY = 0;
+
+  function lockPageScroll() {
+    if (document.body.classList.contains("is-sheet-locked")) return;
+    lockedScrollY = window.scrollY || document.documentElement.scrollTop || 0;
+    document.body.classList.add("is-sheet-locked");
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${lockedScrollY}px`;
+    document.body.style.left = "0";
+    document.body.style.right = "0";
+    document.body.style.width = "100%";
+    document.body.style.overflow = "hidden";
+  }
+
+  function unlockPageScroll() {
+    if (!document.body.classList.contains("is-sheet-locked")) return;
+    document.body.classList.remove("is-sheet-locked");
+    document.body.style.position = "";
+    document.body.style.top = "";
+    document.body.style.left = "";
+    document.body.style.right = "";
+    document.body.style.width = "";
+    document.body.style.overflow = "";
+    window.scrollTo(0, lockedScrollY);
+  }
+
   function openSheet(html) {
+    lockPageScroll();
     sheet.innerHTML = '<div class="sheet__handle"></div>' + html;
     sheet.hidden = false;
     backdrop.hidden = false;
@@ -1050,6 +1085,7 @@ drunk	sparkling	FR	프랑스	도츠`;
     sheet.classList.remove("is-open");
     backdrop.classList.remove("is-open");
     sheetOpen = false;
+    unlockPageScroll();
     setTimeout(() => {
       sheet.hidden = true;
       backdrop.hidden = true;
@@ -1448,7 +1484,11 @@ drunk	sparkling	FR	프랑스	도츠`;
   /* ---------- Wiring ---------- */
   function bindCards() {
     view.querySelectorAll(".card[data-id]").forEach((c) => {
-      c.addEventListener("click", () => openDetail(c.dataset.id));
+      c.addEventListener("click", () => {
+        state.lastViewedId = c.dataset.id;
+        markViewedCard();
+        openDetail(c.dataset.id);
+      });
     });
   }
 
