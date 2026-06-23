@@ -235,6 +235,8 @@ drunk	sparkling	FR	프랑스	도츠`;
     typeFilter: "all",
     countryFilter: "all",
     filterPanel: null,
+    searchOpen: false,
+    searchQuery: "",
     sortBy: "name",
     sortDir: "asc",
   };
@@ -435,7 +437,10 @@ drunk	sparkling	FR	프랑스	도츠`;
   function starInputHTML() {
     return `<div class="star-input" id="starInput">
       ${[1, 2, 3, 4, 5]
-        .map((i) => `<span class="s" data-v="${i}">★</span>`)
+        .map(
+          (i) =>
+            `<button type="button" class="s" data-v="${i}" aria-label="${i}점">★</button>`
+        )
         .join("")}
     </div>`;
   }
@@ -443,31 +448,35 @@ drunk	sparkling	FR	프랑스	도츠`;
   function bindStarInput(root, initialRating) {
     let picked = Number(initialRating) || 0;
     const stars = () => root.querySelectorAll("#starInput .s");
-    const pickValue = (star, clientX) => {
+    const pickValue = (star) => {
       const value = Number(star.dataset.v);
-      const rect = star.getBoundingClientRect();
-      const point = typeof clientX === "number" ? clientX : rect.right;
-      const offset = Math.max(0, Math.min(rect.width, point - rect.left));
-      return offset < rect.width / 2 ? value - 0.5 : value;
+      const half = value - 0.5;
+      return picked === half ? value : half;
     };
     const paint = () => {
       stars().forEach((s) => {
         const value = Number(s.dataset.v);
         s.classList.toggle("on", value <= picked);
         s.classList.toggle("half", picked >= value - 0.5 && picked < value);
+        s.setAttribute("aria-pressed", value <= Math.ceil(picked) ? "true" : "false");
       });
     };
 
+    let lastPointerAt = 0;
     stars().forEach((s) => {
-      const select = (e) => {
-        picked = pickValue(s, e.clientX);
+      const select = () => {
+        picked = pickValue(s);
         paint();
       };
       s.addEventListener("pointerdown", (e) => {
-        select(e);
+        lastPointerAt = Date.now();
+        select();
         e.preventDefault();
       });
-      s.addEventListener("click", select);
+      s.addEventListener("click", () => {
+        if (Date.now() - lastPointerAt < 350) return;
+        select();
+      });
     });
     paint();
     return () => picked;
@@ -506,6 +515,8 @@ drunk	sparkling	FR	프랑스	도츠`;
     state.typeFilter = "all";
     state.countryFilter = "all";
     state.filterPanel = null;
+    state.searchOpen = false;
+    state.searchQuery = "";
     document.querySelectorAll(".tab").forEach((b) => {
       b.classList.toggle("is-active", b.dataset.tab === tab);
     });
@@ -533,6 +544,13 @@ drunk	sparkling	FR	프랑스	도츠`;
     return `<span class="chip__sort" aria-hidden="true">${
       state.sortDir === "asc" ? "&uarr;" : "&darr;"
     }</span>`;
+  }
+
+  function searchIconHTML() {
+    return `<svg class="chip__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <circle cx="10.5" cy="10.5" r="5.5"></circle>
+      <path d="M15 15l4 4"></path>
+    </svg>`;
   }
 
   function sortDefaultDir(key) {
@@ -583,7 +601,21 @@ drunk	sparkling	FR	프랑스	도츠`;
   }
 
   function applyListFilters(wines) {
-    return optionBaseWines(wines, null);
+    const q = state.searchQuery.trim().toLocaleLowerCase("ko");
+    return optionBaseWines(wines, null).filter((w) => {
+      if (!q) return true;
+      const country = countryOf(w.country);
+      const haystack = [
+        w.name,
+        w.vintage,
+        w.note,
+        typeOf(w.type).label,
+        country ? country.name : "",
+      ]
+        .join(" ")
+        .toLocaleLowerCase("ko");
+      return haystack.includes(q);
+    });
   }
 
   function typeOptionsHTML(wines) {
@@ -645,9 +677,22 @@ drunk	sparkling	FR	프랑스	도츠`;
     return `<div class="filter-options">${options}</div>`;
   }
 
+  function searchPanelHTML() {
+    if (!state.searchOpen && !state.searchQuery.trim()) return "";
+    return `<div class="searchbar" role="search">
+      <input class="searchbar__input" data-search-input type="search" value="${esc(
+        state.searchQuery
+      )}" placeholder="와인 이름 검색" autocomplete="off" />
+      <button class="searchbar__clear" type="button" data-search-clear aria-label="검색어 지우기" ${
+        state.searchQuery ? "" : "hidden"
+      }>×</button>
+    </div>`;
+  }
+
   function listControlsHTML(wines, kind) {
     const activeType = state.typeFilter !== "all";
     const activeCountry = state.countryFilter !== "all";
+    const activeSearch = !!state.searchQuery.trim();
     const typeLabel = activeType ? typeOf(state.typeFilter).label : "종류";
     const c = activeCountry ? countryOf(state.countryFilter) : null;
     const countryLabel = activeCountry ? (c ? c.name : "기타") : "국가";
@@ -661,8 +706,13 @@ drunk	sparkling	FR	프랑스	도츠`;
     return `
       <div class="filterbar">
         <button class="chip ${
-          !activeType && !activeCountry ? "is-active" : ""
+          !activeType && !activeCountry && !activeSearch ? "is-active" : ""
         }" data-filter-reset>전체</button>
+        <button class="chip chip--search ${
+          state.searchOpen || activeSearch ? "is-active" : ""
+        }" data-search-toggle aria-label="와인 검색" aria-pressed="${
+          state.searchOpen || activeSearch ? "true" : "false"
+        }">${searchIconHTML()}</button>
         <button class="chip ${
           state.filterPanel === "type" || activeType ? "is-active" : ""
         }" data-filter-panel="type">${typeLabel}</button>
@@ -671,6 +721,7 @@ drunk	sparkling	FR	프랑스	도츠`;
         }" data-filter-panel="country">${countryLabel}</button>
         ${sortButtons}
       </div>
+      ${searchPanelHTML()}
       ${filterPanelHTML(wines)}`;
   }
 
@@ -697,16 +748,27 @@ drunk	sparkling	FR	프랑스	도츠`;
     return a.name.localeCompare(b.name, "ko") * dir;
   }
 
+  function listResultsHTML(wines, kind) {
+    const filtered = applyListFilters(wines).sort(compareWineList);
+    return filtered.length
+      ? '<div class="list">' + filtered.map((w) => wineRow(w, kind)).join("") + "</div>"
+      : `<div class="filtered-empty">조건에 맞는 와인이 없어요.</div>`;
+  }
+
+  function refreshListResults(wines, kind) {
+    const results = $("#wineListResults", view);
+    if (!results) return;
+    results.innerHTML = listResultsHTML(wines, kind);
+    bindCards();
+  }
+
   /* shared list renderer for cellar / drunk tabs */
   function renderList(wines, kind) {
     normalizeSortForKind(kind);
-    const filtered = applyListFilters(wines).sort(compareWineList);
     let html = listControlsHTML(wines, kind);
-    html += filtered.length
-      ? '<div class="list">' + filtered.map((w) => wineRow(w, kind)).join("") + "</div>"
-      : `<div class="filtered-empty">조건에 맞는 와인이 없어요.</div>`;
+    html += `<div id="wineListResults">${listResultsHTML(wines, kind)}</div>`;
     view.innerHTML = html;
-    bindListControls();
+    bindListControls(wines, kind);
     bindCards();
   }
 
@@ -733,12 +795,41 @@ drunk	sparkling	FR	프랑스	도츠`;
       </button>`;
   }
 
-  function bindListControls() {
+  function bindListControls(wines, kind) {
     view.querySelector("[data-filter-reset]")?.addEventListener("click", () => {
       state.typeFilter = "all";
       state.countryFilter = "all";
       state.filterPanel = null;
+      state.searchOpen = false;
+      state.searchQuery = "";
       render();
+    });
+    view.querySelector("[data-search-toggle]")?.addEventListener("click", () => {
+      state.searchOpen = !state.searchOpen;
+      state.filterPanel = null;
+      render();
+      if (state.searchOpen) {
+        requestAnimationFrame(() => {
+          $("#view [data-search-input]")?.focus();
+        });
+      }
+    });
+    view.querySelector("[data-search-input]")?.addEventListener("input", (e) => {
+      state.searchQuery = e.target.value;
+      const clear = view.querySelector("[data-search-clear]");
+      if (clear) clear.hidden = !state.searchQuery.trim();
+      refreshListResults(wines, kind);
+    });
+    view.querySelector("[data-search-clear]")?.addEventListener("click", () => {
+      state.searchQuery = "";
+      const clear = view.querySelector("[data-search-clear]");
+      if (clear) clear.hidden = true;
+      const input = view.querySelector("[data-search-input]");
+      if (input) {
+        input.value = "";
+        input.focus();
+      }
+      refreshListResults(wines, kind);
     });
     view.querySelectorAll("[data-filter-panel]").forEach((b) => {
       b.addEventListener("click", () => {
@@ -816,9 +907,14 @@ drunk	sparkling	FR	프랑스	도츠`;
       0
     );
     const rated = drunk.filter((w) => w.rating);
-    const avg = rated.length
+    const hasRatings = rated.length > 0;
+    const avg = hasRatings
       ? (rated.reduce((s, w) => s + w.rating, 0) / rated.length).toFixed(1)
-      : "—";
+      : null;
+    const avgDisplay = hasRatings ? avg : "없음";
+    const avgHint = hasRatings
+      ? `${rated.length}개 기록 기준`
+      : "마신 기록에서 별점을 남기면 표시돼요";
 
     // Favourite type by count among drunk
     const counts = {};
@@ -840,7 +936,7 @@ drunk	sparkling	FR	프랑스	도츠`;
     const total = state.wines.length;
     const cellarPct = total ? Math.round((cellar.length / total) * 100) : 0;
     const drunkPct = total ? 100 - cellarPct : 0;
-    const avgText = avg === "—" ? "아직 별점 없음" : `${avg}점 평균`;
+    const avgText = hasRatings ? `${avg}점 평균` : "별점 기록 없음";
 
     if (!state.wines.length) {
       view.innerHTML = emptyState(
@@ -858,7 +954,7 @@ drunk	sparkling	FR	프랑스	도츠`;
           <div class="stats-hero__num">${total}<span>병</span></div>
         </div>
         <div class="stats-hero__rating">
-          ${starsHTML(avg === "—" ? 0 : Number(avg))}
+          ${starsHTML(hasRatings ? Number(avg) : 0)}
           <span>${avgText}</span>
         </div>
         <div class="stats-balance" aria-label="보유 ${cellar.length}병, 마심 ${drunk.length}병">
@@ -884,8 +980,8 @@ drunk	sparkling	FR	프랑스	도츠`;
           <div class="stat__icon">★</div>
           <div class="stat__body">
             <div class="stat__label">평균 별점</div>
-            <div class="stat__num">${avg}</div>
-            <div class="stat__hint">${rated.length}개 기록 기준</div>
+            <div class="stat__num stat__num--text">${avgDisplay}</div>
+            <div class="stat__hint">${avgHint}</div>
           </div>
         </div>
         <div class="stat">
