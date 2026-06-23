@@ -13,7 +13,7 @@
     { id: "red", label: "레드", emoji: "🍷", color: "#8f2634" },
     { id: "white", label: "화이트", emoji: "🥂", color: "#f6df9a" },
     { id: "rose", label: "로제", emoji: "🌸", color: "#ef86a3" },
-    { id: "sparkling", label: "샴페인", emoji: "🍾", color: "#f1c84e" },
+    { id: "sparkling", label: "스파클링", emoji: "🍾", color: "#f1c84e" },
     { id: "dessert", label: "디저트", emoji: "🍯", color: "#d98712" },
     { id: "etc", label: "기타", emoji: "🍇", color: "#6a5577" },
   ];
@@ -442,22 +442,32 @@ drunk	sparkling	FR	프랑스	도츠`;
 
   function bindStarInput(root, initialRating) {
     let picked = Number(initialRating) || 0;
+    const stars = () => root.querySelectorAll("#starInput .s");
+    const pickValue = (star, clientX) => {
+      const value = Number(star.dataset.v);
+      const rect = star.getBoundingClientRect();
+      const point = typeof clientX === "number" ? clientX : rect.right;
+      const offset = Math.max(0, Math.min(rect.width, point - rect.left));
+      return offset < rect.width / 2 ? value - 0.5 : value;
+    };
     const paint = () => {
-      root.querySelectorAll("#starInput .s").forEach((s) => {
+      stars().forEach((s) => {
         const value = Number(s.dataset.v);
         s.classList.toggle("on", value <= picked);
         s.classList.toggle("half", picked >= value - 0.5 && picked < value);
       });
     };
 
-    root.querySelectorAll("#starInput .s").forEach((s) => {
-      s.addEventListener("click", (e) => {
-        const value = Number(s.dataset.v);
-        const rect = s.getBoundingClientRect();
-        const isHalf = e.clientX - rect.left < rect.width / 2;
-        picked = isHalf ? value - 0.5 : value;
+    stars().forEach((s) => {
+      const select = (e) => {
+        picked = pickValue(s, e.clientX);
         paint();
+      };
+      s.addEventListener("pointerdown", (e) => {
+        select(e);
+        e.preventDefault();
       });
+      s.addEventListener("click", select);
     });
     paint();
     return () => picked;
@@ -1068,10 +1078,10 @@ drunk	sparkling	FR	프랑스	도츠`;
         }
 
         <div class="btn-stack">
+          <button type="button" class="btn btn--quiet" data-close>취소</button>
           <button type="submit" class="btn btn--dark">${
             isEdit ? "저장" : "셀러에 추가"
           }</button>
-          <button type="button" class="btn btn--quiet" data-close>취소</button>
         </div>
       </form>
     `);
@@ -1237,10 +1247,10 @@ drunk	sparkling	FR	프랑스	도츠`;
         <div class="detail-actions__bar">
         ${
           isDrunk
-            ? `<button class="detail-action detail-action--primary" data-action="edit">수정</button>
-               <button class="detail-action detail-action--secondary" data-action="undo">셀러로 되돌리기</button>`
-            : `<button class="detail-action detail-action--primary" data-action="drink">🍷 마셨어요</button>
-               <button class="detail-action detail-action--secondary" data-action="edit">수정</button>`
+            ? `<button class="detail-action detail-action--secondary" data-action="undo">셀러로 되돌리기</button>
+               <button class="detail-action detail-action--primary" data-action="edit">수정</button>`
+            : `<button class="detail-action detail-action--secondary" data-action="edit">수정</button>
+               <button class="detail-action detail-action--primary" data-action="drink">🍷 마셨어요</button>`
         }
         </div>
         <button class="detail-actions__delete" data-action="delete">삭제</button>
@@ -1249,7 +1259,10 @@ drunk	sparkling	FR	프랑스	도츠`;
 
     sheet
       .querySelector('[data-action="drink"]')
-      ?.addEventListener("click", () => openDrinkForm(w));
+      ?.addEventListener("click", () => {
+        closeSheet();
+        setTimeout(() => openDrinkForm(w), 280);
+      });
     sheet.querySelector('[data-action="edit"]')?.addEventListener("click", () => {
       closeSheet();
       setTimeout(() => openForm(w), 280);
@@ -1310,8 +1323,8 @@ drunk	sparkling	FR	프랑스	도츠`;
         </div>
 
         <div class="btn-stack">
-          <button type="submit" class="btn btn--dark">기록 저장</button>
           <button type="button" class="btn btn--quiet" data-close>취소</button>
+          <button type="submit" class="btn btn--dark">기록 저장</button>
         </div>
       </form>
     `);

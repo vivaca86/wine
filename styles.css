@@ -1011,6 +1011,11 @@ body.is-refreshing .pull-refresh__ring {
   color: var(--ink-08);
   position: relative;
   display: inline-block;
+  padding: 0 2px;
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
   transition: color 0.1s ease, transform 0.06s ease;
 }
 .star-input .s.on {
