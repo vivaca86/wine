@@ -937,6 +937,16 @@ drunk	sparkling	FR	프랑스	도츠`;
     </svg>`;
   }
 
+  function trashIconHTML() {
+    return `<svg class="detail-actions__delete-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M3 6h18"></path>
+      <path d="M8 6V4h8v2"></path>
+      <path d="M6.5 6l1 15h9l1-15"></path>
+      <path d="M10 10v7"></path>
+      <path d="M14 10v7"></path>
+    </svg>`;
+  }
+
   function sortDefaultDir(key) {
     return key === "name" || key === "country" ? "asc" : "desc";
   }
@@ -1889,8 +1899,8 @@ drunk	sparkling	FR	프랑스	도츠`;
             : `<button class="detail-action detail-action--secondary" data-action="edit">수정</button>
                <button class="detail-action detail-action--primary" data-action="drink">🍷 마셨어요</button>`
         }
+          <button class="detail-actions__delete" data-action="delete" aria-label="삭제" title="삭제">${trashIconHTML()}</button>
         </div>
-        <button class="detail-actions__delete" data-action="delete">삭제</button>
       </div>
     `);
 
