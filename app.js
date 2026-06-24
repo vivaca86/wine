@@ -326,7 +326,7 @@ drunk	sparkling	FR	프랑스	도츠`;
         if (raw) state.wines = JSON.parse(raw) || [];
       }
       const pref = JSON.parse(localStorage.getItem(PREF_KEY) || "{}");
-      if (["name", "price", "rating"].includes(pref.sortBy)) {
+      if (["name", "country", "price", "rating"].includes(pref.sortBy)) {
         state.sortBy = pref.sortBy;
         if (pref.sortDir === "asc" || pref.sortDir === "desc") {
           state.sortDir = pref.sortDir;
@@ -938,17 +938,19 @@ drunk	sparkling	FR	프랑스	도츠`;
   }
 
   function sortDefaultDir(key) {
-    return key === "name" ? "asc" : "desc";
+    return key === "name" || key === "country" ? "asc" : "desc";
   }
 
   function sortOptionsFor(kind) {
     return kind === "drunk"
       ? [
           ["name", "이름순"],
+          ["country", "국가순"],
           ["rating", "별점순"],
         ]
       : [
           ["name", "이름순"],
+          ["country", "국가순"],
           ["price", "금액순"],
         ];
   }
@@ -1110,9 +1112,14 @@ drunk	sparkling	FR	프랑스	도츠`;
   }
 
   function compareWineList(a, b) {
-    const typeSort = typeRank(a.type) - typeRank(b.type);
-    if (typeSort) return typeSort;
     const dir = state.sortDir === "asc" ? 1 : -1;
+    if (state.sortBy === "country") {
+      const ac = countryOf(a.country);
+      const bc = countryOf(b.country);
+      const an = ac ? ac.name : "기타";
+      const bn = bc ? bc.name : "기타";
+      return an.localeCompare(bn, "ko") * dir || a.name.localeCompare(b.name, "ko");
+    }
     if (state.sortBy === "price") {
       const ap = a.price == null || a.price === "" || isNaN(a.price) ? null : Number(a.price);
       const bp = b.price == null || b.price === "" || isNaN(b.price) ? null : Number(b.price);
