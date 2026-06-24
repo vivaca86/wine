@@ -13,9 +13,9 @@
     owner: "vivaca86",
     repo: "wine",
     branch: "main",
-    path: "data/wines.json",
+    path: "_data/wines.json",
   };
-  const SYNC_POLL_MS = 45000;
+  const SYNC_POLL_MS = 5000;
 
   /* Wine types: id, label, emoji swatch, icon color */
   const TYPES = [
@@ -259,6 +259,7 @@ drunk	sparkling	FR	프랑스	도츠`;
   let syncInFlight = false;
   let syncPendingPush = false;
   let applyingRemote = false;
+  let lastRemoteSha = null;
 
   function seedWines() {
     return SEED_TSV.trim()
@@ -554,7 +555,11 @@ drunk	sparkling	FR	프랑스	도츠`;
       if (!raw) return null;
       const parsed = JSON.parse(raw);
       if (!parsed || !parsed.token) return null;
-      return Object.assign({}, SYNC_REMOTE, parsed);
+      const path =
+        !parsed.path || parsed.path === "data/wines.json"
+          ? SYNC_REMOTE.path
+          : parsed.path;
+      return Object.assign({}, SYNC_REMOTE, parsed, { path });
     } catch (e) {
       return null;
     }
@@ -613,7 +618,7 @@ drunk	sparkling	FR	프랑스	도츠`;
     const url = `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${syncPath(
       cfg
     )}?ref=${encodeURIComponent(cfg.branch)}`;
-    const res = await fetch(url, { headers: syncHeaders(cfg) });
+    const res = await fetch(url, { headers: syncHeaders(cfg), cache: "no-store" });
     if (res.status === 404) return null;
     if (!res.ok) await throwGitHubError(res);
     const file = await res.json();
@@ -707,7 +712,7 @@ drunk	sparkling	FR	프랑스	도츠`;
     syncDebounce = setTimeout(() => {
       syncDebounce = null;
       syncPush({ silent: true });
-    }, delay == null ? 800 : delay);
+    }, delay == null ? 350 : delay);
   }
 
   function handleSyncError(error) {
@@ -727,6 +732,11 @@ drunk	sparkling	FR	프랑스	도츠`;
         setSyncStatus("error", "아직 클라우드 데이터가 없어요.");
         return false;
       }
+      if (remote.sha === lastRemoteSha && options && options.silent) {
+        setSyncStatus("synced", "최신 상태예요.");
+        return true;
+      }
+      lastRemoteSha = remote.sha;
       applyingRemote = true;
       state.wines = remote.body.wines;
       if (!persistLocalOnly()) quotaAlert();
@@ -755,11 +765,12 @@ drunk	sparkling	FR	프랑스	도츠`;
     if (!options || !options.silent) setSyncStatus("syncing", "클라우드에 저장하는 중");
     try {
       const remote = await fetchRemoteFile(cfg);
-      await writeRemoteFile(
+      const written = await writeRemoteFile(
         cfg,
         remote ? remote.sha : null,
         remote ? "Sync wine cellar data" : "Create wine cellar sync data"
       );
+      lastRemoteSha = written && written.content ? written.content.sha : null;
       setSyncStatus("synced", "클라우드에 저장했어요.");
       return true;
     } catch (e) {
@@ -774,6 +785,16 @@ drunk	sparkling	FR	프랑스	도츠`;
   function setupSync() {
     updateSyncButton();
     $("#syncBtn")?.addEventListener("click", openSyncSheet);
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden && loadSyncConfig() && !syncPendingPush) {
+        syncPull({ silent: true });
+      }
+    });
+    window.addEventListener("focus", () => {
+      if (loadSyncConfig() && !syncPendingPush) {
+        syncPull({ silent: true });
+      }
+    });
     if (loadSyncConfig()) {
       startSyncTimer();
       syncPull({ silent: true });
