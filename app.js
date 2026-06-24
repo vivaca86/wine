@@ -1133,8 +1133,6 @@ drunk	sparkling	FR	프랑스	도츠`;
         : activeCountry
         ? `국가 ${state.countryFilters.length}`
         : "국가";
-    const currentSort = sortOptionsFor(kind).find(([key]) => key === state.sortBy);
-    const sortLabel = currentSort ? currentSort[1] : "정렬";
     return `
       <div class="list-controls">
         <div class="filterbar">
@@ -1151,9 +1149,7 @@ drunk	sparkling	FR	프랑스	도츠`;
           }" data-filter-panel="country"><span class="chip__label">${countryLabel}</span></button>
           <button class="chip chip--sort ${
             state.filterPanel === "sort" ? "is-active" : ""
-          }" data-filter-panel="sort"><span class="chip__label">${sortLabel}</span>${sortArrow(
-            state.sortBy
-          )}</button>
+          }" data-filter-panel="sort"><span class="chip__label">정렬</span></button>
         </div>
         ${searchPanelHTML()}
         ${filterPanelHTML(wines, kind)}
