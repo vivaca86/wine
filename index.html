@@ -20,9 +20,15 @@
 <body>
   <div class="app">
     <header class="app-header">
-      <div class="app-header__brand">
-        <img class="app-header__mark" src="icons/app-icon.svg?v=20260623-rose-icon" alt="" aria-hidden="true" />
-        <h1 class="app-header__title">와인 셀러</h1>
+      <div class="app-header__top">
+        <div class="app-header__brand">
+          <img class="app-header__mark" src="icons/app-icon.svg?v=20260623-rose-icon" alt="" aria-hidden="true" />
+          <h1 class="app-header__title">와인 셀러</h1>
+        </div>
+        <button class="sync-pill sync-pill--local" id="syncBtn" type="button" aria-label="동기화 설정">
+          <span class="sync-pill__dot" aria-hidden="true"></span>
+          <span id="syncText">로컬</span>
+        </button>
       </div>
       <p class="app-header__sub" id="headerSub">나의 와인 컬렉션</p>
     </header>

@@ -98,10 +98,17 @@ button {
 .app-header {
   padding: 4px 2px 18px;
 }
+.app-header__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
 .app-header__brand {
   display: flex;
   align-items: center;
   gap: 11px;
+  min-width: 0;
 }
 .app-header__mark {
   width: 34px;
@@ -122,6 +129,47 @@ button {
   margin: 6px 0 0 45px;
   color: var(--muted);
   font-size: 13px;
+}
+.sync-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  min-height: 32px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  padding: 0 10px;
+  background: rgba(255, 253, 248, 0.76);
+  color: var(--muted);
+  box-shadow: rgba(255, 255, 255, 0.62) 0 1px 0 inset;
+  font-size: 12px;
+  font-weight: 760;
+  line-height: 1;
+}
+.sync-pill__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+.sync-pill--syncing .sync-pill__dot {
+  background: var(--gold);
+}
+.sync-pill--synced {
+  color: var(--wine-deep);
+  border-color: rgba(130, 49, 61, 0.18);
+  background: var(--wine-soft);
+}
+.sync-pill--synced .sync-pill__dot {
+  background: var(--sage);
+}
+.sync-pill--error {
+  color: var(--wine-deep);
+  border-color: rgba(130, 49, 61, 0.28);
+}
+.sync-pill--error .sync-pill__dot {
+  background: var(--wine);
 }
 
 /* ---------- Bottom navigation ---------- */
@@ -1057,6 +1105,38 @@ body.is-refreshing .pull-refresh__ring {
 }
 .star-input .s:active {
   transform: scale(1.15);
+}
+
+/* ---------- Sync settings ---------- */
+.sync-card {
+  display: grid;
+  gap: 12px;
+  margin: 12px 0 16px;
+  padding: 13px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-card);
+  background: rgba(255, 253, 248, 0.72);
+}
+.sync-target {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+.sync-target span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sync-target span:first-child {
+  color: var(--ink-82);
+  font-weight: 760;
+}
+.sync-note {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
 }
 
 /* ---------- Buttons ---------- */

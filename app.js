@@ -7,6 +7,15 @@
   "use strict";
 
   const STORE_KEY = "wine-cellar-v1";
+  const SYNC_CONFIG_KEY = "wine-cellar-sync-config-v1";
+  const SYNC_CLIENT_KEY = "wine-cellar-sync-client-id";
+  const SYNC_REMOTE = {
+    owner: "vivaca86",
+    repo: "wine",
+    branch: "main",
+    path: "data/wines.json",
+  };
+  const SYNC_POLL_MS = 45000;
 
   /* Wine types: id, label, emoji swatch, icon color */
   const TYPES = [
@@ -240,7 +249,16 @@ drunk	sparkling	FR	프랑스	도츠`;
     sortBy: "name",
     sortDir: "asc",
     lastViewedId: null,
+    syncStatus: "local",
+    syncMessage: "",
+    lastSyncedAt: "",
   };
+
+  let syncTimer = null;
+  let syncDebounce = null;
+  let syncInFlight = false;
+  let syncPendingPush = false;
+  let applyingRemote = false;
 
   function seedWines() {
     return SEED_TSV.trim()
@@ -317,14 +335,20 @@ drunk	sparkling	FR	프랑스	도츠`;
       );
     } catch (e) {}
   }
-  /* Persist; returns false if storage quota is exceeded. */
-  function persist() {
+  /* Persist locally; returns false if storage quota is exceeded. */
+  function persistLocalOnly() {
     try {
       localStorage.setItem(STORE_KEY, JSON.stringify(state.wines));
       return true;
     } catch (e) {
       return false;
     }
+  }
+
+  function persist() {
+    const saved = persistLocalOnly();
+    if (saved && !applyingRemote) queueSyncPush();
+    return saved;
   }
 
   /* ---------- Helpers ---------- */
@@ -508,6 +532,252 @@ drunk	sparkling	FR	프랑스	도츠`;
       img.src = e.target.result;
     };
     reader.readAsDataURL(file);
+  }
+
+  /* ---------- Cloud sync (GitHub contents file) ---------- */
+  function getClientId() {
+    try {
+      let id = localStorage.getItem(SYNC_CLIENT_KEY);
+      if (!id) {
+        id = uid();
+        localStorage.setItem(SYNC_CLIENT_KEY, id);
+      }
+      return id;
+    } catch (e) {
+      return "browser";
+    }
+  }
+
+  function loadSyncConfig() {
+    try {
+      const raw = localStorage.getItem(SYNC_CONFIG_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (!parsed || !parsed.token) return null;
+      return Object.assign({}, SYNC_REMOTE, parsed);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function saveSyncConfig(token) {
+    const cfg = Object.assign({}, SYNC_REMOTE, { token: token.trim() });
+    localStorage.setItem(SYNC_CONFIG_KEY, JSON.stringify(cfg));
+    return cfg;
+  }
+
+  function clearSyncConfig() {
+    try {
+      localStorage.removeItem(SYNC_CONFIG_KEY);
+    } catch (e) {}
+    stopSyncTimer();
+    setSyncStatus("local", "");
+  }
+
+  function syncPath(cfg) {
+    return cfg.path.split("/").map(encodeURIComponent).join("/");
+  }
+
+  function toBase64(text) {
+    const bytes = new TextEncoder().encode(text);
+    let binary = "";
+    bytes.forEach((b) => (binary += String.fromCharCode(b)));
+    return btoa(binary);
+  }
+
+  function fromBase64(text) {
+    const binary = atob(String(text || "").replace(/\s/g, ""));
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return new TextDecoder().decode(bytes);
+  }
+
+  function syncHeaders(cfg) {
+    return {
+      Accept: "application/vnd.github+json",
+      Authorization: `Bearer ${cfg.token}`,
+      "X-GitHub-Api-Version": "2022-11-28",
+    };
+  }
+
+  async function throwGitHubError(res) {
+    let message = `GitHub 요청 실패 (${res.status})`;
+    try {
+      const body = await res.json();
+      if (body && body.message) message = body.message;
+    } catch (e) {}
+    throw new Error(message);
+  }
+
+  async function fetchRemoteFile(cfg) {
+    const url = `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${syncPath(
+      cfg
+    )}?ref=${encodeURIComponent(cfg.branch)}`;
+    const res = await fetch(url, { headers: syncHeaders(cfg) });
+    if (res.status === 404) return null;
+    if (!res.ok) await throwGitHubError(res);
+    const file = await res.json();
+    const decoded = JSON.parse(fromBase64(file.content));
+    const wines = Array.isArray(decoded) ? decoded : decoded.wines;
+    if (!Array.isArray(wines)) {
+      throw new Error("동기화 파일 형식이 올바르지 않아요.");
+    }
+    return { sha: file.sha, body: Object.assign({}, decoded, { wines }) };
+  }
+
+  async function writeRemoteFile(cfg, sha, message) {
+    const payload = {
+      version: 1,
+      updatedAt: new Date().toISOString(),
+      updatedBy: getClientId(),
+      seedVersion: SEED_VERSION,
+      wines: state.wines,
+    };
+    const body = {
+      message,
+      branch: cfg.branch,
+      content: toBase64(JSON.stringify(payload, null, 2)),
+    };
+    if (sha) body.sha = sha;
+    const url = `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${syncPath(
+      cfg
+    )}`;
+    const res = await fetch(url, {
+      method: "PUT",
+      headers: Object.assign({ "Content-Type": "application/json" }, syncHeaders(cfg)),
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) await throwGitHubError(res);
+    return res.json();
+  }
+
+  function formatSyncTime() {
+    return new Date().toLocaleTimeString("ko-KR", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  }
+
+  function setSyncStatus(status, message) {
+    state.syncStatus = status;
+    state.syncMessage = message || "";
+    if (status === "synced") state.lastSyncedAt = formatSyncTime();
+    updateSyncButton();
+  }
+
+  function updateSyncButton() {
+    const btn = $("#syncBtn");
+    const label = $("#syncText");
+    if (!btn || !label) return;
+    const hasConfig = !!loadSyncConfig();
+    const status = hasConfig ? state.syncStatus : "local";
+    btn.className = `sync-pill sync-pill--${status}`;
+    label.textContent =
+      status === "syncing"
+        ? "동기화"
+        : status === "synced"
+        ? "동기화됨"
+        : status === "error"
+        ? "오류"
+        : "로컬";
+    btn.title = state.syncMessage || (hasConfig ? "동기화 설정" : "로컬 저장");
+  }
+
+  function stopSyncTimer() {
+    if (syncTimer) clearInterval(syncTimer);
+    syncTimer = null;
+  }
+
+  function startSyncTimer() {
+    stopSyncTimer();
+    if (!loadSyncConfig()) return;
+    syncTimer = setInterval(() => {
+      if (!syncPendingPush) syncPull({ silent: true });
+    }, SYNC_POLL_MS);
+  }
+
+  function queueSyncPush(delay) {
+    if (!loadSyncConfig()) {
+      updateSyncButton();
+      return;
+    }
+    syncPendingPush = true;
+    if (syncInFlight) return;
+    if (syncDebounce) clearTimeout(syncDebounce);
+    syncDebounce = setTimeout(() => {
+      syncDebounce = null;
+      syncPush({ silent: true });
+    }, delay == null ? 800 : delay);
+  }
+
+  function handleSyncError(error) {
+    const message = error && error.message ? error.message : "동기화에 실패했어요.";
+    console.warn(message);
+    setSyncStatus("error", message);
+  }
+
+  async function syncPull(options) {
+    const cfg = loadSyncConfig();
+    if (!cfg || syncInFlight) return false;
+    syncInFlight = true;
+    if (!options || !options.silent) setSyncStatus("syncing", "클라우드에서 가져오는 중");
+    try {
+      const remote = await fetchRemoteFile(cfg);
+      if (!remote) {
+        setSyncStatus("error", "아직 클라우드 데이터가 없어요.");
+        return false;
+      }
+      applyingRemote = true;
+      state.wines = remote.body.wines;
+      if (!persistLocalOnly()) quotaAlert();
+      applyingRemote = false;
+      render();
+      setSyncStatus("synced", "클라우드 데이터를 가져왔어요.");
+      return true;
+    } catch (e) {
+      applyingRemote = false;
+      handleSyncError(e);
+      return false;
+    } finally {
+      syncInFlight = false;
+    }
+  }
+
+  async function syncPush(options) {
+    const cfg = loadSyncConfig();
+    if (!cfg) return false;
+    if (syncInFlight) {
+      syncPendingPush = true;
+      return false;
+    }
+    syncInFlight = true;
+    syncPendingPush = false;
+    if (!options || !options.silent) setSyncStatus("syncing", "클라우드에 저장하는 중");
+    try {
+      const remote = await fetchRemoteFile(cfg);
+      await writeRemoteFile(
+        cfg,
+        remote ? remote.sha : null,
+        remote ? "Sync wine cellar data" : "Create wine cellar sync data"
+      );
+      setSyncStatus("synced", "클라우드에 저장했어요.");
+      return true;
+    } catch (e) {
+      handleSyncError(e);
+      return false;
+    } finally {
+      syncInFlight = false;
+      if (syncPendingPush) queueSyncPush(0);
+    }
+  }
+
+  function setupSync() {
+    updateSyncButton();
+    $("#syncBtn")?.addEventListener("click", openSyncSheet);
+    if (loadSyncConfig()) {
+      startSyncTimer();
+      syncPull({ silent: true });
+    }
   }
 
   /* ---------- Tabs ---------- */
@@ -1099,6 +1369,111 @@ drunk	sparkling	FR	프랑스	도츠`;
     );
   }
 
+  function setSheetBusy(busy) {
+    sheet.querySelectorAll("button, input").forEach((el) => {
+      el.disabled = busy;
+    });
+  }
+
+  function syncTargetHTML(cfg) {
+    return `<div class="sync-target">
+      <span>${esc(cfg.owner)}/${esc(cfg.repo)}</span>
+      <span>${esc(cfg.path)}</span>
+    </div>`;
+  }
+
+  function openSyncSheet() {
+    const cfg = loadSyncConfig();
+    if (!cfg) {
+      openSheet(`
+        <h2 class="sheet__title">동기화 설정</h2>
+        <p class="sheet__subtitle">GitHub 파일로 기기 사이에 와인 목록을 맞춰요.</p>
+
+        <form id="syncForm">
+          <div class="sync-card">
+            ${syncTargetHTML(SYNC_REMOTE)}
+            <div class="field">
+              <label class="field__label">GitHub 토큰</label>
+              <input class="input" name="token" type="password" autocomplete="off" placeholder="github_pat_..." required />
+            </div>
+            <div class="sync-note">토큰은 이 기기에만 저장돼요.</div>
+          </div>
+
+          <div class="btn-stack">
+            <button type="button" class="btn btn--quiet" data-close>취소</button>
+            <button type="submit" class="btn btn--dark" data-sync-mode="push">이 기기 데이터 올리기</button>
+            <button type="submit" class="btn btn--quiet" data-sync-mode="pull">클라우드 가져오기</button>
+          </div>
+        </form>
+      `);
+
+      $("#syncForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const token = e.target.token.value.trim();
+        if (!token) return;
+        const mode = e.submitter?.dataset.syncMode || "push";
+        try {
+          saveSyncConfig(token);
+          startSyncTimer();
+          setSheetBusy(true);
+          const ok =
+            mode === "pull"
+              ? await syncPull({ silent: false })
+              : await syncPush({ silent: false });
+          if (ok) closeSheet();
+          else {
+            setSheetBusy(false);
+            alert(state.syncMessage || "동기화에 실패했어요.");
+          }
+        } catch (error) {
+          handleSyncError(error);
+          setSheetBusy(false);
+          alert(state.syncMessage || "동기화에 실패했어요.");
+        }
+      });
+      return;
+    }
+
+    openSheet(`
+      <h2 class="sheet__title">동기화</h2>
+      <p class="sheet__subtitle">${
+        state.lastSyncedAt ? `마지막 동기화 ${state.lastSyncedAt}` : "연결됨"
+      }</p>
+      <div class="sync-card">
+        ${syncTargetHTML(cfg)}
+        <div class="sync-note">${esc(state.syncMessage || "GitHub에 연결되어 있어요.")}</div>
+      </div>
+      <div class="btn-stack">
+        <button type="button" class="btn btn--dark" data-sync-action="pull">지금 가져오기</button>
+        <button type="button" class="btn btn--quiet" data-sync-action="push">지금 올리기</button>
+        <button type="button" class="btn btn--quiet" data-sync-action="disconnect">동기화 해제</button>
+      </div>
+    `);
+
+    sheet.querySelectorAll("[data-sync-action]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const action = btn.dataset.syncAction;
+        if (action === "disconnect") {
+          if (confirm("이 기기에서 동기화 설정을 지울까요?")) {
+            clearSyncConfig();
+            closeSheet();
+          }
+          return;
+        }
+        setSheetBusy(true);
+        const ok =
+          action === "pull"
+            ? await syncPull({ silent: false })
+            : await syncPush({ silent: false });
+        if (ok) closeSheet();
+        else {
+          setSheetBusy(false);
+          alert(state.syncMessage || "동기화에 실패했어요.");
+        }
+      });
+    });
+  }
+
   /* ---------- Add / Edit form ---------- */
   function openForm(existing) {
     const w = existing || { type: "red", purchaseDate: today() };
@@ -1595,5 +1970,6 @@ drunk	sparkling	FR	프랑스	도츠`;
   /* ---------- Boot ---------- */
   load();
   render();
+  setupSync();
   setupPullToRefresh();
 })();
