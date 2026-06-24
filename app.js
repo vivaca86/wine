@@ -1065,7 +1065,7 @@ drunk	sparkling	FR	프랑스	도츠`;
     const attr = kind === "type" ? "data-type-filter" : "data-country-filter";
     return `<button class="filter-option ${active ? "is-active" : ""}" ${attr}="${esc(
       value
-    )}" aria-pressed="${active ? "true" : "false"}">${labelHTML}<span class="filter-option__count">${count}</span></button>`;
+    )}" aria-pressed="${active ? "true" : "false"}"><span class="filter-option__label">${labelHTML}</span><span class="filter-option__count">${count}</span></button>`;
   }
 
   function filterPanelHTML(wines) {
@@ -1110,25 +1110,27 @@ drunk	sparkling	FR	프랑스	도츠`;
         : "국가";
     const sortButtons = sortOptionsFor(kind)
       .map(
-        ([key, label]) => `<button class="chip ${
+        ([key, label]) => `<button class="chip chip--sort ${
           state.sortBy === key ? "is-active" : ""
-        }" data-sort="${key}">${label}${sortArrow(key)}</button>`
+        }" data-sort="${key}"><span class="chip__label">${label}</span>${sortArrow(key)}</button>`
       )
       .join("");
     return `
       <div class="filterbar">
-        <button class="chip chip--search ${
-          state.searchOpen || activeSearch ? "is-active" : ""
-        }" data-search-toggle aria-label="와인 검색" aria-pressed="${
-          state.searchOpen || activeSearch ? "true" : "false"
-        }">${searchIconHTML()}</button>
-        <button class="chip ${
-          state.filterPanel === "type" || activeType ? "is-active" : ""
-        }" data-filter-panel="type">${typeLabel}</button>
-        <button class="chip ${
-          state.filterPanel === "country" || activeCountry ? "is-active" : ""
-        }" data-filter-panel="country">${countryLabel}</button>
-        ${sortButtons}
+        <div class="filterbar__filters">
+          <button class="chip chip--search ${
+            state.searchOpen || activeSearch ? "is-active" : ""
+          }" data-search-toggle aria-label="와인 검색" aria-pressed="${
+            state.searchOpen || activeSearch ? "true" : "false"
+          }">${searchIconHTML()}</button>
+          <button class="chip chip--filter ${
+            state.filterPanel === "type" || activeType ? "is-active" : ""
+          }" data-filter-panel="type"><span class="chip__label">${typeLabel}</span></button>
+          <button class="chip chip--filter ${
+            state.filterPanel === "country" || activeCountry ? "is-active" : ""
+          }" data-filter-panel="country"><span class="chip__label">${countryLabel}</span></button>
+        </div>
+        <div class="filterbar__sorts">${sortButtons}</div>
       </div>
       ${searchPanelHTML()}
       ${filterPanelHTML(wines)}`;

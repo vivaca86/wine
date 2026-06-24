@@ -1548,12 +1548,21 @@ img.card__photo {
 
 /* ---------- Filters + sorting ---------- */
 .filterbar {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
   gap: 7px;
   margin-bottom: 10px;
-  overflow: visible;
   padding-bottom: 2px;
+}
+.filterbar__filters,
+.filterbar__sorts {
+  display: grid;
+  gap: 7px;
+}
+.filterbar__filters {
+  grid-template-columns: 40px minmax(0, 1fr) minmax(0, 1fr);
+}
+.filterbar__sorts {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 .groupbar {
   display: flex;
@@ -1565,8 +1574,10 @@ img.card__photo {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  flex: 0 0 auto;
   gap: 5px;
+  width: 100%;
+  min-width: 0;
+  height: 40px;
   min-height: 40px;
   border: 1px solid var(--border);
   background: rgba(255, 253, 248, 0.72);
@@ -1575,7 +1586,8 @@ img.card__photo {
   padding: 0 15px;
   font-size: 13px;
   font-weight: 650;
-  transition: all 0.12s ease;
+  transition: background-color 0.12s ease, border-color 0.12s ease,
+    color 0.12s ease, box-shadow 0.12s ease, transform 0.12s ease;
 }
 .chip.is-active {
   background: var(--charcoal);
@@ -1584,9 +1596,16 @@ img.card__photo {
   box-shadow: rgba(23, 22, 20, 0.14) 0 6px 14px;
 }
 .chip__sort {
+  flex: 0 0 auto;
   font-size: 10px;
   line-height: 1;
   opacity: 0.72;
+}
+.chip__label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .chip--search {
   width: 40px;
@@ -1637,8 +1656,8 @@ img.card__photo {
   line-height: 1;
 }
 .filter-options {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 7px;
   margin: 0 0 14px;
   padding: 9px;
@@ -1649,7 +1668,11 @@ img.card__photo {
 .filter-option {
   display: inline-flex;
   align-items: center;
+  justify-content: space-between;
   gap: 6px;
+  width: 100%;
+  min-width: 0;
+  height: 40px;
   min-height: 40px;
   border: 1px solid var(--border);
   background: rgba(255, 253, 248, 0.78);
@@ -1660,12 +1683,26 @@ img.card__photo {
   font-weight: 720;
   line-height: 1;
 }
+.filter-option__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
+}
+.filter-option__label > :last-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .filter-option.is-active {
   background: rgba(130, 49, 61, 0.1);
   border-color: rgba(130, 49, 61, 0.34);
   color: var(--wine);
 }
 .filter-option__count {
+  flex: 0 0 auto;
   color: var(--muted);
   font-size: 11px;
   font-weight: 780;
