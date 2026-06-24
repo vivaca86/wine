@@ -7,15 +7,18 @@
   "use strict";
 
   const STORE_KEY = "wine-cellar-v1";
-  const SYNC_CONFIG_KEY = "wine-cellar-sync-config-v1";
-  const SYNC_CLIENT_KEY = "wine-cellar-sync-client-id";
-  const SYNC_REMOTE = {
-    owner: "vivaca86",
-    repo: "wine",
-    branch: "main",
-    path: "_data/wines.json",
+  const FIREBASE_EMAIL_KEY = "wine-cellar-firebase-email";
+  const FIREBASE_CONFIG = {
+    apiKey: "AIzaSyDPmWSZIIO-yDtnwfCBFFIzmvx_8njtHMs",
+    authDomain: "wine-974c5.firebaseapp.com",
+    projectId: "wine-974c5",
+    storageBucket: "wine-974c5.firebasestorage.app",
+    messagingSenderId: "1008470593815",
+    appId: "1:1008470593815:web:878804c525301fb1e72752",
   };
-  const SYNC_POLL_MS = 5000;
+  const FIREBASE_SDK_VERSION = "10.12.5";
+  const FIRESTORE_COLLECTION = "cellars";
+  const FIRESTORE_DOC_ID = "main";
 
   /* Wine types: id, label, emoji swatch, icon color */
   const TYPES = [
@@ -254,12 +257,14 @@ drunk	sparkling	FR	프랑스	도츠`;
     lastSyncedAt: "",
   };
 
-  let syncTimer = null;
   let syncDebounce = null;
-  let syncInFlight = false;
-  let syncPendingPush = false;
   let applyingRemote = false;
-  let lastRemoteSha = null;
+  let auth = null;
+  let db = null;
+  let firebaseApi = null;
+  let firebaseReady = false;
+  let unsubscribeCellar = null;
+  let currentUser = null;
 
   function seedWines() {
     return SEED_TSV.trim()
@@ -535,127 +540,7 @@ drunk	sparkling	FR	프랑스	도츠`;
     reader.readAsDataURL(file);
   }
 
-  /* ---------- Cloud sync (GitHub contents file) ---------- */
-  function getClientId() {
-    try {
-      let id = localStorage.getItem(SYNC_CLIENT_KEY);
-      if (!id) {
-        id = uid();
-        localStorage.setItem(SYNC_CLIENT_KEY, id);
-      }
-      return id;
-    } catch (e) {
-      return "browser";
-    }
-  }
-
-  function loadSyncConfig() {
-    try {
-      const raw = localStorage.getItem(SYNC_CONFIG_KEY);
-      if (!raw) return null;
-      const parsed = JSON.parse(raw);
-      if (!parsed || !parsed.token) return null;
-      const path =
-        !parsed.path || parsed.path === "data/wines.json"
-          ? SYNC_REMOTE.path
-          : parsed.path;
-      return Object.assign({}, SYNC_REMOTE, parsed, { path });
-    } catch (e) {
-      return null;
-    }
-  }
-
-  function saveSyncConfig(token) {
-    const cfg = Object.assign({}, SYNC_REMOTE, { token: token.trim() });
-    localStorage.setItem(SYNC_CONFIG_KEY, JSON.stringify(cfg));
-    return cfg;
-  }
-
-  function clearSyncConfig() {
-    try {
-      localStorage.removeItem(SYNC_CONFIG_KEY);
-    } catch (e) {}
-    stopSyncTimer();
-    setSyncStatus("local", "");
-  }
-
-  function syncPath(cfg) {
-    return cfg.path.split("/").map(encodeURIComponent).join("/");
-  }
-
-  function toBase64(text) {
-    const bytes = new TextEncoder().encode(text);
-    let binary = "";
-    bytes.forEach((b) => (binary += String.fromCharCode(b)));
-    return btoa(binary);
-  }
-
-  function fromBase64(text) {
-    const binary = atob(String(text || "").replace(/\s/g, ""));
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-    return new TextDecoder().decode(bytes);
-  }
-
-  function syncHeaders(cfg) {
-    return {
-      Accept: "application/vnd.github+json",
-      Authorization: `Bearer ${cfg.token}`,
-      "X-GitHub-Api-Version": "2022-11-28",
-    };
-  }
-
-  async function throwGitHubError(res) {
-    let message = `GitHub 요청 실패 (${res.status})`;
-    try {
-      const body = await res.json();
-      if (body && body.message) message = body.message;
-    } catch (e) {}
-    throw new Error(message);
-  }
-
-  async function fetchRemoteFile(cfg) {
-    const url = `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${syncPath(
-      cfg
-    )}?ref=${encodeURIComponent(cfg.branch)}`;
-    const res = await fetch(url, { headers: syncHeaders(cfg), cache: "no-store" });
-    if (res.status === 404) return null;
-    if (!res.ok) await throwGitHubError(res);
-    const file = await res.json();
-    const decoded = JSON.parse(fromBase64(file.content));
-    const wines = Array.isArray(decoded) ? decoded : decoded.wines;
-    if (!Array.isArray(wines)) {
-      throw new Error("동기화 파일 형식이 올바르지 않아요.");
-    }
-    return { sha: file.sha, body: Object.assign({}, decoded, { wines }) };
-  }
-
-  async function writeRemoteFile(cfg, sha, message) {
-    const payload = {
-      version: 1,
-      updatedAt: new Date().toISOString(),
-      updatedBy: getClientId(),
-      seedVersion: SEED_VERSION,
-      wines: state.wines,
-    };
-    const body = {
-      message,
-      branch: cfg.branch,
-      content: toBase64(JSON.stringify(payload, null, 2)),
-    };
-    if (sha) body.sha = sha;
-    const url = `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${syncPath(
-      cfg
-    )}`;
-    const res = await fetch(url, {
-      method: "PUT",
-      headers: Object.assign({ "Content-Type": "application/json" }, syncHeaders(cfg)),
-      body: JSON.stringify(body),
-    });
-    if (!res.ok) await throwGitHubError(res);
-    return res.json();
-  }
-
+  /* ---------- Cloud sync (Firebase Auth + Firestore) ---------- */
   function formatSyncTime() {
     return new Date().toLocaleTimeString("ko-KR", {
       hour: "2-digit",
@@ -674,8 +559,7 @@ drunk	sparkling	FR	프랑스	도츠`;
     const btn = $("#syncBtn");
     const label = $("#syncText");
     if (!btn || !label) return;
-    const hasConfig = !!loadSyncConfig();
-    const status = hasConfig ? state.syncStatus : "local";
+    const status = currentUser ? state.syncStatus : "local";
     btn.className = `sync-pill sync-pill--${status}`;
     label.textContent =
       status === "syncing"
@@ -685,33 +569,47 @@ drunk	sparkling	FR	프랑스	도츠`;
         : status === "error"
         ? "오류"
         : "로컬";
-    btn.title = state.syncMessage || (hasConfig ? "동기화 설정" : "로컬 저장");
+    btn.title = state.syncMessage || (currentUser ? "Firebase 동기화" : "로그인 필요");
   }
 
-  function stopSyncTimer() {
-    if (syncTimer) clearInterval(syncTimer);
-    syncTimer = null;
+  async function loadFirebase() {
+    if (firebaseApi) return firebaseApi;
+    const base = `https://www.gstatic.com/firebasejs/${FIREBASE_SDK_VERSION}`;
+    const [appMod, authMod, firestoreMod] = await Promise.all([
+      import(`${base}/firebase-app.js`),
+      import(`${base}/firebase-auth.js`),
+      import(`${base}/firebase-firestore.js`),
+    ]);
+    const app = appMod.initializeApp(FIREBASE_CONFIG);
+    auth = authMod.getAuth(app);
+    db = firestoreMod.getFirestore(app);
+    firebaseApi = {
+      signInWithEmailAndPassword: authMod.signInWithEmailAndPassword,
+      onAuthStateChanged: authMod.onAuthStateChanged,
+      signOut: authMod.signOut,
+      doc: firestoreMod.doc,
+      getDoc: firestoreMod.getDoc,
+      setDoc: firestoreMod.setDoc,
+      onSnapshot: firestoreMod.onSnapshot,
+      serverTimestamp: firestoreMod.serverTimestamp,
+    };
+    firebaseReady = true;
+    return firebaseApi;
   }
 
-  function startSyncTimer() {
-    stopSyncTimer();
-    if (!loadSyncConfig()) return;
-    syncTimer = setInterval(() => {
-      if (!syncPendingPush) syncPull({ silent: true });
-    }, SYNC_POLL_MS);
+  function cellarDocRef() {
+    return firebaseApi.doc(db, FIRESTORE_COLLECTION, FIRESTORE_DOC_ID);
   }
 
   function queueSyncPush(delay) {
-    if (!loadSyncConfig()) {
+    if (!currentUser || !firebaseReady) {
       updateSyncButton();
       return;
     }
-    syncPendingPush = true;
-    if (syncInFlight) return;
     if (syncDebounce) clearTimeout(syncDebounce);
     syncDebounce = setTimeout(() => {
       syncDebounce = null;
-      syncPush({ silent: true });
+      syncPush();
     }, delay == null ? 350 : delay);
   }
 
@@ -721,83 +619,108 @@ drunk	sparkling	FR	프랑스	도츠`;
     setSyncStatus("error", message);
   }
 
-  async function syncPull(options) {
-    const cfg = loadSyncConfig();
-    if (!cfg || syncInFlight) return false;
-    syncInFlight = true;
-    if (!options || !options.silent) setSyncStatus("syncing", "클라우드에서 가져오는 중");
-    try {
-      const remote = await fetchRemoteFile(cfg);
-      if (!remote) {
-        setSyncStatus("error", "아직 클라우드 데이터가 없어요.");
-        return false;
-      }
-      if (remote.sha === lastRemoteSha && options && options.silent) {
-        setSyncStatus("synced", "최신 상태예요.");
-        return true;
-      }
-      lastRemoteSha = remote.sha;
-      applyingRemote = true;
-      state.wines = remote.body.wines;
-      if (!persistLocalOnly()) quotaAlert();
-      applyingRemote = false;
-      render();
-      setSyncStatus("synced", "클라우드 데이터를 가져왔어요.");
-      return true;
-    } catch (e) {
-      applyingRemote = false;
-      handleSyncError(e);
-      return false;
-    } finally {
-      syncInFlight = false;
-    }
+  async function writeCloudWines() {
+    if (!currentUser || !firebaseReady) return false;
+    await firebaseApi.setDoc(
+      cellarDocRef(),
+      {
+        version: 1,
+        seedVersion: SEED_VERSION,
+        updatedAt: firebaseApi.serverTimestamp(),
+        updatedBy: currentUser.uid,
+        wines: state.wines,
+      },
+      { merge: true }
+    );
+    return true;
   }
 
-  async function syncPush(options) {
-    const cfg = loadSyncConfig();
-    if (!cfg) return false;
-    if (syncInFlight) {
-      syncPendingPush = true;
-      return false;
-    }
-    syncInFlight = true;
-    syncPendingPush = false;
-    if (!options || !options.silent) setSyncStatus("syncing", "클라우드에 저장하는 중");
+  async function syncPush() {
+    if (!currentUser || !firebaseReady) return false;
     try {
-      const remote = await fetchRemoteFile(cfg);
-      const written = await writeRemoteFile(
-        cfg,
-        remote ? remote.sha : null,
-        remote ? "Sync wine cellar data" : "Create wine cellar sync data"
-      );
-      lastRemoteSha = written && written.content ? written.content.sha : null;
+      setSyncStatus("syncing", "Firebase에 저장하는 중");
+      await writeCloudWines();
       setSyncStatus("synced", "클라우드에 저장했어요.");
       return true;
     } catch (e) {
       handleSyncError(e);
       return false;
-    } finally {
-      syncInFlight = false;
-      if (syncPendingPush) queueSyncPush(0);
     }
   }
 
-  function setupSync() {
+  async function signInToFirebase(email, password) {
+    const api = await loadFirebase();
+    const result = await api.signInWithEmailAndPassword(auth, email, password);
+    try {
+      localStorage.setItem(FIREBASE_EMAIL_KEY, email);
+    } catch (e) {}
+    return result.user;
+  }
+
+  async function signOutOfFirebase() {
+    if (!auth || !firebaseApi) return;
+    await firebaseApi.signOut(auth);
+  }
+
+  async function startCellarListener(user) {
+    const api = await loadFirebase();
+    if (unsubscribeCellar) unsubscribeCellar();
+    unsubscribeCellar = api.onSnapshot(
+      cellarDocRef(),
+      (snapshot) => {
+        if (!snapshot.exists()) {
+          setSyncStatus("synced", "클라우드 데이터가 아직 없어요.");
+          return;
+        }
+        const data = snapshot.data() || {};
+        if (!Array.isArray(data.wines)) {
+          setSyncStatus("error", "클라우드 데이터 형식이 올바르지 않아요.");
+          return;
+        }
+        applyingRemote = true;
+        state.wines = data.wines;
+        if (!persistLocalOnly()) quotaAlert();
+        applyingRemote = false;
+        render();
+        setSyncStatus("synced", "실시간 동기화 중");
+      },
+      (error) => {
+        applyingRemote = false;
+        handleSyncError(error);
+      }
+    );
+    const snapshot = await api.getDoc(cellarDocRef());
+    if (!snapshot.exists()) {
+      setSyncStatus("synced", "클라우드 데이터가 아직 없어요.");
+    }
+  }
+
+  function stopCellarListener() {
+    if (unsubscribeCellar) unsubscribeCellar();
+    unsubscribeCellar = null;
+  }
+
+  async function setupSync() {
     updateSyncButton();
     $("#syncBtn")?.addEventListener("click", openSyncSheet);
-    document.addEventListener("visibilitychange", () => {
-      if (!document.hidden && loadSyncConfig() && !syncPendingPush) {
-        syncPull({ silent: true });
-      }
-    });
-    window.addEventListener("focus", () => {
-      if (loadSyncConfig() && !syncPendingPush) {
-        syncPull({ silent: true });
-      }
-    });
-    if (loadSyncConfig()) {
-      startSyncTimer();
-      syncPull({ silent: true });
+    try {
+      await loadFirebase();
+      firebaseApi.onAuthStateChanged(auth, async (user) => {
+        currentUser = user || null;
+        stopCellarListener();
+        if (!user) {
+          setSyncStatus("local", "");
+          return;
+        }
+        setSyncStatus("syncing", "Firebase 연결 중");
+        try {
+          await startCellarListener(user);
+        } catch (e) {
+          handleSyncError(e);
+        }
+      });
+    } catch (e) {
+      handleSyncError(e);
     }
   }
 
@@ -1396,96 +1319,92 @@ drunk	sparkling	FR	프랑스	도츠`;
     });
   }
 
-  function syncTargetHTML(cfg) {
-    return `<div class="sync-target">
-      <span>${esc(cfg.owner)}/${esc(cfg.repo)}</span>
-      <span>${esc(cfg.path)}</span>
-    </div>`;
+  function savedFirebaseEmail() {
+    try {
+      return localStorage.getItem(FIREBASE_EMAIL_KEY) || "";
+    } catch (e) {
+      return "";
+    }
   }
 
   function openSyncSheet() {
-    const cfg = loadSyncConfig();
-    if (!cfg) {
+    if (!currentUser) {
       openSheet(`
-        <h2 class="sheet__title">동기화 설정</h2>
-        <p class="sheet__subtitle">GitHub 파일로 기기 사이에 와인 목록을 맞춰요.</p>
+        <h2 class="sheet__title">Firebase 로그인</h2>
+        <p class="sheet__subtitle">로그인하면 와인 목록이 실시간으로 공유돼요.</p>
 
         <form id="syncForm">
           <div class="sync-card">
-            ${syncTargetHTML(SYNC_REMOTE)}
             <div class="field">
-              <label class="field__label">GitHub 토큰</label>
-              <input class="input" name="token" type="password" autocomplete="off" placeholder="github_pat_..." required />
+              <label class="field__label">이메일</label>
+              <input class="input" name="email" type="email" autocomplete="username" value="${esc(
+                savedFirebaseEmail()
+              )}" required />
             </div>
-            <div class="sync-note">토큰은 이 기기에만 저장돼요.</div>
+            <div class="field">
+              <label class="field__label">비밀번호</label>
+              <input class="input" name="password" type="password" autocomplete="current-password" required />
+            </div>
+            <div class="sync-note">비밀번호는 Firebase 로그인에만 사용되고 앱 코드에는 저장하지 않아요.</div>
           </div>
 
           <div class="btn-stack">
             <button type="button" class="btn btn--quiet" data-close>취소</button>
-            <button type="submit" class="btn btn--dark" data-sync-mode="push">이 기기 데이터 올리기</button>
-            <button type="submit" class="btn btn--quiet" data-sync-mode="pull">클라우드 가져오기</button>
+            <button type="submit" class="btn btn--dark">로그인</button>
           </div>
         </form>
       `);
 
       $("#syncForm").addEventListener("submit", async (e) => {
         e.preventDefault();
-        const token = e.target.token.value.trim();
-        if (!token) return;
-        const mode = e.submitter?.dataset.syncMode || "push";
+        const email = e.target.email.value.trim();
+        const password = e.target.password.value;
+        if (!email || !password) return;
         try {
-          saveSyncConfig(token);
-          startSyncTimer();
           setSheetBusy(true);
-          const ok =
-            mode === "pull"
-              ? await syncPull({ silent: false })
-              : await syncPush({ silent: false });
-          if (ok) closeSheet();
-          else {
-            setSheetBusy(false);
-            alert(state.syncMessage || "동기화에 실패했어요.");
-          }
+          await signInToFirebase(email, password);
+          closeSheet();
         } catch (error) {
           handleSyncError(error);
           setSheetBusy(false);
-          alert(state.syncMessage || "동기화에 실패했어요.");
+          alert("로그인에 실패했어요. 이메일과 비밀번호를 확인해 주세요.");
         }
       });
       return;
     }
 
     openSheet(`
-      <h2 class="sheet__title">동기화</h2>
+      <h2 class="sheet__title">Firebase 동기화</h2>
       <p class="sheet__subtitle">${
-        state.lastSyncedAt ? `마지막 동기화 ${state.lastSyncedAt}` : "연결됨"
+        state.lastSyncedAt ? `마지막 동기화 ${state.lastSyncedAt}` : currentUser.email
       }</p>
       <div class="sync-card">
-        ${syncTargetHTML(cfg)}
-        <div class="sync-note">${esc(state.syncMessage || "GitHub에 연결되어 있어요.")}</div>
+        <div class="sync-target">
+          <span>${esc(currentUser.email || "Firebase 사용자")}</span>
+          <span>${esc(FIRESTORE_COLLECTION)}/${esc(FIRESTORE_DOC_ID)}</span>
+        </div>
+        <div class="sync-note">${esc(
+          state.syncMessage || "Firestore 실시간 동기화가 연결되어 있어요."
+        )}</div>
       </div>
       <div class="btn-stack">
-        <button type="button" class="btn btn--dark" data-sync-action="pull">지금 가져오기</button>
-        <button type="button" class="btn btn--quiet" data-sync-action="push">지금 올리기</button>
-        <button type="button" class="btn btn--quiet" data-sync-action="disconnect">동기화 해제</button>
+        <button type="button" class="btn btn--dark" data-sync-action="push">현재 기기 데이터 올리기</button>
+        <button type="button" class="btn btn--quiet" data-sync-action="logout">로그아웃</button>
       </div>
     `);
 
     sheet.querySelectorAll("[data-sync-action]").forEach((btn) => {
       btn.addEventListener("click", async () => {
         const action = btn.dataset.syncAction;
-        if (action === "disconnect") {
-          if (confirm("이 기기에서 동기화 설정을 지울까요?")) {
-            clearSyncConfig();
+        if (action === "logout") {
+          if (confirm("이 기기에서 Firebase 로그아웃할까요?")) {
+            await signOutOfFirebase();
             closeSheet();
           }
           return;
         }
         setSheetBusy(true);
-        const ok =
-          action === "pull"
-            ? await syncPull({ silent: false })
-            : await syncPush({ silent: false });
+        const ok = await syncPush();
         if (ok) closeSheet();
         else {
           setSheetBusy(false);
