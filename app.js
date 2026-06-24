@@ -1892,6 +1892,7 @@ drunk	sparkling	FR	프랑스	도츠`;
 
       <div class="detail-actions">
         <div class="detail-actions__bar">
+          <button class="detail-actions__delete" data-action="delete" aria-label="삭제" title="삭제">${trashIconHTML()}</button>
         ${
           isDrunk
             ? `<button class="detail-action detail-action--secondary" data-action="undo">셀러로 되돌리기</button>
@@ -1899,7 +1900,6 @@ drunk	sparkling	FR	프랑스	도츠`;
             : `<button class="detail-action detail-action--secondary" data-action="edit">수정</button>
                <button class="detail-action detail-action--primary" data-action="drink">🍷 마셨어요</button>`
         }
-          <button class="detail-actions__delete" data-action="delete" aria-label="삭제" title="삭제">${trashIconHTML()}</button>
         </div>
       </div>
     `);
@@ -1927,7 +1927,7 @@ drunk	sparkling	FR	프랑스	도츠`;
     sheet
       .querySelector('[data-action="delete"]')
       ?.addEventListener("click", () => {
-        if (confirm(`'${w.name}'을(를) 삭제할까요?`)) {
+        if (confirm(`정말 삭제할까요?\n\n${w.name}`)) {
           const backup = Object.assign({}, w);
           state.wines = state.wines.filter((x) => x.id !== w.id);
           persist(makeAuditLog("delete", backup, null));

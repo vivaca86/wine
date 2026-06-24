@@ -1195,7 +1195,7 @@ body.is-refreshing .pull-refresh__ring {
 }
 .detail-actions__bar {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 44px;
+  grid-template-columns: 44px minmax(0, 1fr) minmax(0, 1fr);
   gap: 6px;
   padding: 5px;
   background: rgba(23, 22, 20, 0.05);
