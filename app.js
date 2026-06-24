@@ -1307,7 +1307,6 @@ drunk	sparkling	FR	프랑스	도츠`;
           state.sortDir = sortDefaultDir(state.sortBy);
         }
         savePref();
-        state.filterPanel = null;
         render();
       });
     });
