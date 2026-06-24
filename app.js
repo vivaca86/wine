@@ -1062,19 +1062,44 @@ drunk	sparkling	FR	프랑스	도츠`;
   }
 
   function filterOptionButton(kind, value, labelHTML, active, count) {
-    const attr = kind === "type" ? "data-type-filter" : "data-country-filter";
+    const attr =
+      kind === "type"
+        ? "data-type-filter"
+        : kind === "country"
+        ? "data-country-filter"
+        : "data-sort";
+    const countHTML =
+      count === "" || count == null
+        ? ""
+        : `<span class="filter-option__count">${count}</span>`;
     return `<button class="filter-option ${active ? "is-active" : ""}" ${attr}="${esc(
       value
-    )}" aria-pressed="${active ? "true" : "false"}"><span class="filter-option__label">${labelHTML}</span><span class="filter-option__count">${count}</span></button>`;
+    )}" aria-pressed="${active ? "true" : "false"}"><span class="filter-option__label">${labelHTML}</span>${countHTML}</button>`;
   }
 
-  function filterPanelHTML(wines) {
+  function sortOptionsHTML(kind) {
+    return sortOptionsFor(kind)
+      .map(([key, label]) =>
+        filterOptionButton(
+          "sort",
+          key,
+          `<span>${label}</span>${state.sortBy === key ? sortArrow(key) : ""}`,
+          state.sortBy === key,
+          ""
+        )
+      )
+      .join("");
+  }
+
+  function filterPanelHTML(wines, kind) {
     if (!state.filterPanel) return "";
     const options =
       state.filterPanel === "type"
         ? typeOptionsHTML(wines)
-        : countryOptionsHTML(wines);
-    return `<div class="filter-options">${options}</div>`;
+        : state.filterPanel === "country"
+        ? countryOptionsHTML(wines)
+        : sortOptionsHTML(kind);
+    return `<button class="filter-dismiss" type="button" data-filter-dismiss aria-label="필터 닫기"></button><div class="filter-options filter-options--${state.filterPanel}">${options}</div>`;
   }
 
   function searchPanelHTML() {
@@ -1108,16 +1133,11 @@ drunk	sparkling	FR	프랑스	도츠`;
         : activeCountry
         ? `국가 ${state.countryFilters.length}`
         : "국가";
-    const sortButtons = sortOptionsFor(kind)
-      .map(
-        ([key, label]) => `<button class="chip chip--sort ${
-          state.sortBy === key ? "is-active" : ""
-        }" data-sort="${key}"><span class="chip__label">${label}</span>${sortArrow(key)}</button>`
-      )
-      .join("");
+    const currentSort = sortOptionsFor(kind).find(([key]) => key === state.sortBy);
+    const sortLabel = currentSort ? currentSort[1] : "정렬";
     return `
-      <div class="filterbar">
-        <div class="filterbar__filters">
+      <div class="list-controls">
+        <div class="filterbar">
           <button class="chip chip--search ${
             state.searchOpen || activeSearch ? "is-active" : ""
           }" data-search-toggle aria-label="와인 검색" aria-pressed="${
@@ -1129,11 +1149,16 @@ drunk	sparkling	FR	프랑스	도츠`;
           <button class="chip chip--filter ${
             state.filterPanel === "country" || activeCountry ? "is-active" : ""
           }" data-filter-panel="country"><span class="chip__label">${countryLabel}</span></button>
+          <button class="chip chip--sort ${
+            state.filterPanel === "sort" ? "is-active" : ""
+          }" data-filter-panel="sort"><span class="chip__label">${sortLabel}</span>${sortArrow(
+            state.sortBy
+          )}</button>
         </div>
-        <div class="filterbar__sorts">${sortButtons}</div>
+        ${searchPanelHTML()}
+        ${filterPanelHTML(wines, kind)}
       </div>
-      ${searchPanelHTML()}
-      ${filterPanelHTML(wines)}`;
+      `;
   }
 
   function compareWineList(a, b) {
@@ -1240,6 +1265,10 @@ drunk	sparkling	FR	프랑스	도츠`;
       }
       refreshListResults(wines, kind);
     });
+    view.querySelector("[data-filter-dismiss]")?.addEventListener("click", () => {
+      state.filterPanel = null;
+      render();
+    });
     view.querySelectorAll("[data-filter-panel]").forEach((b) => {
       b.addEventListener("click", () => {
         state.filterPanel =
@@ -1282,6 +1311,7 @@ drunk	sparkling	FR	프랑스	도츠`;
           state.sortDir = sortDefaultDir(state.sortBy);
         }
         savePref();
+        state.filterPanel = null;
         render();
       });
     });
@@ -2019,6 +2049,18 @@ drunk	sparkling	FR	프랑스	도츠`;
   sheet.addEventListener("click", (e) => {
     if (e.target.closest("[data-close]")) closeSheet();
   });
+  document.addEventListener(
+    "click",
+    (e) => {
+      if (!state.filterPanel || sheetOpen) return;
+      if (e.target.closest(".filterbar") || e.target.closest(".filter-options")) return;
+      e.preventDefault();
+      e.stopPropagation();
+      state.filterPanel = null;
+      render();
+    },
+    true
+  );
 
   function setupPullToRefresh() {
     const indicator = document.createElement("div");

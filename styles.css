@@ -1547,22 +1547,19 @@ img.card__photo {
 }
 
 /* ---------- Filters + sorting ---------- */
-.filterbar {
-  display: grid;
-  gap: 7px;
+.list-controls {
+  position: relative;
+  z-index: 6;
   margin-bottom: 10px;
-  padding-bottom: 2px;
 }
-.filterbar__filters,
-.filterbar__sorts {
+.filterbar {
+  position: relative;
+  z-index: 25;
   display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
   gap: 7px;
-}
-.filterbar__filters {
-  grid-template-columns: 40px minmax(0, 1fr) minmax(0, 1fr);
-}
-.filterbar__sorts {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: 0;
+  padding-bottom: 2px;
 }
 .groupbar {
   display: flex;
@@ -1621,7 +1618,7 @@ img.card__photo {
 }
 .searchbar {
   position: relative;
-  margin: -2px 0 12px;
+  margin: 8px 0 2px;
 }
 .searchbar__input {
   width: 100%;
@@ -1659,11 +1656,31 @@ img.card__photo {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 7px;
-  margin: 0 0 14px;
+  position: absolute;
+  top: calc(100% + 7px);
+  left: 0;
+  right: 0;
+  z-index: 30;
+  max-height: min(360px, 52vh);
+  overflow: auto;
+  margin: 0;
   padding: 9px;
-  background: rgba(255, 253, 248, 0.5);
+  background: rgba(255, 253, 248, 0.96);
   border: 1px solid rgba(48, 42, 34, 0.08);
   border-radius: 18px;
+  box-shadow: rgba(39, 33, 24, 0.16) 0 18px 34px;
+  backdrop-filter: blur(14px);
+}
+.filter-dismiss {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  border: none;
+  background: transparent;
+  padding: 0;
+}
+.filter-options--sort {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 .filter-option {
   display: inline-flex;
@@ -1686,6 +1703,7 @@ img.card__photo {
 .filter-option__label {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   min-width: 0;
   overflow: hidden;
