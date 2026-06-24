@@ -1682,6 +1682,13 @@ img.card__photo {
 .filter-options--sort {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
+.filter-options--sort .filter-option {
+  justify-content: center;
+}
+.filter-options--sort .filter-option__label {
+  flex: 1 1 auto;
+  justify-content: center;
+}
 .filter-option {
   display: inline-flex;
   align-items: center;
