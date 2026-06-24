@@ -1,6 +1,6 @@
 {
-  "name": "와인 셀러",
-  "short_name": "와인 셀러",
+  "name": "셀러",
+  "short_name": "셀러",
   "description": "와인 컬렉션과 시음 기록을 관리하는 모바일 앱",
   "start_url": "./index.html",
   "display": "standalone",
@@ -19,12 +19,6 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
-    },
-    {
-      "src": "icons/app-icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any"
     }
   ]
 }
