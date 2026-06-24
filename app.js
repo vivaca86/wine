@@ -246,8 +246,8 @@ drunk	sparkling	FR	프랑스	도츠`;
   let state = {
     wines: [],
     tab: "cellar",
-    typeFilter: "all",
-    countryFilter: "all",
+    typeFilters: [],
+    countryFilters: [],
     filterPanel: null,
     searchOpen: false,
     searchQuery: "",
@@ -890,8 +890,8 @@ drunk	sparkling	FR	프랑스	도츠`;
   /* ---------- Tabs ---------- */
   function setTab(tab) {
     state.tab = tab;
-    state.typeFilter = "all";
-    state.countryFilter = "all";
+    state.typeFilters = [];
+    state.countryFilters = [];
     state.filterPanel = null;
     state.searchOpen = false;
     state.searchQuery = "";
@@ -972,13 +972,17 @@ drunk	sparkling	FR	프랑스	도츠`;
 
   function optionBaseWines(wines, skip) {
     return wines.filter((w) => {
-      if (skip !== "type" && state.typeFilter !== "all" && w.type !== state.typeFilter) {
+      if (
+        skip !== "type" &&
+        state.typeFilters.length &&
+        !state.typeFilters.includes(w.type)
+      ) {
         return false;
       }
       if (
         skip !== "country" &&
-        state.countryFilter !== "all" &&
-        (w.country || "ETC") !== state.countryFilter
+        state.countryFilters.length &&
+        !state.countryFilters.includes(w.country || "ETC")
       ) {
         return false;
       }
@@ -1008,7 +1012,7 @@ drunk	sparkling	FR	프랑스	도츠`;
     const base = optionBaseWines(wines, "type");
     const counts = countBy(base, (w) => w.type || "etc");
     const ids = Object.keys(counts).sort((a, b) => typeRank(a) - typeRank(b));
-    return filterOptionButton("type", "all", "전체", state.typeFilter === "all", base.length)
+    return filterOptionButton("type", "all", "전체", !state.typeFilters.length, base.length)
       + ids
         .map((id) => {
           const t = typeOf(id);
@@ -1016,7 +1020,7 @@ drunk	sparkling	FR	프랑스	도츠`;
             "type",
             id,
             `${typeIconHTML(id, "option")}<span>${t.label}</span>`,
-            state.typeFilter === id,
+            state.typeFilters.includes(id),
             counts[id]
           );
         })
@@ -1031,7 +1035,7 @@ drunk	sparkling	FR	프랑스	도츠`;
       const bc = countryOf(b);
       return (ac ? ac.name : "기타").localeCompare(bc ? bc.name : "기타", "ko");
     });
-    return filterOptionButton("country", "all", "전체", state.countryFilter === "all", base.length)
+    return filterOptionButton("country", "all", "전체", !state.countryFilters.length, base.length)
       + codes
         .map((code) => {
           const c = countryOf(code);
@@ -1040,7 +1044,7 @@ drunk	sparkling	FR	프랑스	도츠`;
             "country",
             code,
             label,
-            state.countryFilter === code,
+            state.countryFilters.includes(code),
             counts[code]
           );
         })
@@ -1051,7 +1055,7 @@ drunk	sparkling	FR	프랑스	도츠`;
     const attr = kind === "type" ? "data-type-filter" : "data-country-filter";
     return `<button class="filter-option ${active ? "is-active" : ""}" ${attr}="${esc(
       value
-    )}">${labelHTML}<span class="filter-option__count">${count}</span></button>`;
+    )}" aria-pressed="${active ? "true" : "false"}">${labelHTML}<span class="filter-option__count">${count}</span></button>`;
   }
 
   function filterPanelHTML(wines) {
@@ -1076,12 +1080,24 @@ drunk	sparkling	FR	프랑스	도츠`;
   }
 
   function listControlsHTML(wines, kind) {
-    const activeType = state.typeFilter !== "all";
-    const activeCountry = state.countryFilter !== "all";
+    const activeType = state.typeFilters.length > 0;
+    const activeCountry = state.countryFilters.length > 0;
     const activeSearch = !!state.searchQuery.trim();
-    const typeLabel = activeType ? typeOf(state.typeFilter).label : "종류";
-    const c = activeCountry ? countryOf(state.countryFilter) : null;
-    const countryLabel = activeCountry ? (c ? c.name : "기타") : "국가";
+    const typeLabel =
+      state.typeFilters.length === 1
+        ? typeOf(state.typeFilters[0]).label
+        : activeType
+        ? `종류 ${state.typeFilters.length}`
+        : "종류";
+    const c = state.countryFilters.length === 1 ? countryOf(state.countryFilters[0]) : null;
+    const countryLabel =
+      state.countryFilters.length === 1
+        ? c
+          ? c.name
+          : "기타"
+        : activeCountry
+        ? `국가 ${state.countryFilters.length}`
+        : "국가";
     const sortButtons = sortOptionsFor(kind)
       .map(
         ([key, label]) => `<button class="chip ${
@@ -1091,9 +1107,6 @@ drunk	sparkling	FR	프랑스	도츠`;
       .join("");
     return `
       <div class="filterbar">
-        <button class="chip ${
-          !activeType && !activeCountry && !activeSearch ? "is-active" : ""
-        }" data-filter-reset>전체</button>
         <button class="chip chip--search ${
           state.searchOpen || activeSearch ? "is-active" : ""
         }" data-search-toggle aria-label="와인 검색" aria-pressed="${
@@ -1188,14 +1201,6 @@ drunk	sparkling	FR	프랑스	도츠`;
   }
 
   function bindListControls(wines, kind) {
-    view.querySelector("[data-filter-reset]")?.addEventListener("click", () => {
-      state.typeFilter = "all";
-      state.countryFilter = "all";
-      state.filterPanel = null;
-      state.searchOpen = false;
-      state.searchQuery = "";
-      render();
-    });
     view.querySelector("[data-search-toggle]")?.addEventListener("click", () => {
       state.searchOpen = !state.searchOpen;
       state.filterPanel = null;
@@ -1232,15 +1237,27 @@ drunk	sparkling	FR	프랑스	도츠`;
     });
     view.querySelectorAll("[data-type-filter]").forEach((b) => {
       b.addEventListener("click", () => {
-        state.typeFilter = b.dataset.typeFilter;
-        state.filterPanel = null;
+        const value = b.dataset.typeFilter;
+        if (value === "all") {
+          state.typeFilters = [];
+        } else if (state.typeFilters.includes(value)) {
+          state.typeFilters = state.typeFilters.filter((id) => id !== value);
+        } else {
+          state.typeFilters = [...state.typeFilters, value];
+        }
         render();
       });
     });
     view.querySelectorAll("[data-country-filter]").forEach((b) => {
       b.addEventListener("click", () => {
-        state.countryFilter = b.dataset.countryFilter;
-        state.filterPanel = null;
+        const value = b.dataset.countryFilter;
+        if (value === "all") {
+          state.countryFilters = [];
+        } else if (state.countryFilters.includes(value)) {
+          state.countryFilters = state.countryFilters.filter((code) => code !== value);
+        } else {
+          state.countryFilters = [...state.countryFilters, value];
+        }
         render();
       });
     });
@@ -1801,12 +1818,15 @@ drunk	sparkling	FR	프랑스	도츠`;
     const t = typeOf(w.type);
     const isDrunk = w.status === "drunk";
     const typeValue = `${typeIconHTML(w.type, "detail")}<span>${t.label}</span>`;
+    const titleVintage = w.vintage
+      ? `<span class="detail__title-vintage">${esc(w.vintage)}</span>`
+      : "";
     const titleRow = isDrunk
-      ? `<span class="detail__title-side detail__title-side--type">${typeValue}</span>
-         <span class="detail__name">${esc(w.name)}</span>
-         <span class="detail__title-side detail__title-side--vintage">${
-           w.vintage ? esc(w.vintage) : ""
-         }</span>`
+      ? `<span class="detail__compact-title">
+           ${typeIconHTML(w.type, "detail")}
+           <span class="detail__name">${esc(w.name)}</span>
+           ${titleVintage}
+         </span>`
       : `${flagBadge(w.country, true)}<span class="detail__name">${esc(
           w.name
         )}</span>`;
