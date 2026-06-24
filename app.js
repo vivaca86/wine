@@ -8,6 +8,7 @@
 
   const STORE_KEY = "wine-cellar-v1";
   const FIREBASE_EMAIL_KEY = "wine-cellar-firebase-email";
+  const FIREBASE_LOGIN_SESSION_KEY = "wine-cellar-login-audit-uid";
   const FIREBASE_CONFIG = {
     apiKey: "AIzaSyDPmWSZIIO-yDtnwfCBFFIzmvx_8njtHMs",
     authDomain: "wine-974c5.firebaseapp.com",
@@ -19,6 +20,7 @@
   const FIREBASE_SDK_VERSION = "10.12.5";
   const FIRESTORE_COLLECTION = "cellars";
   const FIRESTORE_DOC_ID = "main";
+  const FIRESTORE_LOGS_COLLECTION = "logs";
 
   /* Wine types: id, label, emoji swatch, icon color */
   const TYPES = [
@@ -265,6 +267,7 @@ drunk	sparkling	FR	프랑스	도츠`;
   let firebaseReady = false;
   let unsubscribeCellar = null;
   let currentUser = null;
+  let pendingAuditLogs = [];
 
   function seedWines() {
     return SEED_TSV.trim()
@@ -351,9 +354,16 @@ drunk	sparkling	FR	프랑스	도츠`;
     }
   }
 
-  function persist() {
+  function queueAuditLog(auditLog) {
+    if (auditLog) pendingAuditLogs.push(auditLog);
+  }
+
+  function persist(auditLog) {
     const saved = persistLocalOnly();
-    if (saved && !applyingRemote) queueSyncPush();
+    if (saved && !applyingRemote) {
+      queueAuditLog(auditLog);
+      queueSyncPush();
+    }
     return saved;
   }
 
@@ -540,6 +550,112 @@ drunk	sparkling	FR	프랑스	도츠`;
     reader.readAsDataURL(file);
   }
 
+  function wineSnapshot(w) {
+    if (!w) return null;
+    return {
+      id: w.id || "",
+      status: w.status || "",
+      name: w.name || "",
+      country: w.country || "",
+      type: w.type || "",
+      vintage: w.vintage || "",
+      price: w.price == null ? null : String(w.price),
+      purchaseDate: w.purchaseDate || "",
+      rating: w.rating == null ? null : Number(w.rating),
+      drunkDate: w.drunkDate || "",
+      note: w.note || "",
+      hasPhoto: !!w.photo,
+    };
+  }
+
+  const AUDIT_LABELS = {
+    login: "로그인",
+    logout: "로그아웃",
+    create: "와인 등록",
+    update: "와인 수정",
+    markDrunk: "마신 기록",
+    undoDrunk: "셀러로 되돌리기",
+    delete: "와인 삭제",
+  };
+
+  const AUDIT_FIELD_LABELS = {
+    status: "상태",
+    name: "와인 이름",
+    country: "국가",
+    type: "종류",
+    vintage: "빈티지",
+    price: "구입 가격",
+    purchaseDate: "구입일",
+    rating: "별점",
+    drunkDate: "마신 날",
+    note: "시음 노트",
+    hasPhoto: "사진",
+  };
+
+  function wineChanges(before, after) {
+    if (!before || !after) return [];
+    return Object.keys(AUDIT_FIELD_LABELS)
+      .filter((field) => before[field] !== after[field])
+      .map((field) => ({
+        field,
+        label: AUDIT_FIELD_LABELS[field],
+        before: before[field] == null ? "" : before[field],
+        after: after[field] == null ? "" : after[field],
+      }));
+  }
+
+  function makeAuditLog(action, beforeWine, afterWine) {
+    if (!currentUser) return null;
+    const before = wineSnapshot(beforeWine);
+    const after = wineSnapshot(afterWine);
+    const changes = wineChanges(before, after);
+    if (before && after && !changes.length) return null;
+    const wine = after || before || {};
+    return {
+      action,
+      actionLabel: AUDIT_LABELS[action] || action,
+      actorUid: currentUser.uid,
+      actorEmail: currentUser.email || "",
+      wineId: wine.id || "",
+      wineName: wine.name || "",
+      before,
+      after,
+      changes,
+      clientCreatedAt: new Date().toISOString(),
+    };
+  }
+
+  function makeSessionAuditLog(action, user) {
+    const actor = user || currentUser;
+    if (!actor) return null;
+    return {
+      action,
+      actionLabel: AUDIT_LABELS[action] || action,
+      actorUid: actor.uid,
+      actorEmail: actor.email || "",
+      wineId: "",
+      wineName: "",
+      before: null,
+      after: null,
+      changes: [],
+      clientCreatedAt: new Date().toISOString(),
+    };
+  }
+
+  function shouldLogLogin(user) {
+    try {
+      if (sessionStorage.getItem(FIREBASE_LOGIN_SESSION_KEY) === user.uid) return false;
+      sessionStorage.setItem(FIREBASE_LOGIN_SESSION_KEY, user.uid);
+    } catch (e) {}
+    return true;
+  }
+
+  function clearLoginAuditMarker() {
+    try {
+      sessionStorage.removeItem(FIREBASE_LOGIN_SESSION_KEY);
+    } catch (e) {}
+  }
+
   /* ---------- Cloud sync (Firebase Auth + Firestore) ---------- */
   function formatSyncTime() {
     return new Date().toLocaleTimeString("ko-KR", {
@@ -588,10 +704,12 @@ drunk	sparkling	FR	프랑스	도츠`;
       onAuthStateChanged: authMod.onAuthStateChanged,
       signOut: authMod.signOut,
       doc: firestoreMod.doc,
+      collection: firestoreMod.collection,
       getDoc: firestoreMod.getDoc,
       setDoc: firestoreMod.setDoc,
       onSnapshot: firestoreMod.onSnapshot,
       serverTimestamp: firestoreMod.serverTimestamp,
+      writeBatch: firestoreMod.writeBatch,
     };
     firebaseReady = true;
     return firebaseApi;
@@ -599,6 +717,15 @@ drunk	sparkling	FR	프랑스	도츠`;
 
   function cellarDocRef() {
     return firebaseApi.doc(db, FIRESTORE_COLLECTION, FIRESTORE_DOC_ID);
+  }
+
+  function logsCollectionRef() {
+    return firebaseApi.collection(
+      db,
+      FIRESTORE_COLLECTION,
+      FIRESTORE_DOC_ID,
+      FIRESTORE_LOGS_COLLECTION
+    );
   }
 
   function queueSyncPush(delay) {
@@ -619,6 +746,24 @@ drunk	sparkling	FR	프랑스	도츠`;
     setSyncStatus("error", message);
   }
 
+  async function flushAuditLogs() {
+    if (!pendingAuditLogs.length || !currentUser || !firebaseReady) return true;
+    const logs = pendingAuditLogs.slice(0, 20);
+    const batch = firebaseApi.writeBatch(db);
+    logs.forEach((log) => {
+      const ref = firebaseApi.doc(logsCollectionRef());
+      batch.set(ref, Object.assign({}, log, { createdAt: firebaseApi.serverTimestamp() }));
+    });
+    try {
+      await batch.commit();
+      pendingAuditLogs.splice(0, logs.length);
+      return true;
+    } catch (error) {
+      console.warn("행동 로그 저장 실패", error);
+      return false;
+    }
+  }
+
   async function writeCloudWines() {
     if (!currentUser || !firebaseReady) return false;
     await firebaseApi.setDoc(
@@ -632,6 +777,7 @@ drunk	sparkling	FR	프랑스	도츠`;
       },
       { merge: true }
     );
+    await flushAuditLogs();
     return true;
   }
 
@@ -640,7 +786,12 @@ drunk	sparkling	FR	프랑스	도츠`;
     try {
       setSyncStatus("syncing", "Firebase에 저장하는 중");
       await writeCloudWines();
-      setSyncStatus("synced", "클라우드에 저장했어요.");
+      setSyncStatus(
+        "synced",
+        pendingAuditLogs.length
+          ? "와인은 저장됨, 로그 저장 권한 확인 필요"
+          : "클라우드에 저장했어요."
+      );
       return true;
     } catch (e) {
       handleSyncError(e);
@@ -659,6 +810,11 @@ drunk	sparkling	FR	프랑스	도츠`;
 
   async function signOutOfFirebase() {
     if (!auth || !firebaseApi) return;
+    if (currentUser) {
+      queueAuditLog(makeSessionAuditLog("logout", currentUser));
+      await flushAuditLogs();
+      clearLoginAuditMarker();
+    }
     await firebaseApi.signOut(auth);
   }
 
@@ -714,7 +870,14 @@ drunk	sparkling	FR	프랑스	도츠`;
         }
         setSyncStatus("syncing", "Firebase 연결 중");
         try {
+          if (shouldLogLogin(user)) queueAuditLog(makeSessionAuditLog("login", user));
           await startCellarListener(user);
+          if (pendingAuditLogs.length) {
+            const logsOk = await flushAuditLogs();
+            if (!logsOk) {
+              setSyncStatus("synced", "실시간 동기화 중, 로그 저장 권한 확인 필요");
+            }
+          }
         } catch (e) {
           handleSyncError(e);
         }
@@ -1601,7 +1764,7 @@ drunk	sparkling	FR	프랑스	도츠`;
       if (isEdit) {
         const backup = Object.assign({}, existing);
         Object.assign(existing, data);
-        if (!persist()) {
+        if (!persist(makeAuditLog("update", backup, existing))) {
           Object.assign(existing, backup);
           quotaAlert();
           return;
@@ -1609,7 +1772,7 @@ drunk	sparkling	FR	프랑스	도츠`;
       } else {
         const wine = Object.assign({ id: uid(), status: "cellar" }, data);
         state.wines.push(wine);
-        if (!persist()) {
+        if (!persist(makeAuditLog("create", null, wine))) {
           state.wines.pop();
           quotaAlert();
           return;
@@ -1715,11 +1878,12 @@ drunk	sparkling	FR	프랑스	도츠`;
       setTimeout(() => openForm(w), 280);
     });
     sheet.querySelector('[data-action="undo"]')?.addEventListener("click", () => {
+      const backup = Object.assign({}, w);
       w.status = "cellar";
       delete w.rating;
       delete w.note;
       delete w.drunkDate;
-      persist();
+      persist(makeAuditLog("undoDrunk", backup, w));
       closeSheet();
       render();
     });
@@ -1727,8 +1891,9 @@ drunk	sparkling	FR	프랑스	도츠`;
       .querySelector('[data-action="delete"]')
       ?.addEventListener("click", () => {
         if (confirm(`'${w.name}'을(를) 삭제할까요?`)) {
+          const backup = Object.assign({}, w);
           state.wines = state.wines.filter((x) => x.id !== w.id);
-          persist();
+          persist(makeAuditLog("delete", backup, null));
           closeSheet();
           render();
         }
@@ -1786,7 +1951,7 @@ drunk	sparkling	FR	프랑스	도츠`;
       w.rating = getRating();
       w.drunkDate = f.drunkDate.value || today();
       w.note = f.note.value.trim();
-      if (!persist()) {
+      if (!persist(makeAuditLog("markDrunk", backup, w))) {
         Object.assign(w, backup);
         quotaAlert();
         return;

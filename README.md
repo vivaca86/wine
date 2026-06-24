@@ -40,3 +40,4 @@ python -m http.server 8077
 - 동기화를 켜면 Firebase Firestore의 `cellars/main` 문서에 목록이 저장됩니다.
 - 한 기기에서 저장하면 로그인된 다른 기기에 실시간으로 반영됩니다.
 - Firestore 보안 규칙에서 허용한 Firebase Auth 사용자만 읽고 쓸 수 있습니다.
+- 로그인/로그아웃/등록/수정/삭제/마신 기록은 `cellars/main/logs` 서브컬렉션에 행동 로그로 저장됩니다.
