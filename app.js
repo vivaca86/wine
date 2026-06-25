@@ -376,6 +376,13 @@ drunk	sparkling	FR	프랑스	도츠`;
     )
   ).sort((a, b) => a.localeCompare(b, "ko"));
 
+  const normalizeVarietyInput = (value) =>
+    (value || "")
+      .split(",")
+      .map((part) => part.trim())
+      .filter(Boolean)
+      .join(", ");
+
   function enrichWinesWithVariety(wines) {
     if (!Array.isArray(wines)) return [];
     return wines.map((wine) => {
@@ -1986,23 +1993,46 @@ drunk	sparkling	FR	프랑스	도츠`;
       return (parts[parts.length - 1] || "").trim().toLocaleLowerCase("ko");
     };
 
+    function moveVarietyCaretToEnd() {
+      const end = varietyInput.value.length;
+      if (typeof varietyInput.setSelectionRange === "function") {
+        varietyInput.setSelectionRange(end, end);
+      }
+      requestAnimationFrame(() => {
+        varietyInput.scrollLeft = varietyInput.scrollWidth;
+      });
+    }
+
+    function prepareVarietyInputForAppend() {
+      const normalized = normalizeVarietyInput(varietyInput.value);
+      if (normalized) {
+        varietyInput.value = `${normalized}, `;
+      }
+      moveVarietyCaretToEnd();
+    }
+
     function applyVarietyChoice(choice) {
       const parts = varietyInput.value.split(",");
       parts[parts.length - 1] = choice;
-      varietyInput.value = parts
-        .map((part) => part.trim())
-        .filter(Boolean)
-        .join(", ");
+      const normalized = normalizeVarietyInput(parts.join(","));
+      varietyInput.value = normalized ? `${normalized}, ` : "";
       varietyInput.focus();
-      renderVarietySuggestions();
+      moveVarietyCaretToEnd();
+      varietySuggest.hidden = true;
+      varietySuggest.innerHTML = "";
     }
 
     function renderVarietySuggestions() {
       const query = currentVarietyQuery();
+      if (!query) {
+        varietySuggest.hidden = true;
+        varietySuggest.innerHTML = "";
+        return;
+      }
       const selected = new Set(selectedVarietyParts().map((part) => part.toLocaleLowerCase("ko")));
       const matches = VARIETY_OPTIONS.filter((option) => {
         const normalized = option.toLocaleLowerCase("ko");
-        return !selected.has(normalized) && (!query || normalized.includes(query));
+        return !selected.has(normalized) && normalized.includes(query);
       }).slice(0, 8);
 
       varietySuggest.hidden = !matches.length;
@@ -2030,7 +2060,12 @@ drunk	sparkling	FR	프랑스	도츠`;
       lastAutoVariety = "";
       renderVarietySuggestions();
     });
-    varietyInput.addEventListener("focus", renderVarietySuggestions);
+    varietyInput.addEventListener("focus", () => {
+      prepareVarietyInputForAppend();
+      varietySuggest.hidden = true;
+    });
+    varietyInput.addEventListener("pointerup", moveVarietyCaretToEnd);
+    varietyInput.addEventListener("click", moveVarietyCaretToEnd);
     varietyInput.addEventListener("blur", () => {
       setTimeout(() => {
         varietySuggest.hidden = true;
@@ -2054,7 +2089,7 @@ drunk	sparkling	FR	프랑스	도츠`;
         country: f.country.value,
         type: f.type.value,
         vintage: f.vintage.value.trim(),
-        variety: f.variety.value.trim() || varietyForName(name),
+        variety: normalizeVarietyInput(f.variety.value) || varietyForName(name),
         price: f.price.value.replace(/[^\d]/g, "") || null,
         purchaseDate: f.purchaseDate.value || (isEdit ? "" : today()),
         photo: photo || null,
