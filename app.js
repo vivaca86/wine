@@ -2041,6 +2041,7 @@ drunk	sparkling	FR	프랑스	도츠`;
     let pickedVarietyValue = "";
     let pickedVarietyFragment = "";
     let suppressVarietyInputUntil = 0;
+    let varietyChoiceHandledAt = 0;
 
     const selectedVarietyParts = () =>
       varietyInput.value
@@ -2111,6 +2112,15 @@ drunk	sparkling	FR	프랑스	도츠`;
         .join("");
     }
 
+    function chooseVarietyFromTarget(target) {
+      const btn =
+        target && typeof target.closest === "function" ? target.closest("[data-variety]") : null;
+      if (!btn) return false;
+      varietyChoiceHandledAt = Date.now();
+      applyVarietyChoice(btn.dataset.variety);
+      return true;
+    }
+
     nameInput.addEventListener("input", () => {
       const suggested = varietyForName(nameInput.value.trim());
       const current = varietyInput.value.trim();
@@ -2150,14 +2160,13 @@ drunk	sparkling	FR	프랑스	도츠`;
       }, 120);
     });
     varietySuggest.addEventListener("pointerdown", (e) => {
-      if (e.target.closest("[data-variety]")) {
-        varietyInput.blur();
+      if (chooseVarietyFromTarget(e.target)) {
+        e.preventDefault();
       }
     });
     varietySuggest.addEventListener("click", (e) => {
-      const btn = e.target.closest("[data-variety]");
-      if (!btn) return;
-      applyVarietyChoice(btn.dataset.variety);
+      if (Date.now() - varietyChoiceHandledAt < 500) return;
+      chooseVarietyFromTarget(e.target);
     });
 
     // ----- submit -----
