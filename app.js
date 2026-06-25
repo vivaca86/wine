@@ -365,13 +365,23 @@ drunk	sparkling	FR	프랑스	도츠`;
   };
 
   const varietyForName = (name) => VARIETY_BY_WINE_NAME[(name || "").trim()] || "";
+  const VARIETY_OPTIONS = Array.from(
+    new Set(
+      Object.values(VARIETY_BY_WINE_NAME).flatMap((varieties) =>
+        varieties
+          .split(",")
+          .map((variety) => variety.trim())
+          .filter(Boolean)
+      )
+    )
+  ).sort((a, b) => a.localeCompare(b, "ko"));
 
   function enrichWinesWithVariety(wines) {
     if (!Array.isArray(wines)) return [];
     return wines.map((wine) => {
       if (!wine || typeof wine !== "object") return wine;
       const variety = varietyForName(wine.name);
-      if (!variety || wine.variety === variety) return wine;
+      if (!variety || (wine.variety || "").trim()) return wine;
       return Object.assign({}, wine, { variety });
     });
   }
@@ -702,6 +712,7 @@ drunk	sparkling	FR	프랑스	도츠`;
       country: w.country || "",
       type: w.type || "",
       vintage: w.vintage || "",
+      variety: w.variety || "",
       price: w.price == null ? null : String(w.price),
       purchaseDate: w.purchaseDate || "",
       rating: w.rating == null ? null : Number(w.rating),
@@ -727,6 +738,7 @@ drunk	sparkling	FR	프랑스	도츠`;
     country: "국가",
     type: "종류",
     vintage: "빈티지",
+    variety: "품종",
     price: "구입 가격",
     purchaseDate: "구입일",
     rating: "별점",
@@ -1365,9 +1377,7 @@ drunk	sparkling	FR	프랑스	도츠`;
       kind === "drunk"
         ? `<span class="card__rating">${starsHTML(w.rating || 0)}</span>`
         : `<span class="card__price">${won(w.price)}</span>`;
-    const variety = w.variety
-      ? `<span class="card__sub">품종 · ${esc(w.variety)}</span>`
-      : "";
+    const variety = w.variety ? `<span class="card__sub">${esc(w.variety)}</span>` : "";
     return `
       <button class="card card--${kind}${viewed}" data-id="${w.id}">
         <span class="card__main">
@@ -1793,7 +1803,9 @@ drunk	sparkling	FR	프랑스	도츠`;
     const isEdit = !!existing;
     const isDrunkEdit = isEdit && existing.status === "drunk";
     const selectedType = FORM_TYPE_IDS.includes(w.type) ? w.type : "red";
+    const initialVariety = w.variety || varietyForName(w.name) || "";
     let photo = (existing && existing.photo) || null;
+    let lastAutoVariety = initialVariety;
 
     openSheet(`
       <h2 class="sheet__title">${
@@ -1846,6 +1858,14 @@ drunk	sparkling	FR	프랑스	도츠`;
             ).join("")}
           </div>
           <input type="hidden" name="type" value="${selectedType}" />
+        </div>
+
+        <div class="field field--variety">
+          <label class="field__label">품종 <span class="opt">(선택)</span></label>
+          <input class="input" name="variety" id="varietyInput" autocomplete="off" placeholder="예: 피노 누아, 샤르도네" value="${esc(
+            initialVariety
+          )}" />
+          <div class="variety-suggest" id="varietySuggest" hidden></div>
         </div>
 
         <div class="row-2">
@@ -1950,6 +1970,79 @@ drunk	sparkling	FR	프랑스	도츠`;
       });
     });
 
+    // ----- variety autocomplete -----
+    const nameInput = sheet.querySelector('[name="name"]');
+    const varietyInput = sheet.querySelector('[name="variety"]');
+    const varietySuggest = sheet.querySelector("#varietySuggest");
+
+    const selectedVarietyParts = () =>
+      varietyInput.value
+        .split(",")
+        .map((part) => part.trim())
+        .filter(Boolean);
+
+    const currentVarietyQuery = () => {
+      const parts = varietyInput.value.split(",");
+      return (parts[parts.length - 1] || "").trim().toLocaleLowerCase("ko");
+    };
+
+    function applyVarietyChoice(choice) {
+      const parts = varietyInput.value.split(",");
+      parts[parts.length - 1] = choice;
+      varietyInput.value = parts
+        .map((part) => part.trim())
+        .filter(Boolean)
+        .join(", ");
+      varietyInput.focus();
+      renderVarietySuggestions();
+    }
+
+    function renderVarietySuggestions() {
+      const query = currentVarietyQuery();
+      const selected = new Set(selectedVarietyParts().map((part) => part.toLocaleLowerCase("ko")));
+      const matches = VARIETY_OPTIONS.filter((option) => {
+        const normalized = option.toLocaleLowerCase("ko");
+        return !selected.has(normalized) && (!query || normalized.includes(query));
+      }).slice(0, 8);
+
+      varietySuggest.hidden = !matches.length;
+      varietySuggest.innerHTML = matches
+        .map(
+          (option) =>
+            `<button type="button" class="variety-suggest__item" data-variety="${esc(
+              option
+            )}">${esc(option)}</button>`
+        )
+        .join("");
+    }
+
+    nameInput.addEventListener("input", () => {
+      const suggested = varietyForName(nameInput.value.trim());
+      const current = varietyInput.value.trim();
+      if (suggested && (!current || current === lastAutoVariety)) {
+        varietyInput.value = suggested;
+        lastAutoVariety = suggested;
+        renderVarietySuggestions();
+      }
+    });
+
+    varietyInput.addEventListener("input", () => {
+      lastAutoVariety = "";
+      renderVarietySuggestions();
+    });
+    varietyInput.addEventListener("focus", renderVarietySuggestions);
+    varietyInput.addEventListener("blur", () => {
+      setTimeout(() => {
+        varietySuggest.hidden = true;
+      }, 120);
+    });
+    varietySuggest.addEventListener("mousedown", (e) => e.preventDefault());
+    varietySuggest.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-variety]");
+      if (!btn) return;
+      applyVarietyChoice(btn.dataset.variety);
+    });
+
     // ----- submit -----
     $("#wineForm").addEventListener("submit", (e) => {
       e.preventDefault();
@@ -1961,9 +2054,7 @@ drunk	sparkling	FR	프랑스	도츠`;
         country: f.country.value,
         type: f.type.value,
         vintage: f.vintage.value.trim(),
-        variety:
-          varietyForName(name) ||
-          (existing && existing.name === name ? existing.variety || "" : ""),
+        variety: f.variety.value.trim() || varietyForName(name),
         price: f.price.value.replace(/[^\d]/g, "") || null,
         purchaseDate: f.purchaseDate.value || (isEdit ? "" : today()),
         photo: photo || null,
