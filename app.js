@@ -366,6 +366,16 @@ drunk	sparkling	FR	프랑스	도츠`;
 
   const varietyForName = (name) => VARIETY_BY_WINE_NAME[(name || "").trim()] || "";
 
+  function enrichWinesWithVariety(wines) {
+    if (!Array.isArray(wines)) return [];
+    return wines.map((wine) => {
+      if (!wine || typeof wine !== "object") return wine;
+      const variety = varietyForName(wine.name);
+      if (!variety || wine.variety === variety) return wine;
+      return Object.assign({}, wine, { variety });
+    });
+  }
+
   /* ---------- State ---------- */
   let state = {
     wines: [],
@@ -428,7 +438,7 @@ drunk	sparkling	FR	프랑스	도츠`;
 
     const seeds = seedWines();
     if (raw) {
-      const existing = JSON.parse(raw) || [];
+      const existing = enrichWinesWithVariety(JSON.parse(raw) || []);
       const seedById = new Map(seeds.map((seed) => [seed.id, seed]));
       const existingIds = new Set(existing.map((w) => w.id));
       existing.forEach((wine) => {
@@ -442,7 +452,7 @@ drunk	sparkling	FR	프랑스	도츠`;
           existing.push(seed);
         }
       });
-      state.wines = existing;
+      state.wines = enrichWinesWithVariety(existing);
     } else {
       state.wines = seeds;
     }
@@ -456,7 +466,7 @@ drunk	sparkling	FR	프랑스	도츠`;
     try {
       if (!applySeedIfNeeded()) {
         const raw = localStorage.getItem(STORE_KEY);
-        if (raw) state.wines = JSON.parse(raw) || [];
+        if (raw) state.wines = enrichWinesWithVariety(JSON.parse(raw) || []);
       }
       const pref = JSON.parse(localStorage.getItem(PREF_KEY) || "{}");
       if (["name", "country", "price", "rating"].includes(pref.sortBy)) {
@@ -899,6 +909,7 @@ drunk	sparkling	FR	프랑스	도츠`;
 
   async function writeCloudWines() {
     if (!currentUser || !firebaseReady) return false;
+    state.wines = enrichWinesWithVariety(state.wines);
     await firebaseApi.setDoc(
       cellarDocRef(),
       {
@@ -967,7 +978,7 @@ drunk	sparkling	FR	프랑스	도츠`;
           return;
         }
         applyingRemote = true;
-        state.wines = data.wines;
+        state.wines = enrichWinesWithVariety(data.wines);
         if (!persistLocalOnly()) quotaAlert();
         applyingRemote = false;
         render();
@@ -1950,6 +1961,9 @@ drunk	sparkling	FR	프랑스	도츠`;
         country: f.country.value,
         type: f.type.value,
         vintage: f.vintage.value.trim(),
+        variety:
+          varietyForName(name) ||
+          (existing && existing.name === name ? existing.variety || "" : ""),
         price: f.price.value.replace(/[^\d]/g, "") || null,
         purchaseDate: f.purchaseDate.value || (isEdit ? "" : today()),
         photo: photo || null,
