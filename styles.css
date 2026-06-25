@@ -394,10 +394,15 @@ body.is-refreshing .pull-refresh__ring {
 }
 .card__sub {
   display: block;
-  margin-top: 3px;
+  width: calc(100% - 27px);
+  margin-top: 6px;
   margin-left: 27px;
   font-size: 12px;
+  line-height: 1.35;
   color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .card__name {
   font-size: 16px;
