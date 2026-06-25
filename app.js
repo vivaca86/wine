@@ -383,6 +383,14 @@ drunk	sparkling	FR	프랑스	도츠`;
       .filter(Boolean)
       .join(", ");
 
+  const varietyParts = (wine) =>
+    normalizeVarietyInput(wine && wine.variety)
+      .split(",")
+      .map((part) => part.trim())
+      .filter(Boolean);
+
+  const primaryVariety = (wine) => varietyParts(wine)[0] || "";
+
   function enrichWinesWithVariety(wines) {
     if (!Array.isArray(wines)) return [];
     return wines.map((wine) => {
@@ -399,6 +407,7 @@ drunk	sparkling	FR	프랑스	도츠`;
     tab: "cellar",
     typeFilters: [],
     countryFilters: [],
+    varietyFilters: [],
     filterPanel: null,
     searchOpen: false,
     searchQuery: "",
@@ -486,7 +495,7 @@ drunk	sparkling	FR	프랑스	도츠`;
         if (raw) state.wines = enrichWinesWithVariety(JSON.parse(raw) || []);
       }
       const pref = JSON.parse(localStorage.getItem(PREF_KEY) || "{}");
-      if (["name", "country", "price", "rating"].includes(pref.sortBy)) {
+      if (["name", "country", "variety", "price", "rating"].includes(pref.sortBy)) {
         state.sortBy = pref.sortBy;
         if (pref.sortDir === "asc" || pref.sortDir === "desc") {
           state.sortDir = pref.sortDir;
@@ -1055,6 +1064,7 @@ drunk	sparkling	FR	프랑스	도츠`;
     state.tab = tab;
     state.typeFilters = [];
     state.countryFilters = [];
+    state.varietyFilters = [];
     state.filterPanel = null;
     state.searchOpen = false;
     state.searchQuery = "";
@@ -1111,7 +1121,7 @@ drunk	sparkling	FR	프랑스	도츠`;
   }
 
   function sortDefaultDir(key) {
-    return key === "name" || key === "country" ? "asc" : "desc";
+    return key === "name" || key === "country" || key === "variety" ? "asc" : "desc";
   }
 
   function sortOptionsFor(kind) {
@@ -1119,11 +1129,13 @@ drunk	sparkling	FR	프랑스	도츠`;
       ? [
           ["name", "이름순"],
           ["country", "국가순"],
+          ["variety", "품종순"],
           ["rating", "별점순"],
         ]
       : [
           ["name", "이름순"],
           ["country", "국가순"],
+          ["variety", "품종순"],
           ["price", "금액순"],
         ];
   }
@@ -1143,6 +1155,15 @@ drunk	sparkling	FR	프랑스	도츠`;
     }, {});
   }
 
+  function countVarieties(wines) {
+    return wines.reduce((acc, wine) => {
+      new Set(varietyParts(wine)).forEach((variety) => {
+        acc[variety] = (acc[variety] || 0) + 1;
+      });
+      return acc;
+    }, {});
+  }
+
   function optionBaseWines(wines, skip) {
     return wines.filter((w) => {
       if (
@@ -1156,6 +1177,13 @@ drunk	sparkling	FR	프랑스	도츠`;
         skip !== "country" &&
         state.countryFilters.length &&
         !state.countryFilters.includes(w.country || "ETC")
+      ) {
+        return false;
+      }
+      if (
+        skip !== "variety" &&
+        state.varietyFilters.length &&
+        !varietyParts(w).some((variety) => state.varietyFilters.includes(variety))
       ) {
         return false;
       }
@@ -1225,12 +1253,32 @@ drunk	sparkling	FR	프랑스	도츠`;
         .join("");
   }
 
+  function varietyOptionsHTML(wines) {
+    const base = optionBaseWines(wines, "variety");
+    const counts = countVarieties(base);
+    const varieties = Object.keys(counts).sort((a, b) => a.localeCompare(b, "ko"));
+    return filterOptionButton("variety", "all", "전체", !state.varietyFilters.length, base.length)
+      + varieties
+        .map((variety) =>
+          filterOptionButton(
+            "variety",
+            variety,
+            `<span>${esc(variety)}</span>`,
+            state.varietyFilters.includes(variety),
+            counts[variety]
+          )
+        )
+        .join("");
+  }
+
   function filterOptionButton(kind, value, labelHTML, active, count) {
     const attr =
       kind === "type"
         ? "data-type-filter"
         : kind === "country"
         ? "data-country-filter"
+        : kind === "variety"
+        ? "data-variety-filter"
         : "data-sort";
     const countHTML =
       count === "" || count == null
@@ -1255,13 +1303,17 @@ drunk	sparkling	FR	프랑스	도츠`;
       .join("");
   }
 
+  function filterSectionHTML(title, body) {
+    return `<div class="filter-section-title">${title}</div>${body}`;
+  }
+
   function filterPanelHTML(wines, kind) {
     if (!state.filterPanel) return "";
     const options =
-      state.filterPanel === "type"
-        ? typeOptionsHTML(wines)
-        : state.filterPanel === "country"
-        ? countryOptionsHTML(wines)
+      state.filterPanel === "filter"
+        ? filterSectionHTML("종류", typeOptionsHTML(wines))
+          + filterSectionHTML("국가", countryOptionsHTML(wines))
+          + filterSectionHTML("품종", varietyOptionsHTML(wines))
         : sortOptionsHTML(kind);
     return `<button class="filter-dismiss" type="button" data-filter-dismiss aria-label="필터 닫기"></button><div class="filter-options filter-options--${state.filterPanel}">${options}</div>`;
   }
@@ -1279,24 +1331,11 @@ drunk	sparkling	FR	프랑스	도츠`;
   }
 
   function listControlsHTML(wines, kind) {
-    const activeType = state.typeFilters.length > 0;
-    const activeCountry = state.countryFilters.length > 0;
+    const activeFilterCount =
+      state.typeFilters.length + state.countryFilters.length + state.varietyFilters.length;
+    const activeFilter = activeFilterCount > 0;
     const activeSearch = !!state.searchQuery.trim();
-    const typeLabel =
-      state.typeFilters.length === 1
-        ? typeOf(state.typeFilters[0]).label
-        : activeType
-        ? `종류 ${state.typeFilters.length}`
-        : "종류";
-    const c = state.countryFilters.length === 1 ? countryOf(state.countryFilters[0]) : null;
-    const countryLabel =
-      state.countryFilters.length === 1
-        ? c
-          ? c.name
-          : "기타"
-        : activeCountry
-        ? `국가 ${state.countryFilters.length}`
-        : "국가";
+    const filterLabel = activeFilter ? `필터 ${activeFilterCount}` : "필터";
     return `
       <div class="list-controls">
         <div class="filterbar">
@@ -1306,11 +1345,8 @@ drunk	sparkling	FR	프랑스	도츠`;
             state.searchOpen || activeSearch ? "true" : "false"
           }">${searchIconHTML()}</button>
           <button class="chip chip--filter ${
-            state.filterPanel === "type" || activeType ? "is-active" : ""
-          }" data-filter-panel="type"><span class="chip__label">${typeLabel}</span></button>
-          <button class="chip chip--filter ${
-            state.filterPanel === "country" || activeCountry ? "is-active" : ""
-          }" data-filter-panel="country"><span class="chip__label">${countryLabel}</span></button>
+            state.filterPanel === "filter" || activeFilter ? "is-active" : ""
+          }" data-filter-panel="filter"><span class="chip__label">${filterLabel}</span></button>
           <button class="chip chip--sort ${
             state.filterPanel === "sort" ? "is-active" : ""
           }" data-filter-panel="sort"><span class="chip__label">정렬</span></button>
@@ -1329,6 +1365,14 @@ drunk	sparkling	FR	프랑스	도츠`;
       const an = ac ? ac.name : "기타";
       const bn = bc ? bc.name : "기타";
       return an.localeCompare(bn, "ko") * dir || a.name.localeCompare(b.name, "ko");
+    }
+    if (state.sortBy === "variety") {
+      const av = primaryVariety(a);
+      const bv = primaryVariety(b);
+      if (!av && !bv) return a.name.localeCompare(b.name, "ko");
+      if (!av) return 1;
+      if (!bv) return -1;
+      return av.localeCompare(bv, "ko") * dir || a.name.localeCompare(b.name, "ko");
     }
     if (state.sortBy === "price") {
       const ap = a.price == null || a.price === "" || isNaN(a.price) ? null : Number(a.price);
@@ -1460,6 +1504,19 @@ drunk	sparkling	FR	프랑스	도츠`;
           state.countryFilters = state.countryFilters.filter((code) => code !== value);
         } else {
           state.countryFilters = [...state.countryFilters, value];
+        }
+        render();
+      });
+    });
+    view.querySelectorAll("[data-variety-filter]").forEach((b) => {
+      b.addEventListener("click", () => {
+        const value = b.dataset.varietyFilter;
+        if (value === "all") {
+          state.varietyFilters = [];
+        } else if (state.varietyFilters.includes(value)) {
+          state.varietyFilters = state.varietyFilters.filter((variety) => variety !== value);
+        } else {
+          state.varietyFilters = [...state.varietyFilters, value];
         }
         render();
       });
@@ -1981,6 +2038,9 @@ drunk	sparkling	FR	프랑스	도츠`;
     const nameInput = sheet.querySelector('[name="name"]');
     const varietyInput = sheet.querySelector('[name="variety"]');
     const varietySuggest = sheet.querySelector("#varietySuggest");
+    let pickedVarietyValue = "";
+    let pickedVarietyFragment = "";
+    let suppressVarietyInputUntil = 0;
 
     const selectedVarietyParts = () =>
       varietyInput.value
@@ -2013,13 +2073,18 @@ drunk	sparkling	FR	프랑스	도츠`;
 
     function applyVarietyChoice(choice) {
       const parts = varietyInput.value.split(",");
+      pickedVarietyFragment = (parts[parts.length - 1] || "").trim();
       parts[parts.length - 1] = choice;
       const normalized = normalizeVarietyInput(parts.join(","));
-      varietyInput.value = normalized ? `${normalized}, ` : "";
-      varietyInput.focus();
-      moveVarietyCaretToEnd();
+      pickedVarietyValue = normalized ? `${normalized}, ` : "";
+      suppressVarietyInputUntil = Date.now() + 250;
+      varietyInput.value = pickedVarietyValue;
       varietySuggest.hidden = true;
       varietySuggest.innerHTML = "";
+      requestAnimationFrame(() => {
+        varietyInput.focus();
+        moveVarietyCaretToEnd();
+      });
     }
 
     function renderVarietySuggestions() {
@@ -2057,6 +2122,19 @@ drunk	sparkling	FR	프랑스	도츠`;
     });
 
     varietyInput.addEventListener("input", () => {
+      if (pickedVarietyValue && Date.now() < suppressVarietyInputUntil) {
+        const appended = varietyInput.value.startsWith(pickedVarietyValue)
+          ? varietyInput.value.slice(pickedVarietyValue.length).trim()
+          : "";
+        if (pickedVarietyFragment && appended === pickedVarietyFragment) {
+          varietyInput.value = pickedVarietyValue;
+          moveVarietyCaretToEnd();
+          return;
+        }
+      }
+      pickedVarietyValue = "";
+      pickedVarietyFragment = "";
+      suppressVarietyInputUntil = 0;
       lastAutoVariety = "";
       renderVarietySuggestions();
     });
@@ -2071,7 +2149,11 @@ drunk	sparkling	FR	프랑스	도츠`;
         varietySuggest.hidden = true;
       }, 120);
     });
-    varietySuggest.addEventListener("mousedown", (e) => e.preventDefault());
+    varietySuggest.addEventListener("pointerdown", (e) => {
+      if (e.target.closest("[data-variety]")) {
+        varietyInput.blur();
+      }
+    });
     varietySuggest.addEventListener("click", (e) => {
       const btn = e.target.closest("[data-variety]");
       if (!btn) return;
