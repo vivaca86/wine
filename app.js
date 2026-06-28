@@ -3098,6 +3098,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     let pickedVarietyFragment = "";
     let suppressVarietyInputUntil = 0;
     let varietyChoiceHandledAt = 0;
+    let varietyComposing = false;
 
     const selectedVarietyParts = () =>
       varietyInput.value
@@ -3145,7 +3146,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       parts[parts.length - 1] = choice;
       const normalized = normalizeVarietyInput(parts.join(","));
       pickedVarietyValue = normalized ? `${normalized}, ` : "";
-      suppressVarietyInputUntil = Date.now() + 250;
+      suppressVarietyInputUntil = Date.now() + 1800;
       varietyInput.value = pickedVarietyValue;
       varietySuggest.hidden = true;
       varietySuggest.innerHTML = "";
@@ -3153,6 +3154,25 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       requestAnimationFrame(() => {
         focusVarietyInputForAppend();
       });
+      [40, 140, 360, 800, 1400].forEach((delay) => {
+        setTimeout(() => {
+          if (cleanupVarietyChoiceGhostInput()) renderVarietySuggestions();
+        }, delay);
+      });
+    }
+
+    function cleanupVarietyChoiceGhostInput() {
+      if (!pickedVarietyValue || !pickedVarietyFragment) return false;
+      if (Date.now() > suppressVarietyInputUntil) return false;
+      if (!varietyInput.value.startsWith(pickedVarietyValue)) return false;
+      const appended = varietyInput.value.slice(pickedVarietyValue.length).trim();
+      if (appended !== pickedVarietyFragment) return false;
+      varietyInput.value = pickedVarietyValue;
+      pickedVarietyValue = "";
+      pickedVarietyFragment = "";
+      suppressVarietyInputUntil = 0;
+      focusVarietyInputForAppend();
+      return true;
     }
 
     function renderVarietySuggestions() {
@@ -3205,16 +3225,19 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       }
     });
 
+    varietyInput.addEventListener("compositionstart", () => {
+      varietyComposing = true;
+    });
+    varietyInput.addEventListener("compositionend", () => {
+      varietyComposing = false;
+      setTimeout(() => {
+        if (cleanupVarietyChoiceGhostInput()) renderVarietySuggestions();
+      }, 0);
+    });
     varietyInput.addEventListener("input", () => {
-      if (pickedVarietyValue && Date.now() < suppressVarietyInputUntil) {
-        const appended = varietyInput.value.startsWith(pickedVarietyValue)
-          ? varietyInput.value.slice(pickedVarietyValue.length).trim()
-          : "";
-        if (pickedVarietyFragment && appended === pickedVarietyFragment) {
-          varietyInput.value = pickedVarietyValue;
-          moveVarietyCaretToEnd();
-          return;
-        }
+      if (cleanupVarietyChoiceGhostInput()) return;
+      if (pickedVarietyValue && Date.now() < suppressVarietyInputUntil && varietyComposing) {
+        return;
       }
       pickedVarietyValue = "";
       pickedVarietyFragment = "";
