@@ -59,7 +59,7 @@
 
   const PREF_KEY = "wine-cellar-pref";
   const SEED_KEY = "wine-cellar-seed-version";
-  const SEED_VERSION = "user-wine-list-2026-06-28-semantic-photo-audit";
+  const SEED_VERSION = "user-wine-list-2026-06-28-gallery-view-image-cleanup";
   const SEED_TSV = `status	type	country_code	country_name	name	vintage
 cellar	red	FR	프랑스	프리에르 로크, 르 끌라우드	2019
 cellar	red	FR	프랑스	Moillard Gevrey-Chambertin	2018
@@ -82,7 +82,7 @@ drunk	red	FR	프랑스	필립 리베라 꼬뜨 드 뉘 빌라쥬	2019
 cellar	red	FR	프랑스	샤또 레오빌 라즈까즈	2018
 drunk	red	FR	프랑스	Charles Aine & Fils Cotes du Rhone	2023
 drunk	red	US	미국	패너 애쉬	2018
-drunk	red	US	미국	덕혼 디코이	2019
+drunk	red	US	미국	Decoy Cabernet Sauvignon	2019
 cellar	red	US	미국	덕혼 디코이 멜롯
 cellar	red	US	미국	덕혼 디코이 멜롯
 cellar	red	US	미국	칼레라 피노누아
@@ -108,7 +108,7 @@ drunk	red	AU	호주	킬리카눈 오라클	2016
 drunk	red	AU	호주	킬리카눈 오라클	2016
 drunk	red	AU	호주	블루 아이드 보이	2021
 drunk	red	AU	호주	더 복서	2021
-drunk	red	AR	아르헨티나	이스까이	2019
+drunk	red	AR	아르헨티나	이스까이 시라 비오니에	2019
 drunk	red	AR	아르헨티나	이스까이	2020
 drunk	red	AR	아르헨티나	이스까이	2020
 drunk	red	AR	아르헨티나	이스까이	2020
@@ -135,7 +135,7 @@ cellar	sparkling	FR	프랑스	돔페르뇽	2013
 cellar	sparkling	FR	프랑스	돔페르뇽	2013
 cellar	sparkling	FR	프랑스	돔페르뇽	2013
 drunk	sparkling	FR	프랑스	돔페르뇽	2013
-cellar	sparkling	FR	프랑스	앙리지로 MV17
+cellar	sparkling	FR	프랑스	앙리 지로 에스쁘리
 cellar	sparkling	FR	프랑스	레어 08
 drunk	sparkling	FR	프랑스	떼땅져
 drunk	sparkling	FR	프랑스	떼땅져
@@ -153,7 +153,7 @@ drunk	sparkling	FR	프랑스	뵈브 끌레꼬
 cellar	sparkling	FR	프랑스	뵈브 끌레꼬 로제
 drunk	sparkling	FR	프랑스	빌까르 살몽 드미섹
 cellar	sparkling	FR	프랑스	볼랭져
-drunk	sparkling	FR	프랑스	멈 그랑 꼬르똥
+drunk	sparkling	FR	프랑스	멈 그랑 꼬르동
 drunk	sparkling	FR	프랑스	페리에 주에
 drunk	sparkling	FR	프랑스	앙드레 끌루에
 drunk	sparkling	FR	프랑스	도츠 브뤼 클래식
@@ -181,7 +181,7 @@ drunk	white	FR	프랑스	Domaine Laroche Saint Martin Chablis	2021
 drunk	white	FR	프랑스	La Chablisienne Chablis 1er Cru Vaillons	2018
 cellar	white	FR	프랑스	Joseph Drouhin Chablis Premier Cru Vaillons	2018
 drunk	white	FR	프랑스	Nicolas Potel Chablis 1er Cru Vaillons	2019
-drunk	white	FR	프랑스	Louis Latour Chablis	2020
+drunk	white	FR	프랑스	샤블리 15000원 확인불가
 drunk	white	HU	헝가리	로얄 토카이 드라이 푸르민트
 drunk	white	HU	헝가리	로얄 토카이 블루라벨
 cellar	white	HU	헝가리	로얄 토카이 블루라벨
@@ -218,7 +218,7 @@ drunk	white	DE	독일	조머 리슬링 트로켄
 drunk	red	FR	프랑스	기갈 지공다스
 drunk	red	FR	프랑스	도멘 페블리 마르사네
 drunk	red	ES	스페인	옥세르 바스테기에타 칼라미티 리오하
-drunk	sparkling	FR	프랑스	샤를 에드시크 브뤼 레제르브
+drunk	sparkling	FR	프랑스	찰스하이직 브뤼 레제르브
 drunk	sparkling	FR	프랑스	클레망 페르스발 레 루로 블랑 드 블랑
 drunk	sparkling	FR	프랑스	클레망 페르스발 르 뤼트 블랑 드 누아
 drunk	red	FR	프랑스	마르크 소야르 크라 부르고뉴	2022
@@ -241,7 +241,6 @@ drunk	sparkling	FR	프랑스	파이퍼 하이직 퀴베 브뤼
 drunk	sparkling	FR	프랑스	파이퍼 하이직 퀴베 브뤼
 drunk	sparkling	FR	프랑스	파이퍼 하이직 퀴베 브뤼
 drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
-
   const VARIETY_BY_WINE_NAME = {
     "프리에르 로크, 르 끌라우드": "피노 누아",
     "Moillard Gevrey-Chambertin": "피노 누아",
@@ -278,6 +277,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     "킬리카눈 오라클": "시라즈",
     "블루 아이드 보이": "시라즈",
     "더 복서": "시라즈",
+    "이스까이 시라 비오니에": "시라, 비오니에",
     "이스까이": "말벡, 카베르네 프랑",
     "세냐": "카베르네 소비뇽, 말벡, 카르메네르, 쁘띠 베르도",
     "돈 멜쵸": "카베르네 소비뇽",
@@ -291,6 +291,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     "크룩 171": "피노 누아, 샤르도네, 피노 뮈니에",
     "크룩 172": "피노 누아, 샤르도네, 피노 뮈니에",
     "돔페르뇽": "피노 누아, 샤르도네",
+    "앙리 지로 에스쁘리": "피노 누아, 샤르도네",
     "앙리지로 MV17": "피노 누아, 샤르도네",
     "레어 08": "샤르도네, 피노 누아",
     "떼땅져": "샤르도네, 피노 누아, 피노 뮈니에",
@@ -304,6 +305,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     "뵈브 끌레꼬 로제": "피노 누아, 샤르도네, 피노 뮈니에",
     "빌까르 살몽 드미섹": "피노 뮈니에, 피노 누아, 샤르도네",
     "볼랭져": "피노 누아, 샤르도네, 피노 뮈니에",
+    "멈 그랑 꼬르동": "피노 누아, 샤르도네, 피노 뮈니에",
     "멈 그랑 꼬르똥": "피노 누아, 샤르도네, 피노 뮈니에",
     "페리에 주에": "피노 누아, 피노 뮈니에, 샤르도네",
     "앙드레 끌루에": "피노 누아",
@@ -328,6 +330,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     "Joseph Drouhin Chablis Premier Cru Vaillons": "샤르도네",
     "Nicolas Potel Chablis 1er Cru Vaillons": "샤르도네",
     "Louis Latour Chablis": "샤르도네",
+    "샤블리 15000원 확인불가": "샤르도네",
     "로얄 토카이 드라이 푸르민트": "푸르민트",
     "로얄 토카이 블루라벨": "푸르민트, 하르슈레벨뤼, 무스카텔",
     "샤또 꾸떼": "세미용, 소비뇽 블랑, 뮈스카델",
@@ -352,6 +355,8 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     "기갈 지공다스": "그르나슈, 시라, 무르베드르",
     "도멘 페블리 마르사네": "피노 누아",
     "옥세르 바스테기에타 칼라미티 리오하": "템프라니요, 가르나차, 비우라, 가르나차 블랑카",
+    "찰스하이직 브뤼 레제르브": "피노 누아, 샤르도네, 피노 뮈니에",
+    "찰스 하이직 브뤼 레제르브": "피노 누아, 샤르도네, 피노 뮈니에",
     "샤를 에드시크 브뤼 레제르브": "피노 누아, 샤르도네, 피노 뮈니에",
     "클레망 페르스발 레 루로 블랑 드 블랑": "샤르도네",
     "클레망 페르스발 르 뤼트 블랑 드 누아": "피노 누아",
@@ -399,13 +404,25 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       old: { name: "덕혼 디코이", country: "US", vintage: "2019" },
       next: { name: "Decoy Cabernet Sauvignon", country: "US", vintage: "2019" },
     },
+    "seed-048": {
+      old: { name: "이스까이", country: "AR", vintage: "2019" },
+      next: { name: "이스까이 시라 비오니에", country: "AR", vintage: "2019" },
+    },
     "seed-058": {
       old: { name: "맨패밀리 피노타쥐", country: "NZ", vintage: "" },
       next: { name: "맨패밀리 피노타쥐", country: "ZA", vintage: "" },
     },
+    "seed-075": {
+      old: { name: "앙리지로 MV17", country: "FR", vintage: "" },
+      next: { name: "앙리 지로 에스쁘리", country: "FR", vintage: "" },
+    },
     "seed-081": {
       old: { name: "필리조 에피스", country: "FR", vintage: "" },
       next: { name: "필리조 에 피스 누메로 3 브뤼", country: "FR", vintage: "" },
+    },
+    "seed-093": {
+      old: { name: "멈 그랑 꼬르똥", country: "FR", vintage: "" },
+      next: { name: "멈 그랑 꼬르동", country: "FR", vintage: "" },
     },
     "seed-099": {
       old: { name: "스모켓 리슬링", country: "DE", vintage: "" },
@@ -451,8 +468,11 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       next: { name: "Nicolas Potel Chablis 1er Cru Vaillons", country: "FR", vintage: "2019" },
     },
     "seed-121": {
-      old: { name: "샤블리. 15000원 뽑기로 뽑은거", country: "FR", vintage: "" },
-      next: { name: "Louis Latour Chablis", country: "FR", vintage: "2020" },
+      old: [
+        { name: "샤블리. 15000원 뽑기로 뽑은거", country: "FR", vintage: "" },
+        { name: "Louis Latour Chablis", country: "FR", vintage: "2020" },
+      ],
+      next: { name: "샤블리 15000원 확인불가", country: "FR", vintage: "" },
     },
     "seed-148": {
       old: { name: "오렌지 카틴 피노 그리", country: "FR", vintage: "" },
@@ -465,6 +485,13 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     "seed-157": {
       old: { name: "칼라미티 리오하", country: "ES", vintage: "" },
       next: { name: "옥세르 바스테기에타 칼라미티 리오하", country: "ES", vintage: "" },
+    },
+    "seed-158": {
+      old: [
+        { name: "샤를 에드시크 브뤼 레제르브", country: "FR", vintage: "" },
+        { name: "찰스 하이직 브뤼 레제르브", country: "FR", vintage: "" },
+      ],
+      next: { name: "찰스하이직 브뤼 레제르브", country: "FR", vintage: "" },
     },
     "seed-160": {
       old: { name: "클레망 페르스발 르 뤼 블랑 드 누아", country: "FR", vintage: "" },
@@ -596,7 +623,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     "seed-001": "wine-images/review-001.jpg",
     "seed-002": "wine-images/review-002.jpg",
     "seed-003": "wine-images/review-003.jpg",
-    "seed-004": "wine-images/review-004.jpg",
+
     "seed-005": "wine-images/review-005.jpg",
     "seed-006": "wine-images/review-006.jpg",
     "seed-008": "wine-images/review-008.jpg",
@@ -605,7 +632,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     "seed-011": "wine-images/review-011.jpg",
     "seed-012": "wine-images/review-012.jpg",
     "seed-013": "wine-images/review-013.jpg",
-    "seed-014": "wine-images/review-014.jpg",
+
     "seed-016": "wine-images/review-016.jpg",
     "seed-017": "wine-images/review-017.jpg",
     "seed-018": "wine-images/review-018.jpg",
@@ -633,9 +660,9 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     "seed-040": "wine-images/review-031.jpg",
     "seed-041": "wine-images/review-032.jpg",
     "seed-042": "wine-images/review-032.jpg",
-    "seed-043": "wine-images/review-033.jpg",
-    "seed-044": "wine-images/review-033.jpg",
-    "seed-045": "wine-images/review-033.jpg",
+
+
+
     "seed-046": "wine-images/review-034.jpg",
     "seed-047": "wine-images/review-035.jpg",
     "seed-048": "wine-images/review-036.jpg",
@@ -665,7 +692,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     "seed-072": "wine-images/review-053.jpg",
     "seed-073": "wine-images/review-053.jpg",
     "seed-074": "wine-images/review-053.jpg",
-    "seed-075": "wine-images/review-054.jpg",
+
     "seed-076": "wine-images/review-055.jpg",
     "seed-077": "wine-images/review-056.jpg",
     "seed-078": "wine-images/review-056.jpg",
@@ -673,7 +700,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     "seed-080": "wine-images/review-056.jpg",
     "seed-081": "wine-images/review-057.jpg",
     "seed-082": "wine-images/review-058.jpg",
-    "seed-083": "wine-images/review-059.jpg",
+
     "seed-084": "wine-images/review-060.jpg",
     "seed-085": "wine-images/review-061.jpg",
     "seed-086": "wine-images/review-062.jpg",
@@ -683,7 +710,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     "seed-090": "wine-images/review-064.jpg",
     "seed-091": "wine-images/review-065.jpg",
     "seed-092": "wine-images/review-066.jpg",
-    "seed-093": "wine-images/review-067.jpg",
+
     "seed-094": "wine-images/review-068.jpg",
     "seed-095": "wine-images/review-069.jpg",
     "seed-096": "wine-images/review-070.jpg",
@@ -691,7 +718,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     "seed-098": "wine-images/review-072.jpg",
     "seed-099": "wine-images/review-073.jpg",
     "seed-100": "wine-images/review-074.jpg",
-    "seed-101": "wine-images/review-075.jpg",
+
     "seed-102": "wine-images/review-076.jpg",
     "seed-105": "wine-images/review-077.jpg",
     "seed-106": "wine-images/review-078.jpg",
@@ -708,7 +735,6 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     "seed-117": "wine-images/review-085.jpg",
     "seed-118": "wine-images/review-086.jpg",
     "seed-119": "wine-images/review-087.jpg",
-    "seed-121": "wine-images/review-089.jpg",
     "seed-122": "wine-images/review-090.jpg",
     "seed-123": "wine-images/review-091.jpg",
     "seed-124": "wine-images/review-091.jpg",
@@ -729,8 +755,8 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     "seed-139": "wine-images/review-102.jpg",
     "seed-140": "wine-images/review-103.jpg",
     "seed-141": "wine-images/review-104.jpg",
-    "seed-142": "wine-images/review-105.jpg",
-    "seed-143": "wine-images/review-106.jpg",
+
+
     "seed-144": "wine-images/review-107.jpg",
     "seed-145": "wine-images/review-108.jpg",
     "seed-146": "wine-images/review-109.jpg",
@@ -741,7 +767,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     "seed-151": "wine-images/review-113.jpg",
     "seed-152": "wine-images/review-114.jpg",
     "seed-154": "wine-images/review-116.jpg",
-    "seed-155": "wine-images/review-117.jpg",
+
     "seed-156": "wine-images/review-118.jpg",
     "seed-157": "wine-images/review-119.jpg",
     "seed-158": "wine-images/review-120.jpg",
@@ -754,12 +780,12 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     "seed-167": "wine-images/review-126.jpg",
     "seed-168": "wine-images/review-127.jpg",
     "seed-169": "wine-images/review-127.jpg",
-    "seed-170": "wine-images/review-128.jpg",
-    "seed-171": "wine-images/review-128.jpg",
+
+
     "seed-172": "wine-images/review-129.jpg",
     "seed-173": "wine-images/review-129.jpg",
-    "seed-174": "wine-images/review-130.jpg",
-    "seed-175": "wine-images/review-130.jpg",
+    "seed-174": "wine-images/review-104.jpg",
+    "seed-175": "wine-images/review-104.jpg",
     "seed-176": "wine-images/review-068.jpg",
     "seed-177": "wine-images/review-131.jpg",
     "seed-178": "wine-images/review-131.jpg",
@@ -858,6 +884,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     searchQuery: "",
     sortBy: "name",
     sortDir: "asc",
+    viewMode: "list",
     lastViewedId: null,
     syncStatus: "local",
     syncMessage: "",
@@ -950,6 +977,9 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
           state.sortDir = pref.sortDir;
         }
       }
+      if (pref.viewMode === "list" || pref.viewMode === "image") {
+        state.viewMode = pref.viewMode;
+      }
     } catch (e) {
       state.wines = seedWines();
     }
@@ -958,7 +988,11 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     try {
       localStorage.setItem(
         PREF_KEY,
-        JSON.stringify({ sortBy: state.sortBy, sortDir: state.sortDir })
+        JSON.stringify({
+          sortBy: state.sortBy,
+          sortDir: state.sortDir,
+          viewMode: state.viewMode,
+        })
       );
     } catch (e) {}
   }
@@ -1533,7 +1567,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
   }
 
   function markViewedCard() {
-    view.querySelectorAll(".card[data-id]").forEach((card) => {
+    view.querySelectorAll(".card[data-id], .wine-tile[data-id]").forEach((card) => {
       card.classList.toggle("is-viewed", card.dataset.id === state.lastViewedId);
     });
   }
@@ -1779,6 +1813,21 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     </div>`;
   }
 
+  function viewModeControlsHTML() {
+    return `<div class="view-mode" role="group" aria-label="보기 방식">
+      <button class="view-mode__btn ${
+        state.viewMode === "list" ? "is-active" : ""
+      }" type="button" data-view-mode="list" aria-pressed="${
+        state.viewMode === "list" ? "true" : "false"
+      }">리스트</button>
+      <button class="view-mode__btn ${
+        state.viewMode === "image" ? "is-active" : ""
+      }" type="button" data-view-mode="image" aria-pressed="${
+        state.viewMode === "image" ? "true" : "false"
+      }">이미지</button>
+    </div>`;
+  }
+
   function listControlsHTML(wines, kind) {
     const activeFilterCount =
       state.typeFilters.length + state.countryFilters.length + state.varietyFilters.length;
@@ -1787,6 +1836,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     const filterLabel = activeFilter ? `필터 ${activeFilterCount}` : "필터";
     return `
       <div class="list-controls">
+        ${viewModeControlsHTML()}
         <div class="filterbar">
           <button class="chip chip--search ${
             state.searchOpen || activeSearch ? "is-active" : ""
@@ -1844,9 +1894,15 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
 
   function listResultsHTML(wines, kind) {
     const filtered = applyListFilters(wines).sort(compareWineList);
-    return filtered.length
-      ? '<div class="list">' + filtered.map((w) => wineRow(w, kind)).join("") + "</div>"
-      : `<div class="filtered-empty">조건에 맞는 와인이 없어요.</div>`;
+    if (!filtered.length) return `<div class="filtered-empty">조건에 맞는 와인이 없어요.</div>`;
+    if (state.viewMode === "image") {
+      return (
+        '<div class="image-grid">' +
+        filtered.map((w) => wineImageTile(w, kind)).join("") +
+        "</div>"
+      );
+    }
+    return '<div class="list">' + filtered.map((w) => wineRow(w, kind)).join("") + "</div>";
   }
 
   function refreshListResults(wines, kind) {
@@ -1859,6 +1915,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
   /* shared list renderer for cellar / drunk tabs */
   function renderList(wines, kind) {
     normalizeSortForKind(kind);
+    if (state.viewMode !== "list" && state.viewMode !== "image") state.viewMode = "list";
     let html = listControlsHTML(wines, kind);
     html += `<div id="wineListResults">${listResultsHTML(wines, kind)}</div>`;
     view.innerHTML = html;
@@ -1892,7 +1949,36 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       </button>`;
   }
 
+  function wineImageTile(w, kind) {
+    const viewed = w.id === state.lastViewedId ? " is-viewed" : "";
+    const vint = w.vintage ? ` ${w.vintage}` : "";
+    const label = `${w.name}${vint}`;
+    const photo = w.photo
+      ? `<img class="wine-tile__photo" src="${esc(w.photo)}" alt="${esc(label)}" loading="lazy" />`
+      : `<span class="wine-tile__placeholder" aria-hidden="true">${typeIconHTML(
+          w.type,
+          "detail"
+        )}</span>`;
+    const meta =
+      kind === "drunk"
+        ? `<span class="wine-tile__rating">${starsHTML(w.rating || 0)}</span>`
+        : `<span class="wine-tile__price">${won(w.price)}</span>`;
+    return `<button class="wine-tile wine-tile--${kind}${viewed}" type="button" data-id="${
+      w.id
+    }" aria-label="${esc(label)}">
+      <span class="wine-tile__image">${photo}</span>
+      <span class="wine-tile__meta">${meta}</span>
+    </button>`;
+  }
+
   function bindListControls(wines, kind) {
+    view.querySelectorAll("[data-view-mode]").forEach((b) => {
+      b.addEventListener("click", () => {
+        state.viewMode = b.dataset.viewMode === "image" ? "image" : "list";
+        savePref();
+        render();
+      });
+    });
     view.querySelector("[data-search-toggle]")?.addEventListener("click", () => {
       state.searchOpen = !state.searchOpen;
       state.filterPanel = null;
@@ -2870,7 +2956,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
 
   /* ---------- Wiring ---------- */
   function bindCards() {
-    view.querySelectorAll(".card[data-id]").forEach((c) => {
+    view.querySelectorAll(".card[data-id], .wine-tile[data-id]").forEach((c) => {
       c.addEventListener("click", () => {
         state.lastViewedId = c.dataset.id;
         markViewedCard();

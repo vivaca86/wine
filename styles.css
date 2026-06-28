@@ -509,6 +509,85 @@ body.is-refreshing .pull-refresh__ring {
   white-space: nowrap;
 }
 
+.image-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+  padding-bottom: 14px;
+}
+.wine-tile {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) 34px;
+  width: 100%;
+  min-width: 0;
+  height: 268px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(255, 253, 248, 0.88);
+  box-shadow: var(--shadow-card);
+  transition: background 0.12s ease, border-color 0.12s ease,
+    transform 0.12s ease;
+}
+.wine-tile:active {
+  background: var(--off-white);
+  transform: translateY(1px);
+}
+.wine-tile.is-viewed {
+  border-color: rgba(130, 49, 61, 0.34);
+  background: rgba(255, 247, 239, 0.96);
+}
+.wine-tile__image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+.wine-tile__photo {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+.wine-tile__placeholder {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  color: rgba(23, 22, 20, 0.36);
+  background: rgba(23, 22, 20, 0.05);
+}
+.wine-tile__meta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  overflow: hidden;
+  border-top: 1px solid rgba(48, 42, 34, 0.08);
+  color: var(--charcoal);
+  font-size: 13px;
+  font-weight: 760;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.wine-tile__rating .stars {
+  gap: 1px;
+  font-size: 12px;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+@media (min-width: 720px) {
+  .image-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
 /* Type badge */
 .badge {
   display: inline-flex;
@@ -1607,6 +1686,32 @@ img.card__photo {
   position: relative;
   z-index: 6;
   margin-bottom: 10px;
+}
+.view-mode {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  margin-bottom: 8px;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(255, 253, 248, 0.64);
+}
+.view-mode__btn {
+  height: 34px;
+  min-width: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 760;
+  letter-spacing: 0;
+}
+.view-mode__btn.is-active {
+  background: var(--charcoal);
+  color: var(--off-white);
+  box-shadow: rgba(23, 22, 20, 0.14) 0 5px 12px;
 }
 .filterbar {
   position: relative;
