@@ -2060,7 +2060,7 @@ drunk	sparkling	FR	프랑스	도츠`;
 
   /* ---------- Add / Edit form ---------- */
   function openForm(existing) {
-    const w = existing || { type: "red", purchaseDate: today() };
+    const w = existing || { type: "red", purchaseDate: "" };
     const isEdit = !!existing;
     const isDrunkEdit = isEdit && existing.status === "drunk";
     const selectedType = FORM_TYPE_IDS.includes(w.type) ? w.type : "red";
@@ -2395,7 +2395,7 @@ drunk	sparkling	FR	프랑스	도츠`;
         vintage: f.vintage.value.trim(),
         variety: normalizeVarietyInput(f.variety.value) || varietyForName(name),
         price: f.price.value.replace(/[^\d]/g, "") || null,
-        purchaseDate: f.purchaseDate.value || (isEdit ? "" : today()),
+        purchaseDate: f.purchaseDate.value || "",
         photo: photo || null,
       };
       if (isDrunkEdit) {
@@ -2569,7 +2569,7 @@ drunk	sparkling	FR	프랑스	도츠`;
         <div class="field">
           <label class="field__label">마신 날</label>
           <input class="input" name="drunkDate" type="date" value="${esc(
-            w.drunkDate || today()
+            w.drunkDate || ""
           )}" />
         </div>
 
@@ -2595,7 +2595,7 @@ drunk	sparkling	FR	프랑스	도츠`;
       const backup = Object.assign({}, w);
       w.status = "drunk";
       w.rating = getRating();
-      w.drunkDate = f.drunkDate.value || today();
+      w.drunkDate = f.drunkDate.value || "";
       w.note = f.note.value.trim();
       if (!persist(makeAuditLog("markDrunk", backup, w))) {
         Object.assign(w, backup);
