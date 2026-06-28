@@ -2033,7 +2033,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     const meta =
       kind === "drunk"
         ? `<span class="wine-tile__rating">${starsHTML(w.rating || 0)}</span>`
-        : `<span class="wine-tile__price">${won(w.price)}</span>`;
+        : `<span class="wine-tile__name">${esc(w.name)}</span>`;
     return `<button class="wine-tile wine-tile--${kind}${viewed}" type="button" data-id="${
       w.id
     }" aria-label="${esc(label)}">
