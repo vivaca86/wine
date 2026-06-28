@@ -3411,12 +3411,17 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       setTimeout(() => openForm(w), 280);
     });
     sheet.querySelector('[data-action="undo"]')?.addEventListener("click", () => {
+      if (!confirm(`셀러로 되돌릴까요?\n\n${w.name}`)) return;
       const backup = Object.assign({}, w);
       w.status = "cellar";
       delete w.rating;
       delete w.note;
       delete w.drunkDate;
-      persist(makeAuditLog("undoDrunk", backup, w));
+      if (!persist(makeAuditLog("undoDrunk", backup, w))) {
+        Object.assign(w, backup);
+        quotaAlert();
+        return;
+      }
       closeSheet();
       render();
     });
