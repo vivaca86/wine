@@ -1620,6 +1620,15 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     render();
   }
 
+  function scrollCurrentTabToTop() {
+    const scroller = document.scrollingElement || document.documentElement;
+    if (window.scrollTo) {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } else {
+      scroller.scrollTop = 0;
+    }
+  }
+
   function render() {
     if (state.tab === "cellar") renderCellar();
     else if (state.tab === "drunk") renderDrunk();
@@ -3028,7 +3037,14 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
   }
 
   document.querySelectorAll(".tab").forEach((b) => {
-    b.addEventListener("click", () => setTab(b.dataset.tab));
+    b.addEventListener("click", () => {
+      const nextTab = b.dataset.tab;
+      if (nextTab === state.tab) {
+        scrollCurrentTabToTop();
+        return;
+      }
+      setTab(nextTab);
+    });
   });
   $("#addBtn").addEventListener("click", () => openForm(null));
   backdrop.addEventListener("click", closeSheet);
