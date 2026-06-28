@@ -1067,13 +1067,28 @@ body.is-refreshing .pull-refresh__ring {
   box-shadow: rgba(130, 49, 61, 0.12) 0 0 0 4px;
 }
 .field--variety {
+  position: relative;
+  z-index: 12;
   margin-bottom: 18px;
 }
 .variety-suggest {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(100% + 8px);
+  z-index: 80;
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin-top: 8px;
+  max-height: 116px;
+  margin: 0;
+  padding: 8px;
+  overflow-y: auto;
+  border: 1px solid rgba(130, 49, 61, 0.16);
+  border-radius: 12px;
+  background: rgba(255, 253, 248, 0.98);
+  box-shadow: rgba(39, 33, 24, 0.16) 0 12px 28px;
+  -webkit-overflow-scrolling: touch;
 }
 .variety-suggest[hidden] {
   display: none;
@@ -1108,7 +1123,7 @@ body.is-refreshing .pull-refresh__ring {
   padding: 13px;
   min-width: 0;
   max-width: 100%;
-  overflow: hidden;
+  overflow: visible;
   background: rgba(255, 253, 248, 0.62);
   border: 1px solid var(--border);
   border-radius: var(--r-card);
@@ -1136,6 +1151,9 @@ body.is-refreshing .pull-refresh__ring {
 .row-2 > .field {
   min-width: 0;
 }
+.row-2 > .field--variety .variety-suggest {
+  left: calc(-100% - 10px);
+}
 
 #wineForm,
 #drinkForm {
@@ -1155,6 +1173,10 @@ body.is-refreshing .pull-refresh__ring {
   .row-2 {
     grid-template-columns: 1fr;
     gap: 0;
+  }
+
+  .row-2 > .field--variety .variety-suggest {
+    left: 0;
   }
 }
 
