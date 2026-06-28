@@ -196,7 +196,13 @@ function extractOutputText(payload) {
   return "";
 }
 
-async function analyzeWithOpenAI(image) {
+function shouldRetryWithHighDetail(suggestion) {
+  if (!suggestion || typeof suggestion !== "object") return true;
+  if (!suggestion.name) return true;
+  return Number(suggestion.confidence || 0) < 0.55;
+}
+
+async function analyzeWithOpenAI(image, detail = "low") {
   const apiKey = openaiApiKey.value();
   if (!apiKey) {
     throw new HttpsError("failed-precondition", "OPENAI_API_KEY secret이 아직 설정되지 않았어요.");
@@ -234,7 +240,7 @@ async function analyzeWithOpenAI(image) {
             {
               type: "input_image",
               image_url: image,
-              detail: "low",
+              detail,
             },
           ],
         },
@@ -316,15 +322,24 @@ exports.analyzeWineLabel = onCall(
     }
 
     await reserveMonthlyUsage(uid);
-    const suggestion = await analyzeWithOpenAI(image);
+    let detail = "low";
+    let suggestion = await analyzeWithOpenAI(image, detail);
+    let retriedHighDetail = false;
+    if (shouldRetryWithHighDetail(suggestion)) {
+      detail = "high";
+      retriedHighDetail = true;
+      suggestion = await analyzeWithOpenAI(image, detail);
+    }
     logger.info("Wine label analyzed", {
       uid,
       hasName: !!suggestion.name,
       hasVintage: !!suggestion.vintage,
       type: suggestion.type,
       confidence: suggestion.confidence,
+      detail,
+      retriedHighDetail,
     });
 
-    return { suggestion };
+    return { suggestion, detail, retriedHighDetail };
   }
 );
