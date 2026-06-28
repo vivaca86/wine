@@ -2852,17 +2852,41 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
           )}" required />
         </div>
 
-        <div class="field">
-          <label class="field__label">국가</label>
-          <select class="select" name="country">
-            <option value="">국가 선택</option>
-            ${COUNTRIES.map(
-              (c) =>
-                `<option value="${c.code}" ${
-                  w.country === c.code ? "selected" : ""
-                }>${c.name}</option>`
-            ).join("")}
-          </select>
+        <div class="row-2">
+          <div class="field">
+            <label class="field__label">빈티지 <span class="opt">(선택)</span></label>
+            <input class="input" name="vintage" inputmode="numeric" placeholder="예: 2018" value="${esc(
+              w.vintage || ""
+            )}" />
+          </div>
+          <div class="field field--variety">
+            <label class="field__label">품종 <span class="opt">(선택)</span></label>
+            <input class="input" name="variety" id="varietyInput" autocomplete="off" placeholder="예: 샤르도네" value="${esc(
+              initialVariety
+            )}" />
+            <div class="variety-suggest" id="varietySuggest" hidden></div>
+          </div>
+        </div>
+
+        <div class="row-2">
+          <div class="field">
+            <label class="field__label">국가</label>
+            <select class="select" name="country">
+              <option value="">국가 선택</option>
+              ${COUNTRIES.map(
+                (c) =>
+                  `<option value="${c.code}" ${
+                    w.country === c.code ? "selected" : ""
+                  }>${c.name}</option>`
+              ).join("")}
+            </select>
+          </div>
+          <div class="field">
+            <label class="field__label">구입 가격 <span class="opt">(원)</span></label>
+            <input class="input" name="price" inputmode="numeric" placeholder="예: 85000" value="${
+              w.price != null ? esc(w.price) : ""
+            }" />
+          </div>
         </div>
 
         <div class="field">
@@ -2876,29 +2900,6 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
             ).join("")}
           </div>
           <input type="hidden" name="type" value="${selectedType}" />
-        </div>
-
-        <div class="field field--variety">
-          <label class="field__label">품종 <span class="opt">(선택)</span></label>
-          <input class="input" name="variety" id="varietyInput" autocomplete="off" placeholder="예: 피노 누아, 샤르도네" value="${esc(
-            initialVariety
-          )}" />
-          <div class="variety-suggest" id="varietySuggest" hidden></div>
-        </div>
-
-        <div class="row-2">
-          <div class="field">
-            <label class="field__label">빈티지 <span class="opt">(선택)</span></label>
-            <input class="input" name="vintage" inputmode="numeric" placeholder="예: 2018" value="${esc(
-              w.vintage || ""
-            )}" />
-          </div>
-          <div class="field">
-            <label class="field__label">구입 가격 <span class="opt">(원)</span></label>
-            <input class="input" name="price" inputmode="numeric" placeholder="예: 85000" value="${
-              w.price != null ? esc(w.price) : ""
-            }" />
-          </div>
         </div>
 
         <div class="field">
