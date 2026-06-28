@@ -59,7 +59,7 @@
 
   const PREF_KEY = "wine-cellar-pref";
   const SEED_KEY = "wine-cellar-seed-version";
-  const SEED_VERSION = "user-wine-list-2026-06-28-fill-all-except-unknown-chablis";
+  const SEED_VERSION = "user-wine-list-2026-06-28-normalize-cloud-seed-data";
   const SEED_TSV = `status	type	country_code	country_name	name	vintage
 cellar	red	FR	프랑스	프리에르 로크, 르 끌라우드	2019
 cellar	red	FR	프랑스	Moillard Gevrey-Chambertin	2018
@@ -413,7 +413,13 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       next: { name: "맨패밀리 피노타쥐", country: "ZA", vintage: "" },
     },
     "seed-075": {
-      old: { name: "앙리지로 MV17", country: "FR", vintage: "" },
+      old: [
+        { name: "앙리지로 MV17", country: "FR", vintage: "" },
+        { name: "앙리 지로 MV17", country: "FR", vintage: "" },
+        { name: "Henri Giraud MV17", country: "FR", vintage: "" },
+        { name: "앙리지로 에스쁘리", country: "FR", vintage: "" },
+        { name: "Henri Giraud Esprit", country: "FR", vintage: "" },
+      ],
       next: { name: "앙리 지로 에스쁘리", country: "FR", vintage: "" },
     },
     "seed-081": {
@@ -816,9 +822,18 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
   };
   const DEFAULT_PHOTO_AUTOFILL_ENABLED = true;
   const DEFAULT_PHOTO_RE = /^wine-images\/(?:ready|review)-\d{3}\.jpg$/;
+  const DEFAULT_PHOTO_BY_WINE_NAME = {
+    "앙리 지로 에스쁘리": "wine-images/review-133.jpg",
+    "앙리지로 에스쁘리": "wine-images/review-133.jpg",
+    "Henri Giraud Esprit": "wine-images/review-133.jpg",
+    "Henri Giraud Esprit Nature": "wine-images/review-133.jpg",
+  };
 
   const defaultPhotoForWineId = (id) =>
     DEFAULT_PHOTO_AUTOFILL_ENABLED ? DEFAULT_PHOTO_BY_WINE_ID[id] || null : null;
+
+  const defaultPhotoForWineName = (name) =>
+    DEFAULT_PHOTO_AUTOFILL_ENABLED ? DEFAULT_PHOTO_BY_WINE_NAME[(name || "").trim()] || null : null;
 
   const isDefaultPhoto = (photo) =>
     typeof photo === "string" && DEFAULT_PHOTO_RE.test(photo);
@@ -882,7 +897,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     return wines.map((wine) => {
       if (!wine || typeof wine !== "object") return wine;
       const variety = varietyForName(wine.name);
-      const photo = defaultPhotoForWineId(wine.id);
+      const photo = defaultPhotoForWineId(wine.id) || defaultPhotoForWineName(wine.name);
       const updates = {};
       if (variety && !(wine.variety || "").trim()) updates.variety = variety;
       if (photo && (!(wine.photo || "").trim() || isDefaultPhoto(wine.photo))) {
@@ -892,6 +907,10 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       if (!DEFAULT_PHOTO_AUTOFILL_ENABLED && isDefaultPhoto(wine.photo)) updates.photo = null;
       return Object.keys(updates).length ? Object.assign({}, wine, updates) : wine;
     });
+  }
+
+  function normalizeWines(wines) {
+    return enrichWinesWithVariety(applySeedCorrections(wines));
   }
 
   /* ---------- State ---------- */
@@ -959,7 +978,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
 
     const seeds = seedWines();
     if (raw) {
-      const existing = enrichWinesWithVariety(applySeedCorrections(JSON.parse(raw) || []));
+      const existing = normalizeWines(JSON.parse(raw) || []);
       const seedById = new Map(seeds.map((seed) => [seed.id, seed]));
       const existingIds = new Set(existing.map((w) => w.id));
       existing.forEach((wine) => {
@@ -976,7 +995,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
           existing.push(seed);
         }
       });
-      state.wines = enrichWinesWithVariety(existing);
+      state.wines = normalizeWines(existing);
     } else {
       state.wines = seeds;
     }
@@ -990,7 +1009,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     try {
       if (!applySeedIfNeeded()) {
         const raw = localStorage.getItem(STORE_KEY);
-        if (raw) state.wines = enrichWinesWithVariety(JSON.parse(raw) || []);
+        if (raw) state.wines = normalizeWines(JSON.parse(raw) || []);
       }
       const pref = JSON.parse(localStorage.getItem(PREF_KEY) || "{}");
       if (["name", "country", "variety", "price", "rating"].includes(pref.sortBy)) {
@@ -1442,7 +1461,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
 
   async function writeCloudWines() {
     if (!currentUser || !firebaseReady) return false;
-    state.wines = enrichWinesWithVariety(state.wines);
+    state.wines = normalizeWines(state.wines);
     await firebaseApi.setDoc(
       cellarDocRef(),
       {
@@ -1510,11 +1529,14 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
           setSyncStatus("error", "클라우드 데이터 형식이 올바르지 않아요.");
           return;
         }
+        const normalizedWines = normalizeWines(data.wines);
+        const shouldBackfillCloud = JSON.stringify(data.wines) !== JSON.stringify(normalizedWines);
         applyingRemote = true;
-        state.wines = enrichWinesWithVariety(data.wines);
+        state.wines = normalizedWines;
         if (!persistLocalOnly()) quotaAlert();
         applyingRemote = false;
         render();
+        if (shouldBackfillCloud) writeCloudWines().catch(handleSyncError);
         setSyncStatus("synced", "실시간 동기화 중");
       },
       (error) => {
