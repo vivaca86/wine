@@ -59,15 +59,15 @@
 
   const PREF_KEY = "wine-cellar-pref";
   const SEED_KEY = "wine-cellar-seed-version";
-  const SEED_VERSION = "user-wine-list-2026-06-25-add-varieties";
+  const SEED_VERSION = "user-wine-list-2026-06-28-ready-white-photos";
   const SEED_TSV = `status	type	country_code	country_name	name	vintage
 cellar	red	FR	프랑스	프리에르 로크, 르 끌라우드	2019
-cellar	red	FR	프랑스	모알라 제브리 샹베르땅	2018
+cellar	red	FR	프랑스	Moillard Gevrey-Chambertin	2018
 cellar	red	FR	프랑스	알렉스 감발 제브리 샹베르땅	2019
 drunk	red	FR	프랑스	앙또네 귀용 알렉스 꼬르동 1CRU 레 푸르니에	2017
 cellar	red	FR	프랑스	죠셉 드루앵 제브리 샹베르땅	2017
 cellar	red	FR	프랑스	루이 라투르 제브리 샹베르땅	2018
-cellar	red	FR	프랑스	본 트롱 1CRU	2020
+cellar	red	FR	프랑스	Barolet Pernot Pere & Fils Beaune Teurons 1er Cru	2020
 drunk	red	FR	프랑스	A.F. GROS 브르고뉴	2019
 drunk	red	FR	프랑스	샤또 딸보	2014
 drunk	red	FR	프랑스	샤또 딸보 하프보틀	2019
@@ -80,7 +80,7 @@ drunk	red	FR	프랑스	샤또 르 퓌 에밀리앙	2018
 drunk	red	FR	프랑스	죠셉 드루앵 라포레 브르고뉴	2019
 drunk	red	FR	프랑스	필립 리베라 꼬뜨 드 뉘 빌라쥬	2019
 cellar	red	FR	프랑스	샤또 레오빌 라즈까즈	2018
-drunk	red	FR	프랑스	샤를 에네 꼬뜨 뒤 론
+drunk	red	FR	프랑스	Charles Aine & Fils Cotes du Rhone	2023
 drunk	red	US	미국	패너 애쉬	2018
 drunk	red	US	미국	덕혼 디코이	2019
 cellar	red	US	미국	덕혼 디코이 멜롯
@@ -118,7 +118,7 @@ cellar	red	CL	칠레	돈 멜쵸	2020
 cellar	red	IT	이탈리아	사시까이아	2019
 cellar	red	IT	이탈리아	라 스피네따 바르바레스코 스타데리	2014
 drunk	red	NZ	뉴질랜드	클라우디베이 피노누아	2018
-drunk	red	NZ	뉴질랜드	맨패밀리 피노타쥐
+drunk	red	ZA	남아공	맨패밀리 피노타쥐
 cellar	sparkling	FR	프랑스	크리스탈	2012
 cellar	sparkling	FR	프랑스	크리스탈	2014
 cellar	sparkling	FR	프랑스	크리스탈	2015
@@ -141,7 +141,7 @@ drunk	sparkling	FR	프랑스	떼땅져
 drunk	sparkling	FR	프랑스	떼땅져
 cellar	sparkling	FR	프랑스	떼땅져
 drunk	sparkling	FR	프랑스	떼땅져
-drunk	sparkling	FR	프랑스	필리조 에피스
+drunk	sparkling	FR	프랑스	필리조 에 피스 누메로 3 브뤼
 cellar	sparkling	FR	프랑스	뽀므리
 drunk	sparkling	FR	프랑스	플뢰리
 drunk	sparkling	FR	프랑스	파이퍼 하이직
@@ -159,12 +159,12 @@ drunk	sparkling	FR	프랑스	앙드레 끌루에
 drunk	sparkling	FR	프랑스	도츠
 drunk	white	FR	프랑스	게뷔르츠트라미너 그로씨 로에	2011
 cellar	white	FR	프랑스	휘겔 게뷔리츠트라미너
-drunk	white	DE	독일	스모켓 리슬링
+drunk	white	DE	독일	스모캣 리슬링
 drunk	white	ZA	남아공	맨패밀리 슈냉블랑
 drunk	white	DE	독일	군트럼 카비넷
-drunk	white	CL	칠레	도스코파스
-drunk	white	NZ	뉴질랜드	브레이크 포인트 소비뇽블랑
-drunk	white	NZ	뉴질랜드	브레이크 포인트 소비뇽블랑
+drunk	white	CL	칠레	Dos Copas Sauvignon Blanc	2023
+drunk	white	NZ	뉴질랜드	Break Point Sauvignon Blanc Marlborough
+drunk	white	NZ	뉴질랜드	Break Point Sauvignon Blanc Marlborough
 drunk	white	NZ	뉴질랜드	래빗 아일랜드 소비뇽블랑
 drunk	white	NZ	뉴질랜드	베비치 블랙 소비뇽블랑
 cellar	white	NZ	뉴질랜드	더 패스 소비뇽블랑
@@ -177,12 +177,12 @@ drunk	white	DE	독일	로버트 바일 리슬링	2021
 drunk	white	DE	독일	로버트 바일 리슬링	2021
 drunk	white	DE	독일	로버트 바일 리슬링 스파클링
 drunk	white	FR	프랑스	루이자도 샤블리	2021
-drunk	white	FR	프랑스	샤블리 생마르땡	2021
-drunk	white	FR	프랑스	바이용 샤블리 1CRU	2018
-cellar	white	FR	프랑스	조셉드루앙 샤블리 1CRU	2018
-drunk	white	FR	프랑스	메종 니꼴라 뽀뗄 샤블리 1er 발롱
-drunk	white	FR	프랑스	샤블리. 15000원 뽑기로 뽑은거
-drunk	white	HU	헝가리	로얄토카이
+drunk	white	FR	프랑스	Domaine Laroche Saint Martin Chablis	2021
+drunk	white	FR	프랑스	La Chablisienne Chablis 1er Cru Vaillons	2018
+cellar	white	FR	프랑스	Joseph Drouhin Chablis Premier Cru Vaillons	2018
+drunk	white	FR	프랑스	Nicolas Potel Chablis 1er Cru Vaillons	2019
+drunk	white	FR	프랑스	Louis Latour Chablis	2020
+drunk	white	HU	헝가리	로얄 토카이 드라이 푸르민트
 drunk	white	HU	헝가리	로얄 토카이 블루라벨
 cellar	white	HU	헝가리	로얄 토카이 블루라벨
 cellar	white	FR	프랑스	샤또 꾸떼	2016
@@ -208,20 +208,20 @@ drunk	white	IT	이탈리아	시라꼬	2021
 cellar	white	IT	이탈리아	브리꼬 꽐리아	2021
 drunk	white	IT	이탈리아	브리꼬 꽐리아	2022
 drunk	white	IT	이탈리아	브리꼬 꽐리아	2022
-drunk	white	FR	프랑스	오렌지 카틴 피노 그리
+drunk	white	FR	프랑스	Cattin Orange Pinot Gris
 drunk	red	US	미국	브레드 앤 버터 피노 누아
 drunk	red	CL	칠레	몬테스 클래식 시리즈 카베르네 소비뇽
 drunk	red	IT	이탈리아	브라이다 일 바치알레
 drunk	red	FR	프랑스	루이 자도 부르고뉴 피노 누아
-drunk	red	AU	호주	체라볼로 프티 베르도
+drunk	red	AU	호주	Ceravolo Petit Verdot	2019
 drunk	white	DE	독일	조머 리슬링 트로켄
 drunk	red	FR	프랑스	기갈 지공다스
 drunk	red	FR	프랑스	도멘 페블리 마르사네
-drunk	red	ES	스페인	칼라미티 리오하
+drunk	red	ES	스페인	옥세르 바스테기에타 칼라미티 리오하
 drunk	sparkling	FR	프랑스	샤를 에드시크 브뤼 레제르브
 drunk	sparkling	FR	프랑스	클레망 페르스발 레 루로 블랑 드 블랑
-drunk	sparkling	FR	프랑스	클레망 페르스발 르 뤼 블랑 드 누아
-drunk	red	FR	프랑스	마르크 소야르 크라 2022 부르고뉴
+drunk	sparkling	FR	프랑스	클레망 페르스발 르 뤼트 블랑 드 누아
+drunk	red	FR	프랑스	마르크 소야르 크라 부르고뉴	2022
 drunk	sparkling	FR	프랑스	마리 노엘 르드뤼 퀴베 뒤 굴테 그랑 크뤼
 drunk	white	NZ	뉴질랜드	머드하우스 소비뇽 블랑
 drunk	white	NZ	뉴질랜드	머드하우스 소비뇽 블랑
@@ -244,12 +244,12 @@ drunk	sparkling	FR	프랑스	도츠`;
 
   const VARIETY_BY_WINE_NAME = {
     "프리에르 로크, 르 끌라우드": "피노 누아",
-    "모알라 제브리 샹베르땅": "피노 누아",
+    "Moillard Gevrey-Chambertin": "피노 누아",
     "알렉스 감발 제브리 샹베르땅": "피노 누아",
     "앙또네 귀용 알렉스 꼬르동 1CRU 레 푸르니에": "피노 누아",
     "죠셉 드루앵 제브리 샹베르땅": "피노 누아",
     "루이 라투르 제브리 샹베르땅": "피노 누아",
-    "본 트롱 1CRU": "피노 누아",
+    "Barolet Pernot Pere & Fils Beaune Teurons 1er Cru": "피노 누아",
     "A.F. GROS 브르고뉴": "피노 누아",
     "샤또 딸보": "카베르네 소비뇽, 메를로, 쁘띠 베르도",
     "샤또 딸보 하프보틀": "카베르네 소비뇽, 메를로, 쁘띠 베르도",
@@ -262,7 +262,7 @@ drunk	sparkling	FR	프랑스	도츠`;
     "죠셉 드루앵 라포레 브르고뉴": "피노 누아",
     "필립 리베라 꼬뜨 드 뉘 빌라쥬": "피노 누아",
     "샤또 레오빌 라즈까즈": "카베르네 소비뇽, 메를로, 카베르네 프랑, 쁘띠 베르도",
-    "샤를 에네 꼬뜨 뒤 론": "그르나슈, 시라, 무르베드르",
+    "Charles Aine & Fils Cotes du Rhone": "그르나슈, 시라, 무르베드르",
     "패너 애쉬": "피노 누아",
     "덕혼 디코이": "카베르네 소비뇽",
     "덕혼 디코이 멜롯": "메를로",
@@ -293,7 +293,7 @@ drunk	sparkling	FR	프랑스	도츠`;
     "앙리지로 MV17": "피노 누아, 샤르도네",
     "레어 08": "샤르도네, 피노 누아",
     "떼땅져": "샤르도네, 피노 누아, 피노 뮈니에",
-    "필리조 에피스": "샤르도네, 피노 뮈니에, 피노 누아",
+    "필리조 에 피스 누메로 3 브뤼": "샤르도네, 피노 뮈니에, 피노 누아",
     "뽀므리": "샤르도네, 피노 누아, 피노 뮈니에",
     "플뢰리": "피노 누아",
     "파이퍼 하이직": "피노 누아, 피노 뮈니에, 샤르도네",
@@ -309,11 +309,11 @@ drunk	sparkling	FR	프랑스	도츠`;
     "도츠": "피노 누아, 샤르도네, 피노 뮈니에",
     "게뷔르츠트라미너 그로씨 로에": "게뷔르츠트라미너",
     "휘겔 게뷔리츠트라미너": "게뷔르츠트라미너",
-    "스모켓 리슬링": "리슬링",
+    "스모캣 리슬링": "리슬링",
     "맨패밀리 슈냉블랑": "슈냉 블랑",
     "군트럼 카비넷": "리슬링",
-    "도스코파스": "소비뇽 블랑",
-    "브레이크 포인트 소비뇽블랑": "소비뇽 블랑",
+    "Dos Copas Sauvignon Blanc": "소비뇽 블랑",
+    "Break Point Sauvignon Blanc Marlborough": "소비뇽 블랑",
     "래빗 아일랜드 소비뇽블랑": "소비뇽 블랑",
     "베비치 블랙 소비뇽블랑": "소비뇽 블랑",
     "더 패스 소비뇽블랑": "소비뇽 블랑",
@@ -322,12 +322,12 @@ drunk	sparkling	FR	프랑스	도츠`;
     "로버트 바일 리슬링": "리슬링",
     "로버트 바일 리슬링 스파클링": "리슬링",
     "루이자도 샤블리": "샤르도네",
-    "샤블리 생마르땡": "샤르도네",
-    "바이용 샤블리 1CRU": "샤르도네",
-    "조셉드루앙 샤블리 1CRU": "샤르도네",
-    "메종 니꼴라 뽀뗄 샤블리 1er 발롱": "샤르도네",
-    "샤블리. 15000원 뽑기로 뽑은거": "샤르도네",
-    "로얄토카이": "푸르민트",
+    "Domaine Laroche Saint Martin Chablis": "샤르도네",
+    "La Chablisienne Chablis 1er Cru Vaillons": "샤르도네",
+    "Joseph Drouhin Chablis Premier Cru Vaillons": "샤르도네",
+    "Nicolas Potel Chablis 1er Cru Vaillons": "샤르도네",
+    "Louis Latour Chablis": "샤르도네",
+    "로얄 토카이 드라이 푸르민트": "푸르민트",
     "로얄 토카이 블루라벨": "푸르민트, 하르슈레벨뤼, 무스카텔",
     "샤또 꾸떼": "세미용, 소비뇽 블랑, 뮈스카델",
     "샤또 기로": "세미용, 소비뇽 블랑",
@@ -341,20 +341,20 @@ drunk	sparkling	FR	프랑스	도츠`;
     "토후": "소비뇽 블랑",
     "시라꼬": "모스카토",
     "브리꼬 꽐리아": "모스카토",
-    "오렌지 카틴 피노 그리": "피노 그리",
+    "Cattin Orange Pinot Gris": "피노 그리",
     "브레드 앤 버터 피노 누아": "피노 누아",
     "몬테스 클래식 시리즈 카베르네 소비뇽": "카베르네 소비뇽",
     "브라이다 일 바치알레": "바르베라, 피노 누아, 카베르네 소비뇽, 메를로",
     "루이 자도 부르고뉴 피노 누아": "피노 누아",
-    "체라볼로 프티 베르도": "쁘띠 베르도",
+    "Ceravolo Petit Verdot": "쁘띠 베르도",
     "조머 리슬링 트로켄": "리슬링",
     "기갈 지공다스": "그르나슈, 시라, 무르베드르",
     "도멘 페블리 마르사네": "피노 누아",
-    "칼라미티 리오하": "템프라니요, 가르나차, 비우라, 가르나차 블랑카",
+    "옥세르 바스테기에타 칼라미티 리오하": "템프라니요, 가르나차, 비우라, 가르나차 블랑카",
     "샤를 에드시크 브뤼 레제르브": "피노 누아, 샤르도네, 피노 뮈니에",
     "클레망 페르스발 레 루로 블랑 드 블랑": "샤르도네",
-    "클레망 페르스발 르 뤼 블랑 드 누아": "피노 누아",
-    "마르크 소야르 크라 2022 부르고뉴": "피노 누아",
+    "클레망 페르스발 르 뤼트 블랑 드 누아": "피노 누아",
+    "마르크 소야르 크라 부르고뉴": "피노 누아",
     "마리 노엘 르드뤼 퀴베 뒤 굴테 그랑 크뤼": "피노 누아",
     "머드하우스 소비뇽 블랑": "소비뇽 블랑",
     "코노 소비뇽 블랑": "소비뇽 블랑",
@@ -365,6 +365,168 @@ drunk	sparkling	FR	프랑스	도츠`;
   };
 
   const varietyForName = (name) => VARIETY_BY_WINE_NAME[(name || "").trim()] || "";
+
+  const SEED_CORRECTIONS = {
+    "seed-002": {
+      old: { name: "모알라 제브리 샹베르땅", country: "FR", vintage: "2018" },
+      next: { name: "Moillard Gevrey-Chambertin", country: "FR", vintage: "2018" },
+    },
+    "seed-007": {
+      old: { name: "본 트롱 1CRU", country: "FR", vintage: "2020" },
+      next: {
+        name: "Barolet Pernot Pere & Fils Beaune Teurons 1er Cru",
+        country: "FR",
+        vintage: "2020",
+      },
+    },
+    "seed-020": {
+      old: { name: "샤를 에네 꼬뜨 뒤 론", country: "FR", vintage: "" },
+      next: { name: "Charles Aine & Fils Cotes du Rhone", country: "FR", vintage: "2023" },
+    },
+    "seed-058": {
+      old: { name: "맨패밀리 피노타쥐", country: "NZ", vintage: "" },
+      next: { name: "맨패밀리 피노타쥐", country: "ZA", vintage: "" },
+    },
+    "seed-081": {
+      old: { name: "필리조 에피스", country: "FR", vintage: "" },
+      next: { name: "필리조 에 피스 누메로 3 브뤼", country: "FR", vintage: "" },
+    },
+    "seed-099": {
+      old: { name: "스모켓 리슬링", country: "DE", vintage: "" },
+      next: { name: "스모캣 리슬링", country: "DE", vintage: "" },
+    },
+    "seed-102": {
+      old: { name: "도스코파스", country: "CL", vintage: "" },
+      next: { name: "Dos Copas Sauvignon Blanc", country: "CL", vintage: "2023" },
+    },
+    "seed-103": {
+      old: { name: "브레이크 포인트 소비뇽블랑", country: "NZ", vintage: "" },
+      next: { name: "Break Point Sauvignon Blanc Marlborough", country: "NZ", vintage: "" },
+    },
+    "seed-104": {
+      old: { name: "브레이크 포인트 소비뇽블랑", country: "NZ", vintage: "" },
+      next: { name: "Break Point Sauvignon Blanc Marlborough", country: "NZ", vintage: "" },
+    },
+    "seed-117": {
+      old: { name: "샤블리 생마르땡", country: "FR", vintage: "2021" },
+      next: { name: "Domaine Laroche Saint Martin Chablis", country: "FR", vintage: "2021" },
+    },
+    "seed-118": {
+      old: [
+        { name: "바이용 샤블리 1CRU", country: "FR", vintage: "2018" },
+        { name: "L&C Poitout Chablis 1er Cru Vaillons", country: "FR", vintage: "2018" },
+      ],
+      next: { name: "La Chablisienne Chablis 1er Cru Vaillons", country: "FR", vintage: "2018" },
+    },
+    "seed-122": {
+      old: { name: "로얄토카이", country: "HU", vintage: "" },
+      next: { name: "로얄 토카이 드라이 푸르민트", country: "HU", vintage: "" },
+    },
+    "seed-119": {
+      old: { name: "조셉드루앙 샤블리 1CRU", country: "FR", vintage: "2018" },
+      next: {
+        name: "Joseph Drouhin Chablis Premier Cru Vaillons",
+        country: "FR",
+        vintage: "2018",
+      },
+    },
+    "seed-120": {
+      old: { name: "메종 니꼴라 뽀뗄 샤블리 1er 발롱", country: "FR", vintage: "" },
+      next: { name: "Nicolas Potel Chablis 1er Cru Vaillons", country: "FR", vintage: "2019" },
+    },
+    "seed-121": {
+      old: { name: "샤블리. 15000원 뽑기로 뽑은거", country: "FR", vintage: "" },
+      next: { name: "Louis Latour Chablis", country: "FR", vintage: "2020" },
+    },
+    "seed-148": {
+      old: { name: "오렌지 카틴 피노 그리", country: "FR", vintage: "" },
+      next: { name: "Cattin Orange Pinot Gris", country: "FR", vintage: "" },
+    },
+    "seed-153": {
+      old: { name: "체라볼로 프티 베르도", country: "AU", vintage: "" },
+      next: { name: "Ceravolo Petit Verdot", country: "AU", vintage: "2019" },
+    },
+    "seed-157": {
+      old: { name: "칼라미티 리오하", country: "ES", vintage: "" },
+      next: { name: "옥세르 바스테기에타 칼라미티 리오하", country: "ES", vintage: "" },
+    },
+    "seed-160": {
+      old: { name: "클레망 페르스발 르 뤼 블랑 드 누아", country: "FR", vintage: "" },
+      next: { name: "클레망 페르스발 르 뤼트 블랑 드 누아", country: "FR", vintage: "" },
+    },
+    "seed-161": {
+      old: { name: "마르크 소야르 크라 2022 부르고뉴", country: "FR", vintage: "" },
+      next: { name: "마르크 소야르 크라 부르고뉴", country: "FR", vintage: "2022" },
+    },
+  };
+
+  const DEFAULT_PHOTO_BY_WINE_ID = {
+    "seed-002": "wine-images/ready-004.jpg",
+    "seed-018": "wine-images/ready-045.jpg",
+    "seed-023": "wine-images/ready-006.jpg",
+    "seed-024": "wine-images/ready-006.jpg",
+    "seed-025": "wine-images/ready-015.jpg",
+    "seed-026": "wine-images/ready-022.jpg",
+    "seed-027": "wine-images/ready-022.jpg",
+    "seed-028": "wine-images/ready-022.jpg",
+    "seed-032": "wine-images/ready-037.jpg",
+    "seed-038": "wine-images/ready-025.jpg",
+    "seed-039": "wine-images/ready-025.jpg",
+    "seed-040": "wine-images/ready-025.jpg",
+    "seed-041": "wine-images/ready-024.jpg",
+    "seed-042": "wine-images/ready-024.jpg",
+    "seed-052": "wine-images/ready-013.jpg",
+    "seed-053": "wine-images/ready-014.jpg",
+    "seed-055": "wine-images/ready-012.jpg",
+    "seed-059": "wine-images/ready-019.jpg",
+    "seed-060": "wine-images/ready-020.jpg",
+    "seed-061": "wine-images/ready-021.jpg",
+    "seed-075": "wine-images/ready-036.jpg",
+    "seed-081": "wine-images/ready-044.jpg",
+    "seed-082": "wine-images/ready-011.jpg",
+    "seed-083": "wine-images/ready-046.jpg",
+    "seed-085": "wine-images/ready-042.jpg",
+    "seed-091": "wine-images/ready-034.jpg",
+    "seed-092": "wine-images/ready-033.jpg",
+    "seed-094": "wine-images/ready-043.jpg",
+    "seed-098": "wine-images/ready-047.jpg",
+    "seed-106": "wine-images/ready-031.jpg",
+    "seed-118": "wine-images/ready-002.jpg",
+    "seed-119": "wine-images/ready-001.jpg",
+    "seed-121": "wine-images/ready-003.jpg",
+    "seed-129": "wine-images/ready-016.jpg",
+    "seed-130": "wine-images/ready-016.jpg",
+    "seed-131": "wine-images/ready-016.jpg",
+    "seed-132": "wine-images/ready-017.jpg",
+    "seed-133": "wine-images/ready-018.jpg",
+    "seed-134": "wine-images/ready-018.jpg",
+    "seed-136": "wine-images/ready-007.jpg",
+    "seed-137": "wine-images/ready-008.jpg",
+    "seed-138": "wine-images/ready-009.jpg",
+    "seed-140": "wine-images/ready-029.jpg",
+    "seed-143": "wine-images/ready-023.jpg",
+    "seed-149": "wine-images/ready-026.jpg",
+    "seed-150": "wine-images/ready-028.jpg",
+    "seed-151": "wine-images/ready-027.jpg",
+    "seed-155": "wine-images/ready-005.jpg",
+    "seed-156": "wine-images/ready-010.jpg",
+    "seed-157": "wine-images/ready-038.jpg",
+    "seed-158": "wine-images/ready-035.jpg",
+    "seed-163": "wine-images/ready-030.jpg",
+    "seed-164": "wine-images/ready-030.jpg",
+    "seed-165": "wine-images/ready-040.jpg",
+    "seed-166": "wine-images/ready-040.jpg",
+    "seed-167": "wine-images/ready-040.jpg",
+    "seed-168": "wine-images/ready-032.jpg",
+    "seed-169": "wine-images/ready-032.jpg",
+    "seed-170": "wine-images/ready-039.jpg",
+    "seed-171": "wine-images/ready-039.jpg",
+    "seed-176": "wine-images/ready-043.jpg",
+    "seed-177": "wine-images/ready-041.jpg",
+    "seed-178": "wine-images/ready-041.jpg",
+    "seed-179": "wine-images/ready-041.jpg",
+  };
+
   const VARIETY_OPTIONS = Array.from(
     new Set(
       Object.values(VARIETY_BY_WINE_NAME).flatMap((varieties) =>
@@ -391,13 +553,44 @@ drunk	sparkling	FR	프랑스	도츠`;
 
   const primaryVariety = (wine) => varietyParts(wine)[0] || "";
 
+  function applySeedCorrections(wines) {
+    if (!Array.isArray(wines)) return [];
+    return wines.map((wine) => {
+      const correction = wine && SEED_CORRECTIONS[wine.id];
+      if (!correction) return wine;
+
+      const currentName = (wine.name || "").trim();
+      const currentCountry = wine.country || "";
+      const currentVintage = (wine.vintage || "").trim();
+      const oldVariants = Array.isArray(correction.old) ? correction.old : [correction.old];
+      const matchesOldSeed = oldVariants.some(
+        (old) =>
+          currentName === old.name &&
+          currentCountry === old.country &&
+          currentVintage === old.vintage
+      );
+
+      if (!matchesOldSeed) return wine;
+
+      const nextWine = Object.assign({}, wine, correction.next);
+      const mappedVariety = varietyForName(nextWine.name);
+      if (mappedVariety && !(nextWine.variety || "").trim()) {
+        nextWine.variety = mappedVariety;
+      }
+      return nextWine;
+    });
+  }
+
   function enrichWinesWithVariety(wines) {
     if (!Array.isArray(wines)) return [];
     return wines.map((wine) => {
       if (!wine || typeof wine !== "object") return wine;
       const variety = varietyForName(wine.name);
-      if (!variety || (wine.variety || "").trim()) return wine;
-      return Object.assign({}, wine, { variety });
+      const photo = DEFAULT_PHOTO_BY_WINE_ID[wine.id];
+      const updates = {};
+      if (variety && !(wine.variety || "").trim()) updates.variety = variety;
+      if (photo && !(wine.photo || "").trim()) updates.photo = photo;
+      return Object.keys(updates).length ? Object.assign({}, wine, updates) : wine;
     });
   }
 
@@ -436,8 +629,9 @@ drunk	sparkling	FR	프랑스	도츠`;
       .map((line, idx) => {
         const [status, type, country, , name, vintage] = line.split("\t");
         const trimmedName = name.trim();
+        const id = `seed-${String(idx + 1).padStart(3, "0")}`;
         const wine = {
-          id: `seed-${String(idx + 1).padStart(3, "0")}`,
+          id,
           status,
           name: trimmedName,
           country: country || "",
@@ -446,7 +640,7 @@ drunk	sparkling	FR	프랑스	도츠`;
           variety: varietyForName(trimmedName),
           price: null,
           purchaseDate: "",
-          photo: null,
+          photo: DEFAULT_PHOTO_BY_WINE_ID[id] || null,
         };
         if (status === "drunk") {
           wine.rating = null;
@@ -464,13 +658,16 @@ drunk	sparkling	FR	프랑스	도츠`;
 
     const seeds = seedWines();
     if (raw) {
-      const existing = enrichWinesWithVariety(JSON.parse(raw) || []);
+      const existing = enrichWinesWithVariety(applySeedCorrections(JSON.parse(raw) || []));
       const seedById = new Map(seeds.map((seed) => [seed.id, seed]));
       const existingIds = new Set(existing.map((w) => w.id));
       existing.forEach((wine) => {
         const seed = seedById.get(wine.id);
         if (seed && !wine.variety && seed.variety) {
           wine.variety = seed.variety;
+        }
+        if (seed && !wine.photo && seed.photo) {
+          wine.photo = seed.photo;
         }
       });
       seeds.forEach((seed) => {
