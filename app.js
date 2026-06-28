@@ -2810,7 +2810,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
 
   /* ---------- Add / Edit form ---------- */
   function openForm(existing) {
-    const w = existing || { type: "red", purchaseDate: "" };
+    const w = existing || { type: "red", purchaseDate: today() };
     const isEdit = !!existing;
     const isDrunkEdit = isEdit && existing.status === "drunk";
     const selectedType = FORM_TYPE_IDS.includes(w.type) ? w.type : "red";
@@ -2839,17 +2839,17 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       <form id="wineForm">
         <div class="form-section">
           <div class="form-section__title">와인 정보</div>
+        <div class="field field--photo">
+          <label class="field__label">와인 사진 <span class="opt">(선택 · 병 사진)</span></label>
+          <label class="photo-drop" id="photoDrop"></label>
+          <div class="photo-assist" id="photoAssist" aria-live="polite"></div>
+        </div>
+
         <div class="field">
           <label class="field__label">와인 이름</label>
           <input class="input" name="name" placeholder="예: Château Margaux" value="${esc(
             w.name || ""
           )}" required />
-        </div>
-
-        <div class="field">
-          <label class="field__label">와인 사진 <span class="opt">(선택 · 병 사진)</span></label>
-          <label class="photo-drop" id="photoDrop"></label>
-          <div class="photo-assist" id="photoAssist" aria-live="polite"></div>
         </div>
 
         <div class="field">

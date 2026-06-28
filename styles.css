@@ -992,6 +992,9 @@ body.is-refreshing .pull-refresh__ring {
   min-width: 0;
   max-width: 100%;
 }
+.field--photo {
+  margin-bottom: 18px;
+}
 .field__label {
   display: block;
   font-size: 12px;
@@ -1641,12 +1644,14 @@ img.card__photo {
   justify-content: center;
   gap: 8px;
   width: 100%;
-  min-height: 58px;
+  min-height: 72px;
   border: 1px dashed rgba(23, 22, 20, 0.25);
   border-radius: 12px;
-  background: rgba(255, 253, 248, 0.58);
+  background: rgba(255, 253, 248, 0.72);
   color: var(--muted);
   font-size: 15px;
+  font-weight: 680;
+  text-align: center;
   cursor: pointer;
   overflow: hidden;
   position: relative;
@@ -1689,13 +1694,13 @@ img.card__photo {
 }
 .photo-assist__btn {
   width: 100%;
-  min-height: 38px;
+  min-height: 44px;
   border: 1px solid rgba(130, 49, 61, 0.2);
   border-radius: 12px;
-  background: rgba(130, 49, 61, 0.08);
+  background: rgba(130, 49, 61, 0.1);
   color: var(--wine-deep);
   font-family: inherit;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 780;
 }
 .photo-assist__btn:disabled {
