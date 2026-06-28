@@ -59,7 +59,7 @@
 
   const PREF_KEY = "wine-cellar-pref";
   const SEED_KEY = "wine-cellar-seed-version";
-  const SEED_VERSION = "user-wine-list-2026-06-28-normalize-cloud-seed-data";
+  const SEED_VERSION = "user-wine-list-2026-06-28-henri-giraud-fut-de-chene";
   const SEED_TSV = `status	type	country_code	country_name	name	vintage
 cellar	red	FR	프랑스	프리에르 로크, 르 끌라우드	2019
 cellar	red	FR	프랑스	Moillard Gevrey-Chambertin	2018
@@ -135,7 +135,7 @@ cellar	sparkling	FR	프랑스	돔페르뇽	2013
 cellar	sparkling	FR	프랑스	돔페르뇽	2013
 cellar	sparkling	FR	프랑스	돔페르뇽	2013
 drunk	sparkling	FR	프랑스	돔페르뇽	2013
-cellar	sparkling	FR	프랑스	앙리 지로 에스쁘리
+cellar	sparkling	FR	프랑스	앙리 지로 퓌드센 MV17
 cellar	sparkling	FR	프랑스	레어 08
 drunk	sparkling	FR	프랑스	떼땅져
 drunk	sparkling	FR	프랑스	떼땅져
@@ -291,8 +291,10 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     "크룩 171": "피노 누아, 샤르도네, 피노 뮈니에",
     "크룩 172": "피노 누아, 샤르도네, 피노 뮈니에",
     "돔페르뇽": "피노 누아, 샤르도네",
-    "앙리 지로 에스쁘리": "피노 누아, 샤르도네",
+    "앙리 지로 퓌드센 MV17": "피노 누아, 샤르도네",
+    "앙리 지로 퓌 드 쉔 MV17": "피노 누아, 샤르도네",
     "앙리지로 MV17": "피노 누아, 샤르도네",
+    "앙리 지로 에스쁘리": "피노 누아, 샤르도네",
     "레어 08": "샤르도네, 피노 누아",
     "떼땅져": "샤르도네, 피노 누아, 피노 뮈니에",
     "필리조 에 피스 누메로 3 브뤼": "샤르도네, 피노 뮈니에, 피노 누아",
@@ -417,10 +419,18 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
         { name: "앙리지로 MV17", country: "FR", vintage: "" },
         { name: "앙리 지로 MV17", country: "FR", vintage: "" },
         { name: "Henri Giraud MV17", country: "FR", vintage: "" },
+        { name: "Henri Giraud Fut de Chene MV17", country: "FR", vintage: "" },
+        { name: "Henri Giraud Fût de Chêne MV17", country: "FR", vintage: "" },
+        { name: "앙리 지로 퓌 드 쉔 MV17", country: "FR", vintage: "" },
+        { name: "앙리 지로 퓌드센 MV17", country: "FR", vintage: "" },
+        { name: "앙리 지로 퓌드센", country: "FR", vintage: "" },
         { name: "앙리지로 에스쁘리", country: "FR", vintage: "" },
+        { name: "앙리 지로 에스쁘리", country: "FR", vintage: "" },
+        { name: "앙리 지로 에스쁘리 네이처", country: "FR", vintage: "" },
         { name: "Henri Giraud Esprit", country: "FR", vintage: "" },
+        { name: "Henri Giraud Esprit Nature", country: "FR", vintage: "" },
       ],
-      next: { name: "앙리 지로 에스쁘리", country: "FR", vintage: "" },
+      next: { name: "앙리 지로 퓌드센 MV17", country: "FR", vintage: "" },
     },
     "seed-081": {
       old: { name: "필리조 에피스", country: "FR", vintage: "" },
@@ -705,7 +715,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     "seed-072": "wine-images/review-053.jpg",
     "seed-073": "wine-images/review-053.jpg",
     "seed-074": "wine-images/review-053.jpg",
-    "seed-075": "wine-images/review-133.jpg",
+    "seed-075": "wine-images/review-054.jpg",
 
     "seed-076": "wine-images/review-055.jpg",
     "seed-077": "wine-images/review-056.jpg",
@@ -823,6 +833,14 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
   const DEFAULT_PHOTO_AUTOFILL_ENABLED = true;
   const DEFAULT_PHOTO_RE = /^wine-images\/(?:ready|review)-\d{3}\.jpg$/;
   const DEFAULT_PHOTO_BY_WINE_NAME = {
+    "앙리 지로 퓌드센 MV17": "wine-images/review-054.jpg",
+    "앙리 지로 퓌드센": "wine-images/review-054.jpg",
+    "앙리 지로 퓌 드 쉔 MV17": "wine-images/review-054.jpg",
+    "앙리지로 MV17": "wine-images/review-054.jpg",
+    "앙리 지로 MV17": "wine-images/review-054.jpg",
+    "Henri Giraud MV17": "wine-images/review-054.jpg",
+    "Henri Giraud Fut de Chene MV17": "wine-images/review-054.jpg",
+    "Henri Giraud Fût de Chêne MV17": "wine-images/review-054.jpg",
     "앙리 지로 에스쁘리": "wine-images/review-133.jpg",
     "앙리지로 에스쁘리": "wine-images/review-133.jpg",
     "Henri Giraud Esprit": "wine-images/review-133.jpg",
