@@ -59,7 +59,7 @@
 
   const PREF_KEY = "wine-cellar-pref";
   const SEED_KEY = "wine-cellar-seed-version";
-  const SEED_VERSION = "user-wine-list-2026-06-28-gallery-view-image-cleanup";
+  const SEED_VERSION = "user-wine-list-2026-06-28-marie-ledru-image";
   const SEED_TSV = `status	type	country_code	country_name	name	vintage
 cellar	red	FR	프랑스	프리에르 로크, 르 끌라우드	2019
 cellar	red	FR	프랑스	Moillard Gevrey-Chambertin	2018
@@ -773,6 +773,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     "seed-158": "wine-images/review-120.jpg",
     "seed-159": "wine-images/review-121.jpg",
     "seed-160": "wine-images/review-122.jpg",
+    "seed-162": "wine-images/review-132.jpg",
     "seed-163": "wine-images/review-125.jpg",
     "seed-164": "wine-images/review-125.jpg",
     "seed-165": "wine-images/review-126.jpg",
