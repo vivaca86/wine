@@ -196,9 +196,42 @@ function extractOutputText(payload) {
   return "";
 }
 
+const GENERIC_WINE_NAMES = new Set([
+  "alsace",
+  "barbaresco",
+  "barolo",
+  "bordeaux",
+  "bourgogne",
+  "bourgogne chardonnay",
+  "bourgogne pinot noir",
+  "burgundy",
+  "chablis",
+  "champagne",
+  "chianti",
+  "cotes du rhone",
+  "gigondas",
+  "margaux",
+  "marsannay",
+  "moscato d'asti",
+  "pauillac",
+  "pommard",
+  "rioja",
+  "sancerre",
+  "sauternes",
+]);
+
+function isGenericWineName(name) {
+  const normalized = normalizedLookupName(name)
+    .replace(/[.,]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return GENERIC_WINE_NAMES.has(normalized);
+}
+
 function shouldRetryWithHighDetail(suggestion) {
   if (!suggestion || typeof suggestion !== "object") return true;
   if (!suggestion.name) return true;
+  if (isGenericWineName(suggestion.name)) return true;
   return Number(suggestion.confidence || 0) < 0.55;
 }
 
@@ -226,6 +259,10 @@ async function analyzeWithOpenAI(image, detail = "low") {
               text:
                 "Analyze this wine bottle label. Return only fields visible or strongly inferable from the label. " +
                 "Use the original Latin-script producer/cuvee wording for name; do not translate the wine name into Korean. " +
+                "The name must identify the bottle, not just the broad region or appellation. " +
+                "Do not return only generic names like Bourgogne, Chablis, Champagne, Bordeaux, or Sancerre when producer, brand, cuvee, grape, or style text is visible. " +
+                "For example, return Les Domaines de la Taste d'Or Bourgogne Chardonnay, not Bourgogne. " +
+                "If only appellation and grape/style are readable, return Bourgogne Chardonnay rather than Bourgogne. " +
                 "Vintage must be a 4-digit year only. " +
                 "type must be one of red, white, rose, sparkling, dessert, etc, or empty. " +
                 "country must be a 2-letter ISO code like FR, US, NZ, IT, DE, CL, AU, ES, AR, ZA, HU, or empty. " +
