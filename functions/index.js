@@ -129,10 +129,15 @@ async function analyzeWithOpenAI(image) {
               type: "input_text",
               text:
                 "Analyze this wine bottle label. Return only fields visible or strongly inferable from the label. " +
-                "Use the original producer/cuvee wording for name. Vintage must be a 4-digit year only. " +
+                "Use the original Latin-script producer/cuvee wording for name; do not translate the wine name into Korean. " +
+                "Vintage must be a 4-digit year only. " +
                 "type must be one of red, white, rose, sparkling, dessert, etc, or empty. " +
                 "country must be a 2-letter ISO code like FR, US, NZ, IT, DE, CL, AU, ES, AR, ZA, HU, or empty. " +
-                "variety should be comma-separated grape names when visible or highly likely. " +
+                "variety should be comma-separated Korean grape names when visible or highly likely. " +
+                "You may infer variety from strong wine-region or cuvee cues: Chablis=샤르도네, " +
+                "Sancerre or Sauvignon Blanc=소비뇽 블랑, Riesling=리슬링, Pinot Noir/Burgundy red=피노 누아, " +
+                "Syrah/Shiraz=시라 or 시라즈, Moscato d'Asti=모스카토, Sauternes/Barsac=세미용, 소비뇽 블랑, " +
+                "Blanc de Blancs=샤르도네, Blanc de Noirs=피노 누아 or 피노 뮈니에. " +
                 "If uncertain, leave the field empty and lower confidence.",
             },
             {

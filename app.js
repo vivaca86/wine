@@ -60,7 +60,7 @@
 
   const PREF_KEY = "wine-cellar-pref";
   const SEED_KEY = "wine-cellar-seed-version";
-  const SEED_VERSION = "user-wine-list-2026-06-28-henri-giraud-fut-de-chene";
+  const SEED_VERSION = "user-wine-list-2026-06-29-english-wine-names";
   const SEED_TSV = `status	type	country_code	country_name	name	vintage
 cellar	red	FR	프랑스	프리에르 로크, 르 끌라우드	2019
 cellar	red	FR	프랑스	Moillard Gevrey-Chambertin	2018
@@ -384,7 +384,191 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     "토후 소비뇽 블랑": "소비뇽 블랑",
   };
 
-  const varietyForName = (name) => VARIETY_BY_WINE_NAME[(name || "").trim()] || "";
+  const varietyForName = (name, type = "") =>
+    VARIETY_BY_WINE_NAME[(name || "").trim()] || inferVarietyFromName(name, type);
+
+  const ENGLISH_NAME_BY_SEED_ID = {
+    "seed-001": "Domaine Prieure Roch Le Cloud",
+    "seed-002": "Moillard Gevrey-Chambertin",
+    "seed-003": "Alex Gambal Gevrey-Chambertin",
+    "seed-004": "Domaine Antonin Guyon Aloxe-Corton 1er Cru Les Fournieres",
+    "seed-005": "Joseph Drouhin Gevrey-Chambertin",
+    "seed-006": "Louis Latour Gevrey-Chambertin",
+    "seed-007": "Barolet Pernot Pere & Fils Beaune Teurons 1er Cru",
+    "seed-008": "A.F. Gros Bourgogne Pinot Noir",
+    "seed-009": "Chateau Talbot",
+    "seed-010": "Chateau Talbot Half Bottle",
+    "seed-011": "Connetable de Talbot",
+    "seed-012": "Bouchard Pere & Fils Gevrey-Chambertin",
+    "seed-013": "Bouchard Pere & Fils Pommard",
+    "seed-014": "Domaine Antonin Guyon Corton Bressandes Grand Cru",
+    "seed-015": "Domaine Antonin Guyon Cote de Beaune Villages",
+    "seed-016": "Chateau Le Puy Emilien",
+    "seed-017": "Joseph Drouhin Laforet Bourgogne Pinot Noir",
+    "seed-018": "Domaine Philippe Livera Cote de Nuits Villages",
+    "seed-019": "Chateau Leoville Las Cases",
+    "seed-020": "Charles Aine & Fils Cotes du Rhone",
+    "seed-021": "Penner-Ash Pinot Noir",
+    "seed-022": "Decoy Cabernet Sauvignon",
+    "seed-023": "Decoy Merlot",
+    "seed-024": "Decoy Merlot",
+    "seed-025": "Calera Pinot Noir",
+    "seed-026": "Textbook Cabernet Sauvignon",
+    "seed-027": "Textbook Cabernet Sauvignon",
+    "seed-028": "Textbook Cabernet Sauvignon",
+    "seed-029": "Opus One",
+    "seed-030": "Opus One",
+    "seed-031": "Opus One",
+    "seed-032": "Opus One Overture",
+    "seed-033": "The Hilt Estate Pinot Noir",
+    "seed-034": "The Hilt Estate Pinot Noir",
+    "seed-035": "The Hilt Estate Pinot Noir",
+    "seed-036": "Two Hands Bella's Garden Shiraz",
+    "seed-037": "Two Hands Bella's Garden Shiraz",
+    "seed-038": "Two Hands Lily's Garden Shiraz",
+    "seed-039": "Two Hands Lily's Garden Shiraz",
+    "seed-040": "Two Hands Lily's Garden Shiraz",
+    "seed-041": "Two Hands Charlie's Garden Shiraz",
+    "seed-042": "Two Hands Charlie's Garden Shiraz",
+    "seed-043": "Kilikanoon Oracle Shiraz",
+    "seed-044": "Kilikanoon Oracle Shiraz",
+    "seed-045": "Kilikanoon Oracle Shiraz",
+    "seed-046": "Mollydooker Blue Eyed Boy Shiraz",
+    "seed-047": "Mollydooker The Boxer Shiraz",
+    "seed-048": "Trapiche Iscay Syrah & Viognier",
+    "seed-049": "Trapiche Iscay Malbec & Cabernet Franc",
+    "seed-050": "Trapiche Iscay Malbec & Cabernet Franc",
+    "seed-051": "Trapiche Iscay Malbec & Cabernet Franc",
+    "seed-052": "Sena",
+    "seed-053": "Sena",
+    "seed-054": "Don Melchor Cabernet Sauvignon",
+    "seed-055": "Tenuta San Guido Sassicaia",
+    "seed-056": "La Spinetta Barbaresco Starderi",
+    "seed-057": "Cloudy Bay Pinot Noir",
+    "seed-058": "MAN Family Pinotage",
+    "seed-059": "Louis Roederer Cristal",
+    "seed-060": "Louis Roederer Cristal",
+    "seed-061": "Louis Roederer Cristal",
+    "seed-062": "Jacques Selosse V.O. Version Originale",
+    "seed-063": "Jacques Selosse V.O. Version Originale",
+    "seed-064": "Krug Grande Cuvee 170eme Edition",
+    "seed-065": "Krug Grande Cuvee 170eme Edition",
+    "seed-066": "Krug Grande Cuvee 171eme Edition",
+    "seed-067": "Krug Grande Cuvee 171eme Edition",
+    "seed-068": "Krug Grande Cuvee 171eme Edition",
+    "seed-069": "Krug Grande Cuvee 172eme Edition",
+    "seed-070": "Dom Perignon",
+    "seed-071": "Dom Perignon",
+    "seed-072": "Dom Perignon",
+    "seed-073": "Dom Perignon",
+    "seed-074": "Dom Perignon",
+    "seed-075": "Henri Giraud Ay Grand Cru Fut de Chene MV17",
+    "seed-076": "Piper-Heidsieck Rare 2008",
+    "seed-077": "Taittinger Brut Reserve",
+    "seed-078": "Taittinger Brut Reserve",
+    "seed-079": "Taittinger Brut Reserve",
+    "seed-080": "Taittinger Brut Reserve",
+    "seed-081": "Champagne Philizot & Fils Numero 3 Brut",
+    "seed-082": "Pommery Brut Royal",
+    "seed-083": "Champagne Fleury Robert Fleury Extra Brut",
+    "seed-084": "Piper-Heidsieck Cuvee Brut",
+    "seed-085": "Piper-Heidsieck Vintage Brut",
+    "seed-086": "Pol Roger Brut Reserve",
+    "seed-087": "Veuve Clicquot Yellow Label Brut",
+    "seed-088": "Veuve Clicquot Yellow Label Brut",
+    "seed-089": "Veuve Clicquot Yellow Label Brut",
+    "seed-090": "Veuve Clicquot Rose",
+    "seed-091": "Billecart-Salmon Demi-Sec",
+    "seed-092": "Bollinger Special Cuvee Brut",
+    "seed-093": "G.H. Mumm Grand Cordon Brut",
+    "seed-094": "Perrier-Jouet Grand Brut",
+    "seed-095": "Andre Clouet Grande Reserve Brut",
+    "seed-096": "Deutz Brut Classic",
+    "seed-097": "Hugel Gewurztraminer Grossi Laue",
+    "seed-098": "Hugel Gewurztraminer",
+    "seed-099": "Sumo Cat Riesling",
+    "seed-100": "MAN Family Chenin Blanc",
+    "seed-101": "Guntrum Riesling Kabinett",
+    "seed-102": "Dos Copas Sauvignon Blanc",
+    "seed-103": "Break Point Sauvignon Blanc Marlborough",
+    "seed-104": "Break Point Sauvignon Blanc Marlborough",
+    "seed-105": "Rabbit Island Sauvignon Blanc",
+    "seed-106": "Babich Black Label Sauvignon Blanc",
+    "seed-107": "The Pass Sauvignon Blanc",
+    "seed-108": "Selaks Origins Sauvignon Blanc",
+    "seed-109": "Selaks Origins Sauvignon Blanc",
+    "seed-110": "Markus Molitor Zeltinger Sonnenuhr Riesling Auslese",
+    "seed-111": "Robert Weil Riesling Tradition",
+    "seed-112": "Robert Weil Riesling Tradition",
+    "seed-113": "Robert Weil Riesling Tradition",
+    "seed-114": "Robert Weil Riesling Tradition",
+    "seed-115": "Robert Weil Riesling Sekt Brut",
+    "seed-116": "Louis Jadot Chablis",
+    "seed-117": "Domaine Laroche Saint Martin Chablis",
+    "seed-118": "La Chablisienne Chablis 1er Cru Vaillons",
+    "seed-119": "Joseph Drouhin Chablis Premier Cru Vaillons",
+    "seed-120": "Nicolas Potel Chablis 1er Cru Vaillons",
+    "seed-121": "Unknown Chablis 15000 KRW",
+    "seed-122": "Royal Tokaji Dry Furmint",
+    "seed-123": "Royal Tokaji Blue Label 5 Puttonyos Aszu",
+    "seed-124": "Royal Tokaji Blue Label 5 Puttonyos Aszu",
+    "seed-125": "Chateau Coutet Barsac",
+    "seed-126": "Chateau Coutet Barsac",
+    "seed-127": "Chateau Guiraud Sauternes",
+    "seed-128": "Cloudy Bay Sauvignon Blanc",
+    "seed-129": "Cloudy Bay Sauvignon Blanc",
+    "seed-130": "Cloudy Bay Sauvignon Blanc",
+    "seed-131": "Cloudy Bay Sauvignon Blanc",
+    "seed-132": "Cloudy Bay Sauvignon Blanc",
+    "seed-133": "Cloudy Bay Sauvignon Blanc",
+    "seed-134": "Cloudy Bay Sauvignon Blanc",
+    "seed-135": "Oyster Bay Sauvignon Blanc",
+    "seed-136": "Dog Point Sauvignon Blanc",
+    "seed-137": "Dog Point Sauvignon Blanc",
+    "seed-138": "Dog Point Sauvignon Blanc",
+    "seed-139": "Whitehaven Sauvignon Blanc",
+    "seed-140": "Mud House Sauvignon Blanc",
+    "seed-141": "Palliser Estate Sauvignon Blanc",
+    "seed-142": "Invivo X SJP Sauvignon Blanc",
+    "seed-143": "Tohu Sauvignon Blanc",
+    "seed-144": "Saracco Moscato d'Asti",
+    "seed-145": "La Spinetta Bricco Quaglia Moscato d'Asti",
+    "seed-146": "La Spinetta Bricco Quaglia Moscato d'Asti",
+    "seed-147": "La Spinetta Bricco Quaglia Moscato d'Asti",
+    "seed-148": "Cattin Orange Pinot Gris",
+    "seed-149": "Bread & Butter Pinot Noir",
+    "seed-150": "Montes Classic Cabernet Sauvignon",
+    "seed-151": "Braida Il Baciale Monferrato Rosso",
+    "seed-152": "Louis Jadot Bourgogne Pinot Noir",
+    "seed-153": "Ceravolo Petit Verdot",
+    "seed-154": "Schloss Vollrads Sommer Riesling Trocken",
+    "seed-155": "E. Guigal Gigondas",
+    "seed-156": "Domaine Faiveley Marsannay",
+    "seed-157": "Oxer Bastegieta Kalamity Rioja",
+    "seed-158": "Charles Heidsieck Brut Reserve",
+    "seed-159": "Clement Perseval Les Rouleaux Blanc de Blancs",
+    "seed-160": "Clement Perseval Le Luth Blanc de Noirs",
+    "seed-161": "Marc Soyard Cras Bourgogne",
+    "seed-162": "Marie-Noelle Ledru Cuvee du Goulte Grand Cru Blanc de Noirs Extra Brut",
+    "seed-163": "Mud House Sauvignon Blanc",
+    "seed-164": "Mud House Sauvignon Blanc",
+    "seed-165": "Kono Sauvignon Blanc",
+    "seed-166": "Kono Sauvignon Blanc",
+    "seed-167": "Kono Sauvignon Blanc",
+    "seed-168": "Babich Black Label Sauvignon Blanc",
+    "seed-169": "Babich Black Label Sauvignon Blanc",
+    "seed-170": "Kim Crawford Sauvignon Blanc",
+    "seed-171": "Kim Crawford Sauvignon Blanc",
+    "seed-172": "Oyster Bay Sauvignon Blanc",
+    "seed-173": "Oyster Bay Sauvignon Blanc",
+    "seed-174": "Palliser Estate Sauvignon Blanc",
+    "seed-175": "Palliser Estate Sauvignon Blanc",
+    "seed-176": "Perrier-Jouet Grand Brut",
+    "seed-177": "Piper-Heidsieck Cuvee Brut",
+    "seed-178": "Piper-Heidsieck Cuvee Brut",
+    "seed-179": "Piper-Heidsieck Cuvee Brut",
+    "seed-180": "Deutz Brut Classic",
+  };
 
   const SEED_CORRECTIONS = {
     "seed-002": {
@@ -857,14 +1041,29 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
   const isDefaultPhoto = (photo) =>
     typeof photo === "string" && DEFAULT_PHOTO_RE.test(photo);
 
+  const ADDITIONAL_VARIETY_OPTIONS = [
+    "그르나슈",
+    "까르메네르",
+    "네비올로",
+    "말벡",
+    "바르베라",
+    "비오니에",
+    "세미용",
+    "카베르네 프랑",
+    "템프라니요",
+    "피노 뮈니에",
+  ];
+
   const VARIETY_OPTIONS = Array.from(
     new Set(
-      Object.values(VARIETY_BY_WINE_NAME).flatMap((varieties) =>
-        varieties
-          .split(",")
-          .map((variety) => variety.trim())
-          .filter(Boolean)
-      )
+      Object.values(VARIETY_BY_WINE_NAME)
+        .flatMap((varieties) =>
+          varieties
+            .split(",")
+            .map((variety) => variety.trim())
+            .filter(Boolean)
+        )
+        .concat(ADDITIONAL_VARIETY_OPTIONS)
     )
   ).sort((a, b) => a.localeCompare(b, "ko"));
 
@@ -883,11 +1082,115 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
 
   const primaryVariety = (wine) => varietyParts(wine)[0] || "";
 
+  const canonicalSeedNameForId = (id) => ENGLISH_NAME_BY_SEED_ID[id] || "";
+
+  function normalizedLookupName(value) {
+    return String(value || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase();
+  }
+
+  function inferVarietyFromName(name, type = "") {
+    const n = normalizedLookupName(name);
+    const wineType = (type || "").toLowerCase();
+    if (!n) return "";
+
+    if (n.includes("blanc de blancs")) return "샤르도네";
+    if (n.includes("marie-noelle ledru")) return "피노 누아";
+    if (n.includes("blanc de noirs")) return "피노 누아, 피노 뮈니에";
+    if (n.includes("sauvignon blanc") || n.includes("sancerre")) return "소비뇽 블랑";
+    if (n.includes("chablis") || n.includes("chardonnay")) return "샤르도네";
+    if (n.includes("chenin blanc")) return "슈냉 블랑";
+    if (n.includes("gewurztraminer")) return "게뷔르츠트라미너";
+    if (n.includes("riesling")) return "리슬링";
+    if (n.includes("moscato")) return "모스카토";
+    if (n.includes("pinot gris") || n.includes("pinot grigio")) return "피노 그리";
+    if (n.includes("furmint") || n.includes("tokaji")) return "푸르민트";
+    if (n.includes("barsac") || n.includes("sauternes")) return "세미용, 소비뇽 블랑";
+
+    if (n.includes("malbec") && n.includes("cabernet franc")) return "말벡, 카베르네 프랑";
+    if (n.includes("syrah") && n.includes("viognier")) return "시라, 비오니에";
+    if (n.includes("shiraz")) return "시라즈";
+    if (n.includes("syrah")) return "시라";
+    if (n.includes("pinotage")) return "피노타주";
+    if (n.includes("petit verdot")) return "쁘띠 베르도";
+    if (n.includes("merlot")) return "메를로";
+
+    if (n.includes("opus one") || n.includes("overture")) {
+      return "카베르네 소비뇽, 메를로, 카베르네 프랑, 쁘띠 베르도, 말벡";
+    }
+    if (n.includes("sassicaia")) return "카베르네 소비뇽, 카베르네 프랑";
+    if (n.includes("sena")) {
+      return "카베르네 소비뇽, 까르메네르, 말벡, 메를로, 쁘띠 베르도";
+    }
+    if (n.includes("talbot") || n.includes("leoville las cases")) {
+      return "카베르네 소비뇽, 메를로, 카베르네 프랑, 쁘띠 베르도";
+    }
+    if (n.includes("cabernet sauvignon") || n.includes("don melchor")) {
+      return "카베르네 소비뇽";
+    }
+
+    if (n.includes("barbaresco")) return "네비올로";
+    if (
+      n.includes("pinot noir") ||
+      n.includes("gevrey-chambertin") ||
+      n.includes("pommard") ||
+      n.includes("corton") ||
+      n.includes("aloxe-corton") ||
+      n.includes("cote de beaune") ||
+      n.includes("cote de nuits") ||
+      n.includes("marsannay") ||
+      n.includes("ladoix") ||
+      n.includes("le cloud")
+    ) {
+      return "피노 누아";
+    }
+
+    if (n.includes("gigondas") || n.includes("cotes du rhone")) return "그르나슈, 시라";
+    if (n.includes("rioja") || n.includes("kalamity")) return "템프라니요";
+    if (n.includes("braida") || n.includes("monferrato")) return "바르베라";
+
+    if (n.includes("jacques selosse")) return "샤르도네";
+    if (n.includes("andre clouet")) return "피노 누아";
+    if (n.includes("cristal") || n.includes("dom perignon") || n.includes("rare 2008")) {
+      return "샤르도네, 피노 누아";
+    }
+    if (
+      wineType === "sparkling" ||
+      n.includes("champagne") ||
+      n.includes("brut") ||
+      n.includes("cuvee")
+    ) {
+      return "샤르도네, 피노 누아, 피노 뮈니에";
+    }
+
+    return "";
+  }
+
+  function seedVarietyForId(id, fallbackName = "", type = "") {
+    const canonicalName = canonicalSeedNameForId(id);
+    return varietyForName(canonicalName, type) || varietyForName(fallbackName, type);
+  }
+
+  function applyEnglishSeedName(wine) {
+    if (!wine || typeof wine !== "object") return wine;
+    const canonicalName = canonicalSeedNameForId(wine.id);
+    if (!canonicalName) return wine;
+
+    const updates = {};
+    if ((wine.name || "").trim() !== canonicalName) updates.name = canonicalName;
+    const variety = seedVarietyForId(wine.id, wine.name, wine.type);
+    if (variety && !(wine.variety || "").trim()) updates.variety = variety;
+    return Object.keys(updates).length ? Object.assign({}, wine, updates) : wine;
+  }
+
   function applySeedCorrections(wines) {
     if (!Array.isArray(wines)) return [];
     return wines.map((wine) => {
+      let nextWine = wine;
       const correction = wine && SEED_CORRECTIONS[wine.id];
-      if (!correction) return wine;
+      if (!correction) return applyEnglishSeedName(nextWine);
 
       const currentName = (wine.name || "").trim();
       const currentCountry = wine.country || "";
@@ -900,14 +1203,14 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
           currentVintage === old.vintage
       );
 
-      if (!matchesOldSeed) return wine;
+      if (!matchesOldSeed) return applyEnglishSeedName(nextWine);
 
-      const nextWine = Object.assign({}, wine, correction.next);
-      const mappedVariety = varietyForName(nextWine.name);
+      nextWine = Object.assign({}, wine, correction.next);
+      const mappedVariety = seedVarietyForId(nextWine.id, nextWine.name, nextWine.type);
       if (mappedVariety && !(nextWine.variety || "").trim()) {
         nextWine.variety = mappedVariety;
       }
-      return nextWine;
+      return applyEnglishSeedName(nextWine);
     });
   }
 
@@ -915,7 +1218,8 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     if (!Array.isArray(wines)) return [];
     return wines.map((wine) => {
       if (!wine || typeof wine !== "object") return wine;
-      const variety = varietyForName(wine.name);
+      const variety =
+        seedVarietyForId(wine.id, wine.name, wine.type) || varietyForName(wine.name, wine.type);
       const photo = defaultPhotoForWineId(wine.id) || defaultPhotoForWineName(wine.name);
       const updates = {};
       if (variety && !(wine.variety || "").trim()) updates.variety = variety;
@@ -970,14 +1274,15 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
         const [status, type, country, , name, vintage] = line.split("\t");
         const trimmedName = name.trim();
         const id = `seed-${String(idx + 1).padStart(3, "0")}`;
+        const canonicalName = canonicalSeedNameForId(id) || trimmedName;
         const wine = {
           id,
           status,
-          name: trimmedName,
+          name: canonicalName,
           country: country || "",
           type,
           vintage: (vintage || "").trim(),
-          variety: varietyForName(trimmedName),
+          variety: seedVarietyForId(id, trimmedName, type),
           price: null,
           purchaseDate: "",
           photo: defaultPhotoForWineId(id),
@@ -2490,7 +2795,8 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     const isEdit = !!existing;
     const isDrunkEdit = isEdit && existing.status === "drunk";
     const selectedType = FORM_TYPE_IDS.includes(w.type) ? w.type : "red";
-    const initialVariety = w.variety || varietyForName(w.name) || "";
+    const initialVariety =
+      w.variety || seedVarietyForId(w.id, w.name, w.type) || varietyForName(w.name, w.type) || "";
     let photo = (existing && existing.photo) || null;
     let lastAutoVariety = initialVariety;
     let aiBusy = false;
@@ -2662,7 +2968,9 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
         applied += 1;
       }
       if (suggestion.type && setFormType(suggestion.type)) applied += 1;
-      if (setInputValue(varietyInput, normalizeVarietyInput(suggestion.variety))) {
+      const suggestedVariety =
+        normalizeVarietyInput(suggestion.variety) || varietyForName(suggestion.name, suggestion.type);
+      if (setInputValue(varietyInput, suggestedVariety)) {
         lastAutoVariety = varietyInput.value.trim();
         applied += 1;
       }
@@ -2860,7 +3168,10 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     }
 
     nameInput.addEventListener("input", () => {
-      const suggested = varietyForName(nameInput.value.trim());
+      const suggested = varietyForName(
+        nameInput.value.trim(),
+        sheet.querySelector('[name="type"]').value
+      );
       const current = varietyInput.value.trim();
       if (suggested && (!current || current === lastAutoVariety)) {
         varietyInput.value = suggested;
@@ -2920,7 +3231,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
         country: f.country.value,
         type: f.type.value,
         vintage: f.vintage.value.trim(),
-        variety: normalizeVarietyInput(f.variety.value) || varietyForName(name),
+        variety: normalizeVarietyInput(f.variety.value) || varietyForName(name, f.type.value),
         price: f.price.value.replace(/[^\d]/g, "") || null,
         purchaseDate: f.purchaseDate.value || "",
         photo: photo || null,
