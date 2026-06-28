@@ -59,7 +59,7 @@
 
   const PREF_KEY = "wine-cellar-pref";
   const SEED_KEY = "wine-cellar-seed-version";
-  const SEED_VERSION = "user-wine-list-2026-06-28-ready-white-photos";
+  const SEED_VERSION = "user-wine-list-2026-06-28-manual-date-no-partial-photos";
   const SEED_TSV = `status	type	country_code	country_name	name	vintage
 cellar	red	FR	프랑스	프리에르 로크, 르 끌라우드	2019
 cellar	red	FR	프랑스	Moillard Gevrey-Chambertin	2018
@@ -526,6 +526,14 @@ drunk	sparkling	FR	프랑스	도츠`;
     "seed-178": "wine-images/ready-041.jpg",
     "seed-179": "wine-images/ready-041.jpg",
   };
+  const DEFAULT_PHOTO_AUTOFILL_ENABLED = false;
+  const DEFAULT_PHOTO_RE = /^wine-images\/ready-\d{3}\.jpg$/;
+
+  const defaultPhotoForWineId = (id) =>
+    DEFAULT_PHOTO_AUTOFILL_ENABLED ? DEFAULT_PHOTO_BY_WINE_ID[id] || null : null;
+
+  const isDefaultPhoto = (photo) =>
+    typeof photo === "string" && DEFAULT_PHOTO_RE.test(photo);
 
   const VARIETY_OPTIONS = Array.from(
     new Set(
@@ -586,10 +594,11 @@ drunk	sparkling	FR	프랑스	도츠`;
     return wines.map((wine) => {
       if (!wine || typeof wine !== "object") return wine;
       const variety = varietyForName(wine.name);
-      const photo = DEFAULT_PHOTO_BY_WINE_ID[wine.id];
+      const photo = defaultPhotoForWineId(wine.id);
       const updates = {};
       if (variety && !(wine.variety || "").trim()) updates.variety = variety;
       if (photo && !(wine.photo || "").trim()) updates.photo = photo;
+      if (!DEFAULT_PHOTO_AUTOFILL_ENABLED && isDefaultPhoto(wine.photo)) updates.photo = null;
       return Object.keys(updates).length ? Object.assign({}, wine, updates) : wine;
     });
   }
@@ -640,7 +649,7 @@ drunk	sparkling	FR	프랑스	도츠`;
           variety: varietyForName(trimmedName),
           price: null,
           purchaseDate: "",
-          photo: DEFAULT_PHOTO_BY_WINE_ID[id] || null,
+          photo: defaultPhotoForWineId(id),
         };
         if (status === "drunk") {
           wine.rating = null;
@@ -2146,9 +2155,12 @@ drunk	sparkling	FR	프랑스	도츠`;
 
         <div class="field">
           <label class="field__label">구입일</label>
-          <input class="input" name="purchaseDate" type="date" value="${esc(
-            w.purchaseDate || ""
-          )}" />
+          <div class="date-row">
+            <input class="input" name="purchaseDate" type="date" value="${esc(
+              w.purchaseDate || ""
+            )}" />
+            <button type="button" class="date-clear" data-clear-date="purchaseDate" aria-label="구입일 비우기" title="구입일 비우기">-</button>
+          </div>
         </div>
         </div>
 
@@ -2163,9 +2175,12 @@ drunk	sparkling	FR	프랑스	도츠`;
 
                 <div class="field">
                   <label class="field__label">마신 날</label>
-                  <input class="input" name="drunkDate" type="date" value="${esc(
-                    w.drunkDate || ""
-                  )}" />
+                  <div class="date-row">
+                    <input class="input" name="drunkDate" type="date" value="${esc(
+                      w.drunkDate || ""
+                    )}" />
+                    <button type="button" class="date-clear" data-clear-date="drunkDate" aria-label="마신 날 비우기" title="마신 날 비우기">-</button>
+                  </div>
                 </div>
 
                 <div class="field">
@@ -2568,9 +2583,12 @@ drunk	sparkling	FR	프랑스	도츠`;
 
         <div class="field">
           <label class="field__label">마신 날</label>
-          <input class="input" name="drunkDate" type="date" value="${esc(
-            w.drunkDate || ""
-          )}" />
+          <div class="date-row">
+            <input class="input" name="drunkDate" type="date" value="${esc(
+              w.drunkDate || ""
+            )}" />
+            <button type="button" class="date-clear" data-clear-date="drunkDate" aria-label="마신 날 비우기" title="마신 날 비우기">-</button>
+          </div>
         </div>
 
         <div class="field">
@@ -2624,6 +2642,17 @@ drunk	sparkling	FR	프랑스	도츠`;
   $("#addBtn").addEventListener("click", () => openForm(null));
   backdrop.addEventListener("click", closeSheet);
   sheet.addEventListener("click", (e) => {
+    const clearDate = e.target.closest("[data-clear-date]");
+    if (clearDate) {
+      e.preventDefault();
+      const input = sheet.querySelector(`[name="${clearDate.dataset.clearDate}"]`);
+      if (input) {
+        input.value = "";
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+        input.focus();
+      }
+      return;
+    }
     if (e.target.closest("[data-close]")) closeSheet();
   });
   document.addEventListener(

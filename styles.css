@@ -1522,6 +1522,27 @@ img.card__photo {
   box-shadow: rgba(130, 49, 61, 0.12) 0 0 0 4px;
 }
 
+.date-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 42px;
+  gap: 8px;
+  align-items: center;
+}
+.date-clear {
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-micro);
+  background: rgba(255, 253, 248, 0.9);
+  color: var(--muted);
+  font: inherit;
+  font-size: 20px;
+  line-height: 1;
+}
+.date-clear:active {
+  transform: translateY(1px);
+}
+
 /* ---------- Photo input ---------- */
 .photo-drop {
   display: flex;
