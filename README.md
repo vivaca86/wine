@@ -41,3 +41,21 @@ python -m http.server 8077
 - 한 기기에서 저장하면 로그인된 다른 기기에 실시간으로 반영됩니다.
 - Firestore 보안 규칙에서 허용한 Firebase Auth 사용자만 읽고 쓸 수 있습니다.
 - 로그인/로그아웃/등록/수정/삭제/마신 기록은 `cellars/main/logs` 서브컬렉션에 행동 로그로 저장됩니다.
+
+## 사진 자동 입력 배포 메모
+와인 추가 화면에서 병 사진을 선택한 뒤 `사진으로 자동 입력`을 누르면 Firebase Callable Function
+`analyzeWineLabel`이 OpenAI Responses API로 라벨을 분석해 와인 이름, 빈티지, 종류, 국가, 품종 후보를 폼에 채웁니다.
+분석 결과는 자동 저장되지 않으며 저장 전 직접 확인할 수 있습니다.
+
+서버 함수는 로그인된 Firebase Auth 사용자만 호출할 수 있고, 사용자별 하루 8회로 제한됩니다.
+OpenAI API 키는 프론트 코드에 넣지 않고 Firebase Secret `OPENAI_API_KEY`로만 읽습니다.
+
+배포 전 준비:
+```bash
+firebase login
+firebase use wine-974c5
+firebase functions:secrets:set OPENAI_API_KEY
+firebase deploy --only functions
+```
+
+기본 모델은 `gpt-4o-mini`입니다. 배포 환경에서 `OPENAI_VISION_MODEL`을 설정하면 다른 모델로 바꿀 수 있습니다.

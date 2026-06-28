@@ -1679,6 +1679,35 @@ img.card__photo {
   align-items: center;
   justify-content: center;
 }
+.photo-assist {
+  display: grid;
+  gap: 7px;
+  margin-top: 8px;
+}
+.photo-assist:empty {
+  display: none;
+}
+.photo-assist__btn {
+  width: 100%;
+  min-height: 38px;
+  border: 1px solid rgba(130, 49, 61, 0.2);
+  border-radius: 12px;
+  background: rgba(130, 49, 61, 0.08);
+  color: var(--wine-deep);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 780;
+}
+.photo-assist__btn:disabled {
+  opacity: 0.66;
+  cursor: default;
+}
+.photo-assist__status {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+  text-align: center;
+}
 
 /* ---------- Detail photo ---------- */
 .detail__photo {

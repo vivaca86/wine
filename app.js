@@ -18,6 +18,7 @@
     appId: "1:1008470593815:web:878804c525301fb1e72752",
   };
   const FIREBASE_SDK_VERSION = "10.12.5";
+  const FIREBASE_FUNCTIONS_REGION = "asia-northeast3";
   const FIRESTORE_COLLECTION = "cellars";
   const FIRESTORE_DOC_ID = "main";
   const FIRESTORE_LOGS_COLLECTION = "logs";
@@ -954,6 +955,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
   let applyingRemote = false;
   let auth = null;
   let db = null;
+  let cloudFunctions = null;
   let firebaseApi = null;
   let firebaseReady = false;
   let unsubscribeCellar = null;
@@ -1404,18 +1406,21 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
   async function loadFirebase() {
     if (firebaseApi) return firebaseApi;
     const base = `https://www.gstatic.com/firebasejs/${FIREBASE_SDK_VERSION}`;
-    const [appMod, authMod, firestoreMod] = await Promise.all([
+    const [appMod, authMod, firestoreMod, functionsMod] = await Promise.all([
       import(`${base}/firebase-app.js`),
       import(`${base}/firebase-auth.js`),
       import(`${base}/firebase-firestore.js`),
+      import(`${base}/firebase-functions.js`),
     ]);
     const app = appMod.initializeApp(FIREBASE_CONFIG);
     auth = authMod.getAuth(app);
     db = firestoreMod.getFirestore(app);
+    cloudFunctions = functionsMod.getFunctions(app, FIREBASE_FUNCTIONS_REGION);
     firebaseApi = {
       signInWithEmailAndPassword: authMod.signInWithEmailAndPassword,
       onAuthStateChanged: authMod.onAuthStateChanged,
       signOut: authMod.signOut,
+      httpsCallable: functionsMod.httpsCallable,
       doc: firestoreMod.doc,
       collection: firestoreMod.collection,
       getDoc: firestoreMod.getDoc,
@@ -1439,6 +1444,18 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       FIRESTORE_DOC_ID,
       FIRESTORE_LOGS_COLLECTION
     );
+  }
+
+  async function analyzeWineLabelPhoto(image) {
+    if (!currentUser) {
+      throw new Error("로그인 후 사진 자동 입력을 사용할 수 있어요.");
+    }
+    const api = await loadFirebase();
+    const analyzeWineLabel = api.httpsCallable(cloudFunctions, "analyzeWineLabel", {
+      timeout: 60000,
+    });
+    const result = await analyzeWineLabel({ image });
+    return result && result.data ? result.data.suggestion : null;
   }
 
   function queueSyncPush(delay) {
@@ -2476,6 +2493,8 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     const initialVariety = w.variety || varietyForName(w.name) || "";
     let photo = (existing && existing.photo) || null;
     let lastAutoVariety = initialVariety;
+    let aiBusy = false;
+    let aiStatus = "";
 
     openSheet(`
       <h2 class="sheet__title">${
@@ -2502,6 +2521,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
         <div class="field">
           <label class="field__label">와인 사진 <span class="opt">(선택 · 병 사진)</span></label>
           <label class="photo-drop" id="photoDrop"></label>
+          <div class="photo-assist" id="photoAssist" aria-live="polite"></div>
         </div>
 
         <div class="field">
@@ -2605,6 +2625,95 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     const getRating = isDrunkEdit
       ? bindStarInput(sheet, existing.rating || 0)
       : null;
+    const form = $("#wineForm");
+    const nameInput = form.elements.name;
+    const vintageInput = form.elements.vintage;
+    const countryInput = form.elements.country;
+    const typeInput = form.elements.type;
+    const varietyInput = form.elements.variety;
+
+    function setFormType(type) {
+      if (!FORM_TYPE_IDS.includes(type)) return false;
+      typeInput.value = type;
+      sheet.querySelectorAll("[data-type]").forEach((b) => {
+        b.classList.toggle("is-active", b.dataset.type === type);
+      });
+      return true;
+    }
+
+    function setInputValue(input, value) {
+      const next = (value || "").trim();
+      if (!input || !next) return false;
+      input.value = next;
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      return true;
+    }
+
+    function applyWineLabelSuggestion(suggestion) {
+      if (!suggestion || typeof suggestion !== "object") return 0;
+      let applied = 0;
+      if (setInputValue(nameInput, suggestion.name)) applied += 1;
+      if (setInputValue(vintageInput, suggestion.vintage)) applied += 1;
+      if (
+        suggestion.country &&
+        COUNTRIES.some((country) => country.code === suggestion.country) &&
+        setInputValue(countryInput, suggestion.country)
+      ) {
+        applied += 1;
+      }
+      if (suggestion.type && setFormType(suggestion.type)) applied += 1;
+      if (setInputValue(varietyInput, normalizeVarietyInput(suggestion.variety))) {
+        lastAutoVariety = varietyInput.value.trim();
+        applied += 1;
+      }
+      return applied;
+    }
+
+    function aiErrorMessage(error) {
+      const message = error && error.message ? error.message : "";
+      if (message.includes("OPENAI_API_KEY")) return "아직 서버 키가 설정되지 않았어요.";
+      if (message.includes("로그인")) return "로그인 후 사용할 수 있어요.";
+      if (message.includes("8회")) return message;
+      return "사진 분석에 실패했어요.";
+    }
+
+    function renderPhotoAssistant() {
+      const assist = sheet.querySelector("#photoAssist");
+      if (!assist) return;
+      if (!photo) {
+        assist.innerHTML = "";
+        return;
+      }
+      const status = aiStatus
+        ? `<span class="photo-assist__status">${esc(aiStatus)}</span>`
+        : "";
+      assist.innerHTML = `
+        <button type="button" class="photo-assist__btn" id="photoAiBtn" ${
+          aiBusy ? "disabled" : ""
+        }>${aiBusy ? "분석 중..." : "사진으로 자동 입력"}</button>
+        ${status}
+      `;
+      assist.querySelector("#photoAiBtn")?.addEventListener("click", async () => {
+        if (aiBusy || !photo) return;
+        aiBusy = true;
+        aiStatus = "사진 라벨 분석 중";
+        renderPhotoAssistant();
+        try {
+          const suggestion = await analyzeWineLabelPhoto(photo);
+          const applied = applyWineLabelSuggestion(suggestion);
+          const confidence =
+            suggestion && Number(suggestion.confidence) > 0
+              ? ` · 확신도 ${Math.round(Number(suggestion.confidence) * 100)}%`
+              : "";
+          aiStatus = applied ? `자동 입력 완료${confidence}` : "읽을 수 있는 정보가 부족해요.";
+        } catch (error) {
+          aiStatus = aiErrorMessage(error);
+        } finally {
+          aiBusy = false;
+          renderPhotoAssistant();
+        }
+      });
+    }
 
     // ----- photo drop rendering / wiring -----
     function renderPhoto() {
@@ -2621,7 +2730,9 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
         if (!file) return;
         processImage(file, (url) => {
           photo = url;
+          aiStatus = "";
           renderPhoto();
+          renderPhotoAssistant();
         });
       });
       const rm = drop.querySelector("#photoRemove");
@@ -2630,10 +2741,13 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
           e.preventDefault();
           e.stopPropagation();
           photo = null;
+          aiStatus = "";
           renderPhoto();
+          renderPhotoAssistant();
         });
     }
     renderPhoto();
+    renderPhotoAssistant();
 
     // ----- type picker -----
     sheet.querySelectorAll("[data-type]").forEach((btn) => {
@@ -2647,8 +2761,6 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     });
 
     // ----- variety autocomplete -----
-    const nameInput = sheet.querySelector('[name="name"]');
-    const varietyInput = sheet.querySelector('[name="variety"]');
     const varietySuggest = sheet.querySelector("#varietySuggest");
     let pickedVarietyValue = "";
     let pickedVarietyFragment = "";
