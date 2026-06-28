@@ -59,7 +59,7 @@
 
   const PREF_KEY = "wine-cellar-pref";
   const SEED_KEY = "wine-cellar-seed-version";
-  const SEED_VERSION = "user-wine-list-2026-06-28-review-photo-fixes";
+  const SEED_VERSION = "user-wine-list-2026-06-28-drunk-photo-audit";
   const SEED_TSV = `status	type	country_code	country_name	name	vintage
 cellar	red	FR	프랑스	프리에르 로크, 르 끌라우드	2019
 cellar	red	FR	프랑스	Moillard Gevrey-Chambertin	2018
@@ -474,7 +474,6 @@ drunk	sparkling	FR	프랑스	도츠`;
     "seed-012": "wine-images/review-012.jpg",
     "seed-013": "wine-images/review-013.jpg",
     "seed-014": "wine-images/review-014.jpg",
-    "seed-015": "wine-images/review-015.jpg",
     "seed-016": "wine-images/review-016.jpg",
     "seed-017": "wine-images/review-017.jpg",
     "seed-018": "wine-images/review-018.jpg",
@@ -610,7 +609,6 @@ drunk	sparkling	FR	프랑스	도츠`;
     "seed-150": "wine-images/review-112.jpg",
     "seed-151": "wine-images/review-113.jpg",
     "seed-152": "wine-images/review-114.jpg",
-    "seed-153": "wine-images/review-115.jpg",
     "seed-154": "wine-images/review-116.jpg",
     "seed-155": "wine-images/review-117.jpg",
     "seed-156": "wine-images/review-118.jpg",
@@ -618,8 +616,6 @@ drunk	sparkling	FR	프랑스	도츠`;
     "seed-158": "wine-images/review-120.jpg",
     "seed-159": "wine-images/review-121.jpg",
     "seed-160": "wine-images/review-122.jpg",
-    "seed-161": "wine-images/review-123.jpg",
-    "seed-162": "wine-images/review-124.jpg",
     "seed-163": "wine-images/review-125.jpg",
     "seed-164": "wine-images/review-125.jpg",
     "seed-165": "wine-images/review-126.jpg",
