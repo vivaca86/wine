@@ -59,7 +59,7 @@
 
   const PREF_KEY = "wine-cellar-pref";
   const SEED_KEY = "wine-cellar-seed-version";
-  const SEED_VERSION = "user-wine-list-2026-06-28-edge-name-audit";
+  const SEED_VERSION = "user-wine-list-2026-06-28-semantic-photo-audit";
   const SEED_TSV = `status	type	country_code	country_name	name	vintage
 cellar	red	FR	프랑스	프리에르 로크, 르 끌라우드	2019
 cellar	red	FR	프랑스	Moillard Gevrey-Chambertin	2018
@@ -264,6 +264,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     "샤또 레오빌 라즈까즈": "카베르네 소비뇽, 메를로, 카베르네 프랑, 쁘띠 베르도",
     "Charles Aine & Fils Cotes du Rhone": "그르나슈, 시라, 무르베드르",
     "패너 애쉬": "피노 누아",
+    "Decoy Cabernet Sauvignon": "카베르네 소비뇽",
     "덕혼 디코이": "카베르네 소비뇽",
     "덕혼 디코이 멜롯": "메를로",
     "칼레라 피노누아": "피노 누아",
@@ -393,6 +394,10 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     "seed-020": {
       old: { name: "샤를 에네 꼬뜨 뒤 론", country: "FR", vintage: "" },
       next: { name: "Charles Aine & Fils Cotes du Rhone", country: "FR", vintage: "2023" },
+    },
+    "seed-022": {
+      old: { name: "덕혼 디코이", country: "US", vintage: "2019" },
+      next: { name: "Decoy Cabernet Sauvignon", country: "US", vintage: "2019" },
     },
     "seed-058": {
       old: { name: "맨패밀리 피노타쥐", country: "NZ", vintage: "" },
@@ -703,7 +708,6 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     "seed-117": "wine-images/review-085.jpg",
     "seed-118": "wine-images/review-086.jpg",
     "seed-119": "wine-images/review-087.jpg",
-    "seed-120": "wine-images/review-088.jpg",
     "seed-121": "wine-images/review-089.jpg",
     "seed-122": "wine-images/review-090.jpg",
     "seed-123": "wine-images/review-091.jpg",
