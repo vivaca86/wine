@@ -59,7 +59,7 @@
 
   const PREF_KEY = "wine-cellar-pref";
   const SEED_KEY = "wine-cellar-seed-version";
-  const SEED_VERSION = "user-wine-list-2026-06-28-drunk-photo-audit";
+  const SEED_VERSION = "user-wine-list-2026-06-28-edge-name-audit";
   const SEED_TSV = `status	type	country_code	country_name	name	vintage
 cellar	red	FR	프랑스	프리에르 로크, 르 끌라우드	2019
 cellar	red	FR	프랑스	Moillard Gevrey-Chambertin	2018
@@ -144,8 +144,8 @@ drunk	sparkling	FR	프랑스	떼땅져
 drunk	sparkling	FR	프랑스	필리조 에 피스 누메로 3 브뤼
 cellar	sparkling	FR	프랑스	뽀므리
 drunk	sparkling	FR	프랑스	플뢰리
-drunk	sparkling	FR	프랑스	파이퍼 하이직
-cellar	sparkling	FR	프랑스	파이퍼하이직	2014
+drunk	sparkling	FR	프랑스	파이퍼 하이직 퀴베 브뤼
+cellar	sparkling	FR	프랑스	파이퍼 하이직 빈티지	2014
 drunk	sparkling	FR	프랑스	폴로져
 drunk	sparkling	FR	프랑스	뵈브 끌레꼬
 drunk	sparkling	FR	프랑스	뵈브 끌레꼬
@@ -156,7 +156,7 @@ cellar	sparkling	FR	프랑스	볼랭져
 drunk	sparkling	FR	프랑스	멈 그랑 꼬르똥
 drunk	sparkling	FR	프랑스	페리에 주에
 drunk	sparkling	FR	프랑스	앙드레 끌루에
-drunk	sparkling	FR	프랑스	도츠
+drunk	sparkling	FR	프랑스	도츠 브뤼 클래식
 drunk	white	FR	프랑스	게뷔르츠트라미너 그로씨 로에	2011
 cellar	white	FR	프랑스	휘겔 게뷔리츠트라미너
 drunk	white	DE	독일	스모캣 리슬링
@@ -165,11 +165,11 @@ drunk	white	DE	독일	군트럼 카비넷
 drunk	white	CL	칠레	Dos Copas Sauvignon Blanc	2023
 drunk	white	NZ	뉴질랜드	Break Point Sauvignon Blanc Marlborough
 drunk	white	NZ	뉴질랜드	Break Point Sauvignon Blanc Marlborough
-drunk	white	NZ	뉴질랜드	래빗 아일랜드 소비뇽블랑
-drunk	white	NZ	뉴질랜드	베비치 블랙 소비뇽블랑
-cellar	white	NZ	뉴질랜드	더 패스 소비뇽블랑
-cellar	white	NZ	뉴질랜드	셀락 오리진 소비뇽블랑
-cellar	white	NZ	뉴질랜드	셀락 오리진 소비뇽블랑
+drunk	white	NZ	뉴질랜드	래빗 아일랜드 소비뇽 블랑
+drunk	white	NZ	뉴질랜드	베비치 블랙 라벨 소비뇽 블랑
+cellar	white	NZ	뉴질랜드	더 패스 소비뇽 블랑
+cellar	white	NZ	뉴질랜드	셀락 오리진 소비뇽 블랑
+cellar	white	NZ	뉴질랜드	셀락 오리진 소비뇽 블랑
 drunk	white	DE	독일	마르쿠스 몰리터 젤팅거 아우스레제	2018
 cellar	white	DE	독일	로버트 바일 리슬링	2021
 drunk	white	DE	독일	로버트 바일 리슬링	2021
@@ -188,22 +188,22 @@ cellar	white	HU	헝가리	로얄 토카이 블루라벨
 cellar	white	FR	프랑스	샤또 꾸떼	2016
 cellar	white	FR	프랑스	샤또 꾸떼	2016
 cellar	white	FR	프랑스	샤또 기로	2016
-drunk	white	NZ	뉴질랜드	클라우디베이	2021
-drunk	white	NZ	뉴질랜드	클라우디베이	2022
-drunk	white	NZ	뉴질랜드	클라우디베이	2022
-drunk	white	NZ	뉴질랜드	클라우디베이	2022
-drunk	white	NZ	뉴질랜드	클라우디베이	2023
-cellar	white	NZ	뉴질랜드	클라우디베이	2024
-drunk	white	NZ	뉴질랜드	클라우디베이	2024
-drunk	white	NZ	뉴질랜드	오이스터베이
-drunk	white	NZ	뉴질랜드	도그포인트	2018
-drunk	white	NZ	뉴질랜드	도그포인트	2020
-drunk	white	NZ	뉴질랜드	도그포인트	2021
+drunk	white	NZ	뉴질랜드	클라우디베이 소비뇽 블랑	2021
+drunk	white	NZ	뉴질랜드	클라우디베이 소비뇽 블랑	2022
+drunk	white	NZ	뉴질랜드	클라우디베이 소비뇽 블랑	2022
+drunk	white	NZ	뉴질랜드	클라우디베이 소비뇽 블랑	2022
+drunk	white	NZ	뉴질랜드	클라우디베이 소비뇽 블랑	2023
+cellar	white	NZ	뉴질랜드	클라우디베이 소비뇽 블랑	2024
+drunk	white	NZ	뉴질랜드	클라우디베이 소비뇽 블랑	2024
+drunk	white	NZ	뉴질랜드	오이스터 베이 소비뇽 블랑
+drunk	white	NZ	뉴질랜드	도그포인트 소비뇽 블랑	2018
+drunk	white	NZ	뉴질랜드	도그포인트 소비뇽 블랑	2020
+drunk	white	NZ	뉴질랜드	도그포인트 소비뇽 블랑	2021
 drunk	white	NZ	뉴질랜드	화이트헤븐	2021
-drunk	white	NZ	뉴질랜드	머드하우스	2021
-drunk	white	NZ	뉴질랜드	펄리셔	2022
-drunk	white	NZ	뉴질랜드	인비보	2022
-drunk	white	NZ	뉴질랜드	토후	2022
+drunk	white	NZ	뉴질랜드	머드하우스 소비뇽 블랑	2021
+drunk	white	NZ	뉴질랜드	펄리셔 소비뇽 블랑	2022
+drunk	white	NZ	뉴질랜드	인비보 소비뇽 블랑	2022
+drunk	white	NZ	뉴질랜드	토후 소비뇽 블랑	2022
 drunk	white	IT	이탈리아	시라꼬	2021
 cellar	white	IT	이탈리아	브리꼬 꽐리아	2021
 drunk	white	IT	이탈리아	브리꼬 꽐리아	2022
@@ -228,8 +228,8 @@ drunk	white	NZ	뉴질랜드	머드하우스 소비뇽 블랑
 drunk	white	NZ	뉴질랜드	코노 소비뇽 블랑
 drunk	white	NZ	뉴질랜드	코노 소비뇽 블랑
 drunk	white	NZ	뉴질랜드	코노 소비뇽 블랑
-drunk	white	NZ	뉴질랜드	베비치 블랙라벨 소비뇽 블랑
-drunk	white	NZ	뉴질랜드	베비치 블랙라벨 소비뇽 블랑
+drunk	white	NZ	뉴질랜드	베비치 블랙 라벨 소비뇽 블랑
+drunk	white	NZ	뉴질랜드	베비치 블랙 라벨 소비뇽 블랑
 drunk	white	NZ	뉴질랜드	킴 크로포드 소비뇽 블랑
 drunk	white	NZ	뉴질랜드	킴 크로포드 소비뇽 블랑
 drunk	white	NZ	뉴질랜드	오이스터 베이 소비뇽 블랑
@@ -237,10 +237,10 @@ drunk	white	NZ	뉴질랜드	오이스터 베이 소비뇽 블랑
 drunk	white	NZ	뉴질랜드	펄리셔 소비뇽 블랑
 drunk	white	NZ	뉴질랜드	펄리셔 소비뇽 블랑
 drunk	sparkling	FR	프랑스	페리에 주에
-drunk	sparkling	FR	프랑스	파이퍼하이직
-drunk	sparkling	FR	프랑스	파이퍼하이직
-drunk	sparkling	FR	프랑스	파이퍼하이직
-drunk	sparkling	FR	프랑스	도츠`;
+drunk	sparkling	FR	프랑스	파이퍼 하이직 퀴베 브뤼
+drunk	sparkling	FR	프랑스	파이퍼 하이직 퀴베 브뤼
+drunk	sparkling	FR	프랑스	파이퍼 하이직 퀴베 브뤼
+drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
 
   const VARIETY_BY_WINE_NAME = {
     "프리에르 로크, 르 끌라우드": "피노 누아",
@@ -362,6 +362,17 @@ drunk	sparkling	FR	프랑스	도츠`;
     "킴 크로포드 소비뇽 블랑": "소비뇽 블랑",
     "오이스터 베이 소비뇽 블랑": "소비뇽 블랑",
     "펄리셔 소비뇽 블랑": "소비뇽 블랑",
+    "도츠 브뤼 클래식": "피노 누아, 샤르도네, 피노 뮈니에",
+    "파이퍼 하이직 퀴베 브뤼": "피노 누아, 피노 뮈니에, 샤르도네",
+    "파이퍼 하이직 빈티지": "피노 누아, 피노 뮈니에, 샤르도네",
+    "래빗 아일랜드 소비뇽 블랑": "소비뇽 블랑",
+    "베비치 블랙 라벨 소비뇽 블랑": "소비뇽 블랑",
+    "더 패스 소비뇽 블랑": "소비뇽 블랑",
+    "셀락 오리진 소비뇽 블랑": "소비뇽 블랑",
+    "클라우디베이 소비뇽 블랑": "소비뇽 블랑",
+    "도그포인트 소비뇽 블랑": "소비뇽 블랑",
+    "인비보 소비뇽 블랑": "소비뇽 블랑",
+    "토후 소비뇽 블랑": "소비뇽 블랑",
   };
 
   const varietyForName = (name) => VARIETY_BY_WINE_NAME[(name || "").trim()] || "";
@@ -457,6 +468,122 @@ drunk	sparkling	FR	프랑스	도츠`;
     "seed-161": {
       old: { name: "마르크 소야르 크라 2022 부르고뉴", country: "FR", vintage: "" },
       next: { name: "마르크 소야르 크라 부르고뉴", country: "FR", vintage: "2022" },
+    },
+    "seed-084": {
+      old: { name: "파이퍼 하이직", country: "FR", vintage: "" },
+      next: { name: "파이퍼 하이직 퀴베 브뤼", country: "FR", vintage: "" },
+    },
+    "seed-085": {
+      old: { name: "파이퍼하이직", country: "FR", vintage: "2014" },
+      next: { name: "파이퍼 하이직 빈티지", country: "FR", vintage: "2014" },
+    },
+    "seed-096": {
+      old: { name: "도츠", country: "FR", vintage: "" },
+      next: { name: "도츠 브뤼 클래식", country: "FR", vintage: "" },
+    },
+    "seed-105": {
+      old: { name: "래빗 아일랜드 소비뇽블랑", country: "NZ", vintage: "" },
+      next: { name: "래빗 아일랜드 소비뇽 블랑", country: "NZ", vintage: "" },
+    },
+    "seed-106": {
+      old: { name: "베비치 블랙 소비뇽블랑", country: "NZ", vintage: "" },
+      next: { name: "베비치 블랙 라벨 소비뇽 블랑", country: "NZ", vintage: "" },
+    },
+    "seed-107": {
+      old: { name: "더 패스 소비뇽블랑", country: "NZ", vintage: "" },
+      next: { name: "더 패스 소비뇽 블랑", country: "NZ", vintage: "" },
+    },
+    "seed-108": {
+      old: { name: "셀락 오리진 소비뇽블랑", country: "NZ", vintage: "" },
+      next: { name: "셀락 오리진 소비뇽 블랑", country: "NZ", vintage: "" },
+    },
+    "seed-109": {
+      old: { name: "셀락 오리진 소비뇽블랑", country: "NZ", vintage: "" },
+      next: { name: "셀락 오리진 소비뇽 블랑", country: "NZ", vintage: "" },
+    },
+    "seed-128": {
+      old: { name: "클라우디베이", country: "NZ", vintage: "2021" },
+      next: { name: "클라우디베이 소비뇽 블랑", country: "NZ", vintage: "2021" },
+    },
+    "seed-129": {
+      old: { name: "클라우디베이", country: "NZ", vintage: "2022" },
+      next: { name: "클라우디베이 소비뇽 블랑", country: "NZ", vintage: "2022" },
+    },
+    "seed-130": {
+      old: { name: "클라우디베이", country: "NZ", vintage: "2022" },
+      next: { name: "클라우디베이 소비뇽 블랑", country: "NZ", vintage: "2022" },
+    },
+    "seed-131": {
+      old: { name: "클라우디베이", country: "NZ", vintage: "2022" },
+      next: { name: "클라우디베이 소비뇽 블랑", country: "NZ", vintage: "2022" },
+    },
+    "seed-132": {
+      old: { name: "클라우디베이", country: "NZ", vintage: "2023" },
+      next: { name: "클라우디베이 소비뇽 블랑", country: "NZ", vintage: "2023" },
+    },
+    "seed-133": {
+      old: { name: "클라우디베이", country: "NZ", vintage: "2024" },
+      next: { name: "클라우디베이 소비뇽 블랑", country: "NZ", vintage: "2024" },
+    },
+    "seed-134": {
+      old: { name: "클라우디베이", country: "NZ", vintage: "2024" },
+      next: { name: "클라우디베이 소비뇽 블랑", country: "NZ", vintage: "2024" },
+    },
+    "seed-135": {
+      old: { name: "오이스터베이", country: "NZ", vintage: "" },
+      next: { name: "오이스터 베이 소비뇽 블랑", country: "NZ", vintage: "" },
+    },
+    "seed-136": {
+      old: { name: "도그포인트", country: "NZ", vintage: "2018" },
+      next: { name: "도그포인트 소비뇽 블랑", country: "NZ", vintage: "2018" },
+    },
+    "seed-137": {
+      old: { name: "도그포인트", country: "NZ", vintage: "2020" },
+      next: { name: "도그포인트 소비뇽 블랑", country: "NZ", vintage: "2020" },
+    },
+    "seed-138": {
+      old: { name: "도그포인트", country: "NZ", vintage: "2021" },
+      next: { name: "도그포인트 소비뇽 블랑", country: "NZ", vintage: "2021" },
+    },
+    "seed-140": {
+      old: { name: "머드하우스", country: "NZ", vintage: "2021" },
+      next: { name: "머드하우스 소비뇽 블랑", country: "NZ", vintage: "2021" },
+    },
+    "seed-141": {
+      old: { name: "펄리셔", country: "NZ", vintage: "2022" },
+      next: { name: "펄리셔 소비뇽 블랑", country: "NZ", vintage: "2022" },
+    },
+    "seed-142": {
+      old: { name: "인비보", country: "NZ", vintage: "2022" },
+      next: { name: "인비보 소비뇽 블랑", country: "NZ", vintage: "2022" },
+    },
+    "seed-143": {
+      old: { name: "토후", country: "NZ", vintage: "2022" },
+      next: { name: "토후 소비뇽 블랑", country: "NZ", vintage: "2022" },
+    },
+    "seed-168": {
+      old: { name: "베비치 블랙라벨 소비뇽 블랑", country: "NZ", vintage: "" },
+      next: { name: "베비치 블랙 라벨 소비뇽 블랑", country: "NZ", vintage: "" },
+    },
+    "seed-169": {
+      old: { name: "베비치 블랙라벨 소비뇽 블랑", country: "NZ", vintage: "" },
+      next: { name: "베비치 블랙 라벨 소비뇽 블랑", country: "NZ", vintage: "" },
+    },
+    "seed-177": {
+      old: { name: "파이퍼하이직", country: "FR", vintage: "" },
+      next: { name: "파이퍼 하이직 퀴베 브뤼", country: "FR", vintage: "" },
+    },
+    "seed-178": {
+      old: { name: "파이퍼하이직", country: "FR", vintage: "" },
+      next: { name: "파이퍼 하이직 퀴베 브뤼", country: "FR", vintage: "" },
+    },
+    "seed-179": {
+      old: { name: "파이퍼하이직", country: "FR", vintage: "" },
+      next: { name: "파이퍼 하이직 퀴베 브뤼", country: "FR", vintage: "" },
+    },
+    "seed-180": {
+      old: { name: "도츠", country: "FR", vintage: "" },
+      next: { name: "도츠 브뤼 클래식", country: "FR", vintage: "" },
     },
   };
 
