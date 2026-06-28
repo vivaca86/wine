@@ -59,7 +59,7 @@
 
   const PREF_KEY = "wine-cellar-pref";
   const SEED_KEY = "wine-cellar-seed-version";
-  const SEED_VERSION = "user-wine-list-2026-06-28-marie-ledru-image";
+  const SEED_VERSION = "user-wine-list-2026-06-28-recovered-product-images";
   const SEED_TSV = `status	type	country_code	country_name	name	vintage
 cellar	red	FR	프랑스	프리에르 로크, 르 끌라우드	2019
 cellar	red	FR	프랑스	Moillard Gevrey-Chambertin	2018
@@ -623,6 +623,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     "seed-001": "wine-images/review-001.jpg",
     "seed-002": "wine-images/review-002.jpg",
     "seed-003": "wine-images/review-003.jpg",
+    "seed-004": "wine-images/review-141.jpg",
 
     "seed-005": "wine-images/review-005.jpg",
     "seed-006": "wine-images/review-006.jpg",
@@ -632,6 +633,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     "seed-011": "wine-images/review-011.jpg",
     "seed-012": "wine-images/review-012.jpg",
     "seed-013": "wine-images/review-013.jpg",
+    "seed-014": "wine-images/review-142.jpg",
 
     "seed-016": "wine-images/review-016.jpg",
     "seed-017": "wine-images/review-017.jpg",
@@ -660,6 +662,9 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     "seed-040": "wine-images/review-031.jpg",
     "seed-041": "wine-images/review-032.jpg",
     "seed-042": "wine-images/review-032.jpg",
+    "seed-043": "wine-images/review-137.jpg",
+    "seed-044": "wine-images/review-137.jpg",
+    "seed-045": "wine-images/review-137.jpg",
 
 
 
@@ -692,6 +697,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     "seed-072": "wine-images/review-053.jpg",
     "seed-073": "wine-images/review-053.jpg",
     "seed-074": "wine-images/review-053.jpg",
+    "seed-075": "wine-images/review-133.jpg",
 
     "seed-076": "wine-images/review-055.jpg",
     "seed-077": "wine-images/review-056.jpg",
@@ -710,6 +716,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     "seed-090": "wine-images/review-064.jpg",
     "seed-091": "wine-images/review-065.jpg",
     "seed-092": "wine-images/review-066.jpg",
+    "seed-093": "wine-images/review-135.jpg",
 
     "seed-094": "wine-images/review-068.jpg",
     "seed-095": "wine-images/review-069.jpg",
@@ -718,8 +725,11 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     "seed-098": "wine-images/review-072.jpg",
     "seed-099": "wine-images/review-073.jpg",
     "seed-100": "wine-images/review-074.jpg",
+    "seed-101": "wine-images/review-134.jpg",
 
     "seed-102": "wine-images/review-076.jpg",
+    "seed-103": "wine-images/review-145.jpg",
+    "seed-104": "wine-images/review-145.jpg",
     "seed-105": "wine-images/review-077.jpg",
     "seed-106": "wine-images/review-078.jpg",
     "seed-107": "wine-images/review-079.jpg",
@@ -735,6 +745,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     "seed-117": "wine-images/review-085.jpg",
     "seed-118": "wine-images/review-086.jpg",
     "seed-119": "wine-images/review-087.jpg",
+    "seed-120": "wine-images/review-138.jpg",
     "seed-122": "wine-images/review-090.jpg",
     "seed-123": "wine-images/review-091.jpg",
     "seed-124": "wine-images/review-091.jpg",
@@ -755,6 +766,8 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     "seed-139": "wine-images/review-102.jpg",
     "seed-140": "wine-images/review-103.jpg",
     "seed-141": "wine-images/review-104.jpg",
+    "seed-142": "wine-images/review-136.jpg",
+    "seed-143": "wine-images/review-140.jpg",
 
 
     "seed-144": "wine-images/review-107.jpg",
@@ -766,13 +779,16 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     "seed-150": "wine-images/review-112.jpg",
     "seed-151": "wine-images/review-113.jpg",
     "seed-152": "wine-images/review-114.jpg",
+    "seed-153": "wine-images/review-146.jpg",
     "seed-154": "wine-images/review-116.jpg",
+    "seed-155": "wine-images/review-139.jpg",
 
     "seed-156": "wine-images/review-118.jpg",
     "seed-157": "wine-images/review-119.jpg",
     "seed-158": "wine-images/review-120.jpg",
     "seed-159": "wine-images/review-121.jpg",
     "seed-160": "wine-images/review-122.jpg",
+    "seed-161": "wine-images/review-144.jpg",
     "seed-162": "wine-images/review-132.jpg",
     "seed-163": "wine-images/review-125.jpg",
     "seed-164": "wine-images/review-125.jpg",
@@ -781,6 +797,8 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     "seed-167": "wine-images/review-126.jpg",
     "seed-168": "wine-images/review-127.jpg",
     "seed-169": "wine-images/review-127.jpg",
+    "seed-170": "wine-images/review-143.jpg",
+    "seed-171": "wine-images/review-143.jpg",
 
 
     "seed-172": "wine-images/review-129.jpg",
