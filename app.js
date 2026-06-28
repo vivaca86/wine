@@ -384,8 +384,8 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     "토후 소비뇽 블랑": "소비뇽 블랑",
   };
 
-  const varietyForName = (name, type = "") =>
-    VARIETY_BY_WINE_NAME[(name || "").trim()] || inferVarietyFromName(name, type);
+  const varietyForName = (name, type = "", country = "") =>
+    VARIETY_BY_WINE_NAME[(name || "").trim()] || inferVarietyFromName(name, type, country);
 
   const ENGLISH_NAME_BY_SEED_ID = {
     "seed-001": "Domaine Prieure Roch Le Cloud",
@@ -1091,10 +1091,11 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       .toLowerCase();
   }
 
-  function inferVarietyFromName(name, type = "") {
+  function inferVarietyFromName(name, type = "", country = "") {
     const n = normalizedLookupName(name);
     const wineType = (type || "").toLowerCase();
-    if (!n) return "";
+    const countryCode = (country || "").toUpperCase();
+    if (!n) return representativeVarietyForType(wineType, countryCode);
 
     if (n.includes("blanc de blancs")) return "샤르도네";
     if (n.includes("marie-noelle ledru")) return "피노 누아";
@@ -1165,12 +1166,24 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       return "샤르도네, 피노 누아, 피노 뮈니에";
     }
 
+    return representativeVarietyForType(wineType, countryCode);
+  }
+
+  function representativeVarietyForType(type = "", country = "") {
+    const wineType = (type || "").toLowerCase();
+    const countryCode = (country || "").toUpperCase();
+    if (wineType === "sparkling") return "샤르도네, 피노 누아, 피노 뮈니에";
+    if (wineType === "white" && countryCode === "NZ") return "소비뇽 블랑";
+    if (wineType === "red" && countryCode === "AU") return "시라즈";
+    if (wineType === "red" && countryCode === "AR") return "말벡";
+    if (wineType === "dessert" && countryCode === "HU") return "푸르민트";
+    if (wineType === "dessert" && countryCode === "FR") return "세미용, 소비뇽 블랑";
     return "";
   }
 
-  function seedVarietyForId(id, fallbackName = "", type = "") {
+  function seedVarietyForId(id, fallbackName = "", type = "", country = "") {
     const canonicalName = canonicalSeedNameForId(id);
-    return varietyForName(canonicalName, type) || varietyForName(fallbackName, type);
+    return varietyForName(canonicalName, type, country) || varietyForName(fallbackName, type, country);
   }
 
   function applyEnglishSeedName(wine) {
@@ -1180,7 +1193,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
 
     const updates = {};
     if ((wine.name || "").trim() !== canonicalName) updates.name = canonicalName;
-    const variety = seedVarietyForId(wine.id, wine.name, wine.type);
+    const variety = seedVarietyForId(wine.id, wine.name, wine.type, wine.country);
     if (variety && !(wine.variety || "").trim()) updates.variety = variety;
     return Object.keys(updates).length ? Object.assign({}, wine, updates) : wine;
   }
@@ -1206,7 +1219,12 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       if (!matchesOldSeed) return applyEnglishSeedName(nextWine);
 
       nextWine = Object.assign({}, wine, correction.next);
-      const mappedVariety = seedVarietyForId(nextWine.id, nextWine.name, nextWine.type);
+      const mappedVariety = seedVarietyForId(
+        nextWine.id,
+        nextWine.name,
+        nextWine.type,
+        nextWine.country
+      );
       if (mappedVariety && !(nextWine.variety || "").trim()) {
         nextWine.variety = mappedVariety;
       }
@@ -1219,7 +1237,8 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     return wines.map((wine) => {
       if (!wine || typeof wine !== "object") return wine;
       const variety =
-        seedVarietyForId(wine.id, wine.name, wine.type) || varietyForName(wine.name, wine.type);
+        seedVarietyForId(wine.id, wine.name, wine.type, wine.country) ||
+        varietyForName(wine.name, wine.type, wine.country);
       const photo = defaultPhotoForWineId(wine.id) || defaultPhotoForWineName(wine.name);
       const updates = {};
       if (variety && !(wine.variety || "").trim()) updates.variety = variety;
@@ -1282,7 +1301,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
           country: country || "",
           type,
           vintage: (vintage || "").trim(),
-          variety: seedVarietyForId(id, trimmedName, type),
+          variety: seedVarietyForId(id, trimmedName, type, country),
           price: null,
           purchaseDate: "",
           photo: defaultPhotoForWineId(id),
@@ -2796,7 +2815,10 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     const isDrunkEdit = isEdit && existing.status === "drunk";
     const selectedType = FORM_TYPE_IDS.includes(w.type) ? w.type : "red";
     const initialVariety =
-      w.variety || seedVarietyForId(w.id, w.name, w.type) || varietyForName(w.name, w.type) || "";
+      w.variety ||
+      seedVarietyForId(w.id, w.name, w.type, w.country) ||
+      varietyForName(w.name, w.type, w.country) ||
+      "";
     let photo = (existing && existing.photo) || null;
     let lastAutoVariety = initialVariety;
     let aiBusy = false;
@@ -2969,7 +2991,8 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       }
       if (suggestion.type && setFormType(suggestion.type)) applied += 1;
       const suggestedVariety =
-        normalizeVarietyInput(suggestion.variety) || varietyForName(suggestion.name, suggestion.type);
+        normalizeVarietyInput(suggestion.variety) ||
+        varietyForName(suggestion.name, suggestion.type, suggestion.country);
       if (setInputValue(varietyInput, suggestedVariety)) {
         lastAutoVariety = varietyInput.value.trim();
         applied += 1;
@@ -2981,7 +3004,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       const message = error && error.message ? error.message : "";
       if (message.includes("OPENAI_API_KEY")) return "아직 서버 키가 설정되지 않았어요.";
       if (message.includes("로그인")) return "로그인 후 사용할 수 있어요.";
-      if (message.includes("8회")) return message;
+      if (message.includes("회까지")) return message;
       return "사진 분석에 실패했어요.";
     }
 
@@ -3028,10 +3051,10 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       const drop = sheet.querySelector("#photoDrop");
       drop.classList.toggle("has-photo", !!photo);
       drop.innerHTML = photo
-        ? `<input type="file" accept="image/*" capture="environment" id="photoInput" hidden />
+        ? `<input type="file" accept="image/*" id="photoInput" hidden />
            <img src="${photo}" alt="와인 사진" />
            <button type="button" class="photo-remove" id="photoRemove" aria-label="사진 삭제">✕</button>`
-        : `<input type="file" accept="image/*" capture="environment" id="photoInput" hidden />
+        : `<input type="file" accept="image/*" id="photoInput" hidden />
            <span>📷 와인 병 사진 찍기 / 선택</span>`;
       drop.querySelector("#photoInput").addEventListener("change", (e) => {
         const file = e.target.files && e.target.files[0];
@@ -3170,7 +3193,8 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     nameInput.addEventListener("input", () => {
       const suggested = varietyForName(
         nameInput.value.trim(),
-        sheet.querySelector('[name="type"]').value
+        sheet.querySelector('[name="type"]').value,
+        countryInput.value
       );
       const current = varietyInput.value.trim();
       if (suggested && (!current || current === lastAutoVariety)) {
@@ -3231,7 +3255,8 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
         country: f.country.value,
         type: f.type.value,
         vintage: f.vintage.value.trim(),
-        variety: normalizeVarietyInput(f.variety.value) || varietyForName(name, f.type.value),
+        variety:
+          normalizeVarietyInput(f.variety.value) || varietyForName(name, f.type.value, f.country.value),
         price: f.price.value.replace(/[^\d]/g, "") || null,
         purchaseDate: f.purchaseDate.value || "",
         photo: photo || null,

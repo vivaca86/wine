@@ -12,40 +12,42 @@ const db = getFirestore();
 const openaiApiKey = defineSecret("OPENAI_API_KEY");
 
 const REGION = "asia-northeast3";
-const DAILY_LIMIT = 8;
+const MONTHLY_LIMIT = 300;
 const MAX_IMAGE_CHARS = 4_000_000;
 const DEFAULT_MODEL = "gpt-4o-mini";
 const VALID_TYPES = new Set(["red", "white", "rose", "sparkling", "dessert", "etc", ""]);
 const VALID_COUNTRY_RE = /^[A-Z]{2}$|^$/;
 const DATA_URL_RE = /^data:image\/(?:jpeg|jpg|png|webp);base64,[A-Za-z0-9+/=\r\n]+$/;
 
-function kstDayKey(date = new Date()) {
-  return new Intl.DateTimeFormat("en-CA", {
+function kstMonthKey(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Seoul",
     year: "numeric",
     month: "2-digit",
-    day: "2-digit",
-  }).format(date);
+  }).formatToParts(date);
+  const year = parts.find((part) => part.type === "year").value;
+  const month = parts.find((part) => part.type === "month").value;
+  return `${year}-${month}`;
 }
 
-async function reserveDailyUsage(uid) {
-  const dayKey = kstDayKey();
-  const ref = db.collection("aiUsage").doc(uid).collection("wineLabelAnalysis").doc(dayKey);
+async function reserveMonthlyUsage(uid) {
+  const monthKey = kstMonthKey();
+  const ref = db.collection("aiUsage").doc(uid).collection("wineLabelAnalysisMonthly").doc(monthKey);
   await db.runTransaction(async (tx) => {
     const snap = await tx.get(ref);
     const count = snap.exists ? Number(snap.data().count || 0) : 0;
-    if (count >= DAILY_LIMIT) {
+    if (count >= MONTHLY_LIMIT) {
       throw new HttpsError(
         "resource-exhausted",
-        `오늘 사진 자동 입력은 ${DAILY_LIMIT}회까지 사용할 수 있어요.`
+        `이번 달 사진 자동 입력은 ${MONTHLY_LIMIT}회까지 사용할 수 있어요.`
       );
     }
     tx.set(
       ref,
       {
         count: count + 1,
-        limit: DAILY_LIMIT,
-        dayKey,
+        limit: MONTHLY_LIMIT,
+        monthKey,
         updatedAt: FieldValue.serverTimestamp(),
       },
       { merge: true }
@@ -79,9 +81,89 @@ function cleanConfidence(value) {
   return Math.max(0, Math.min(1, n));
 }
 
+function normalizedLookupName(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
+function representativeVarietyForType(type = "", country = "") {
+  const wineType = (type || "").toLowerCase();
+  const countryCode = (country || "").toUpperCase();
+  if (wineType === "sparkling") return "샤르도네, 피노 누아, 피노 뮈니에";
+  if (wineType === "white" && countryCode === "NZ") return "소비뇽 블랑";
+  if (wineType === "red" && countryCode === "AU") return "시라즈";
+  if (wineType === "red" && countryCode === "AR") return "말벡";
+  if (wineType === "dessert" && countryCode === "HU") return "푸르민트";
+  if (wineType === "dessert" && countryCode === "FR") return "세미용, 소비뇽 블랑";
+  return "";
+}
+
+function inferVarietyFromSuggestion(name, type = "", country = "") {
+  const n = normalizedLookupName(name);
+  if (!n) return representativeVarietyForType(type, country);
+
+  if (n.includes("blanc de blancs")) return "샤르도네";
+  if (n.includes("marie-noelle ledru")) return "피노 누아";
+  if (n.includes("blanc de noirs")) return "피노 누아, 피노 뮈니에";
+  if (n.includes("sauvignon blanc") || n.includes("sancerre")) return "소비뇽 블랑";
+  if (n.includes("chablis") || n.includes("chardonnay")) return "샤르도네";
+  if (n.includes("chenin blanc")) return "슈냉 블랑";
+  if (n.includes("gewurztraminer")) return "게뷔르츠트라미너";
+  if (n.includes("riesling")) return "리슬링";
+  if (n.includes("moscato")) return "모스카토";
+  if (n.includes("pinot gris") || n.includes("pinot grigio")) return "피노 그리";
+  if (n.includes("furmint") || n.includes("tokaji")) return "푸르민트";
+  if (n.includes("barsac") || n.includes("sauternes")) return "세미용, 소비뇽 블랑";
+  if (n.includes("malbec") && n.includes("cabernet franc")) return "말벡, 카베르네 프랑";
+  if (n.includes("syrah") && n.includes("viognier")) return "시라, 비오니에";
+  if (n.includes("shiraz")) return "시라즈";
+  if (n.includes("syrah")) return "시라";
+  if (n.includes("pinotage")) return "피노타주";
+  if (n.includes("petit verdot")) return "쁘띠 베르도";
+  if (n.includes("merlot")) return "메를로";
+  if (n.includes("opus one") || n.includes("overture")) {
+    return "카베르네 소비뇽, 메를로, 카베르네 프랑, 쁘띠 베르도, 말벡";
+  }
+  if (n.includes("sassicaia")) return "카베르네 소비뇽, 카베르네 프랑";
+  if (n.includes("sena")) return "카베르네 소비뇽, 까르메네르, 말벡, 메를로, 쁘띠 베르도";
+  if (n.includes("talbot") || n.includes("leoville las cases")) {
+    return "카베르네 소비뇽, 메를로, 카베르네 프랑, 쁘띠 베르도";
+  }
+  if (n.includes("cabernet sauvignon") || n.includes("don melchor")) {
+    return "카베르네 소비뇽";
+  }
+  if (n.includes("barbaresco")) return "네비올로";
+  if (
+    n.includes("pinot noir") ||
+    n.includes("gevrey-chambertin") ||
+    n.includes("pommard") ||
+    n.includes("corton") ||
+    n.includes("aloxe-corton") ||
+    n.includes("cote de beaune") ||
+    n.includes("cote de nuits") ||
+    n.includes("marsannay") ||
+    n.includes("ladoix") ||
+    n.includes("le cloud")
+  ) {
+    return "피노 누아";
+  }
+  if (n.includes("gigondas") || n.includes("cotes du rhone")) return "그르나슈, 시라";
+  if (n.includes("rioja") || n.includes("kalamity")) return "템프라니요";
+  if (n.includes("braida") || n.includes("monferrato")) return "바르베라";
+  if (n.includes("jacques selosse")) return "샤르도네";
+  if (n.includes("andre clouet")) return "피노 누아";
+  if (n.includes("cristal") || n.includes("dom perignon") || n.includes("rare 2008")) {
+    return "샤르도네, 피노 누아";
+  }
+
+  return representativeVarietyForType(type, country);
+}
+
 function normalizeSuggestion(raw) {
   const suggestion = raw && typeof raw === "object" ? raw : {};
-  return {
+  const normalized = {
     name: cleanString(suggestion.name, 120),
     vintage: cleanVintage(suggestion.vintage),
     type: cleanType(suggestion.type),
@@ -90,6 +172,14 @@ function normalizeSuggestion(raw) {
     confidence: cleanConfidence(suggestion.confidence),
     notes: cleanString(suggestion.notes, 180),
   };
+  if (!normalized.variety) {
+    normalized.variety = inferVarietyFromSuggestion(
+      normalized.name,
+      normalized.type,
+      normalized.country
+    );
+  }
+  return normalized;
 }
 
 function extractOutputText(payload) {
@@ -134,6 +224,7 @@ async function analyzeWithOpenAI(image) {
                 "type must be one of red, white, rose, sparkling, dessert, etc, or empty. " +
                 "country must be a 2-letter ISO code like FR, US, NZ, IT, DE, CL, AU, ES, AR, ZA, HU, or empty. " +
                 "variety should be comma-separated Korean grape names when visible or highly likely. " +
+                "If the exact blend is not visible but the wine name, region, or style has a standard representative grape, return that representative grape or blend. " +
                 "You may infer variety from strong wine-region or cuvee cues: Chablis=샤르도네, " +
                 "Sancerre or Sauvignon Blanc=소비뇽 블랑, Riesling=리슬링, Pinot Noir/Burgundy red=피노 누아, " +
                 "Syrah/Shiraz=시라 or 시라즈, Moscato d'Asti=모스카토, Sauternes/Barsac=세미용, 소비뇽 블랑, " +
@@ -224,7 +315,7 @@ exports.analyzeWineLabel = onCall(
       throw new HttpsError("invalid-argument", "분석할 와인 병 사진이 올바르지 않아요.");
     }
 
-    await reserveDailyUsage(uid);
+    await reserveMonthlyUsage(uid);
     const suggestion = await analyzeWithOpenAI(image);
     logger.info("Wine label analyzed", {
       uid,
