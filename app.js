@@ -59,7 +59,7 @@
 
   const PREF_KEY = "wine-cellar-pref";
   const SEED_KEY = "wine-cellar-seed-version";
-  const SEED_VERSION = "user-wine-list-2026-06-28-review-rembg-photos";
+  const SEED_VERSION = "user-wine-list-2026-06-28-review-rembg-photos-v2";
   const SEED_TSV = `status	type	country_code	country_name	name	vintage
 cellar	red	FR	프랑스	프리에르 로크, 르 끌라우드	2019
 cellar	red	FR	프랑스	Moillard Gevrey-Chambertin	2018
@@ -711,7 +711,9 @@ drunk	sparkling	FR	프랑스	도츠`;
       const photo = defaultPhotoForWineId(wine.id);
       const updates = {};
       if (variety && !(wine.variety || "").trim()) updates.variety = variety;
-      if (photo && !(wine.photo || "").trim()) updates.photo = photo;
+      if (photo && (!(wine.photo || "").trim() || isDefaultPhoto(wine.photo))) {
+        updates.photo = photo;
+      }
       if (!DEFAULT_PHOTO_AUTOFILL_ENABLED && isDefaultPhoto(wine.photo)) updates.photo = null;
       return Object.keys(updates).length ? Object.assign({}, wine, updates) : wine;
     });
