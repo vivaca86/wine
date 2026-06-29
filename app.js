@@ -3108,7 +3108,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       <div class="tasting-form__head">
         <span class="tasting-form__person">${personMarkHTML(person, {
           status: TASTING_STATUS.DRUNK,
-        })}<span>${person.label}</span></span>
+        })}</span>
         <div class="tasting-statuses">
           ${tastingStatusOptionsHTML(person.id, safe.status)}
         </div>
@@ -3824,7 +3824,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
 
   function noteBlockHTML(label, note) {
     return `<div class="note-block note-block--focus" data-note-block>
-      <div class="note-block__label">${esc(label)}</div>
+      ${label ? `<div class="note-block__label">${esc(label)}</div>` : ""}
       <div class="note-block__text note-block__text--clamped" data-note-text>${esc(
         note
       )}</div>
@@ -3844,7 +3844,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
                 <span class="tasting-detail__person">${personMarkHTML(
                   person,
                   tasting
-                )}<span>${person.label}</span></span>
+                )}</span>
                 <span class="tasting-detail__state">안마심</span>
               </div>
             </section>`;
@@ -3854,7 +3854,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
               <span class="tasting-detail__person">${personMarkHTML(
                 person,
                 tasting
-              )}<span>${person.label}</span></span>
+              )}</span>
               <span class="tasting-detail__rating">${starsHTML(
                 tasting.rating || 0
               )}</span>
@@ -3864,7 +3864,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
                 ? `<div class="tasting-detail__date">${fmtDate(tasting.drunkDate)}</div>`
                 : ""
             }
-            ${tasting.note ? noteBlockHTML(`${person.label}의 노트`, tasting.note) : ""}
+            ${tasting.note ? noteBlockHTML("", tasting.note) : ""}
           </section>`;
         })
         .join("")}
