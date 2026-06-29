@@ -35,8 +35,8 @@
   const TYPE_ORDER = ["red", "sparkling", "white", "rose", "dessert", "etc"];
   const FORM_TYPE_IDS = ["red", "white", "rose", "sparkling", "dessert"];
   const TASTERS = [
-    { id: "me", label: "나", short: "나", className: "me" },
-    { id: "partner", label: "상대", short: "상", className: "partner" },
+    { id: "me", label: "심", short: "심", className: "me" },
+    { id: "partner", label: "꽁", short: "꽁", className: "partner" },
   ];
   const TASTING_STATUS = {
     DRUNK: "drunk",
