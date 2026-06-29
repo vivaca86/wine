@@ -1317,6 +1317,10 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       (person) => tastings[person.id].status !== TASTING_STATUS.UNKNOWN
     );
     next.status = hasKnown ? "drunk" : next.status === "cellar" ? "cellar" : "cellar";
+    next.featuredTasterId = featuredTasterIdFromTastings(
+      tastings,
+      wine.featuredTasterId
+    );
     return syncLegacyTastingFields(next);
   }
 
@@ -1601,12 +1605,58 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     return drunkTastingEntries(wine).filter((entry) => Number(entry.tasting.rating) > 0);
   }
 
+  function tasterIdExists(id) {
+    return TASTERS.some((person) => person.id === id);
+  }
+
+  function featuredTasterIdFromTastings(tastings, preferredId) {
+    const entries = TASTERS.map((person) => ({
+      person,
+      tasting: normalizeTasting(tastings && tastings[person.id], TASTING_STATUS.UNKNOWN),
+    }));
+    const drunkEntries = entries.filter(
+      (entry) => entry.tasting.status === TASTING_STATUS.DRUNK
+    );
+    if (!drunkEntries.length) return "";
+    if (
+      tasterIdExists(preferredId) &&
+      drunkEntries.some((entry) => entry.person.id === preferredId)
+    ) {
+      return preferredId;
+    }
+    return drunkEntries[0].person.id;
+  }
+
+  function featuredTasterIdFor(wine) {
+    return featuredTasterIdFromTastings(wine && wine.tastings, wine?.featuredTasterId);
+  }
+
   function wineAverageRating(wine) {
     const rated = ratedTastingEntries(wine);
     if (!rated.length) return null;
     const avg =
       rated.reduce((sum, entry) => sum + Number(entry.tasting.rating), 0) / rated.length;
     return Math.round(avg * 10) / 10;
+  }
+
+  function featuredTastingEntry(wine) {
+    const featuredId = featuredTasterIdFor(wine);
+    const preferred = featuredId
+      ? {
+          person: tasterById(featuredId),
+          tasting: tastingOf(wine, featuredId),
+        }
+      : null;
+    if (preferred && preferred.tasting.status === TASTING_STATUS.DRUNK) {
+      return preferred;
+    }
+    return drunkTastingEntries(wine)[0] || null;
+  }
+
+  function wineDisplayRating(wine) {
+    const entry = featuredTastingEntry(wine);
+    const rating = Number(entry?.tasting.rating);
+    return rating > 0 ? rating : null;
   }
 
   function primaryTasting(wine) {
@@ -1632,16 +1682,17 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
 
   function syncLegacyTastingFields(wine) {
     if (!wine || typeof wine !== "object") return wine;
-    const avg = wineAverageRating(wine);
+    wine.featuredTasterId = featuredTasterIdFor(wine);
+    const displayRating = wineDisplayRating(wine);
     const primary = primaryTasting(wine);
-    wine.rating = avg == null ? null : avg;
+    wine.rating = displayRating == null ? null : displayRating;
     wine.drunkDate = primary.drunkDate || "";
     wine.note = primary.note || "";
     applyWineStatusFromTastings(wine);
     return wine;
   }
 
-  function updateWineTastings(wine, tastings) {
+  function updateWineTastings(wine, tastings, featuredTasterId) {
     wine.tastings = {};
     TASTERS.forEach((person) => {
       wine.tastings[person.id] = normalizeTasting(
@@ -1649,6 +1700,10 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
         TASTING_STATUS.UNKNOWN
       );
     });
+    wine.featuredTasterId = featuredTasterIdFromTastings(
+      wine.tastings,
+      featuredTasterId || wine.featuredTasterId
+    );
     return syncLegacyTastingFields(wine);
   }
 
@@ -1796,6 +1851,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       drunkDate: w.drunkDate || "",
       note: w.note || "",
       tastings: JSON.stringify(w.tastings || {}),
+      featuredTasterId: w.featuredTasterId || "",
       hasPhoto: !!w.photo,
     };
   }
@@ -1823,6 +1879,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     drunkDate: "마신 날",
     note: "시음 노트",
     tastings: "사람별 기록",
+    featuredTasterId: "대표 별점",
     hasPhoto: "사진",
   };
 
@@ -2221,7 +2278,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     </svg>`;
   }
 
-  function personMarkHTML(person, tasting) {
+  function personMarkHTML(person, tasting, featured) {
     const status = tasting.status;
     if (status === TASTING_STATUS.UNKNOWN) return "";
     const title =
@@ -2230,12 +2287,21 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
         : `${person.label} 안마심`;
     return `<span class="person-mark person-mark--${person.className} ${
       status === TASTING_STATUS.SKIPPED ? "person-mark--skipped" : ""
+    } ${
+      featured ? "person-mark--featured" : ""
     }" title="${esc(title)}" aria-label="${esc(title)}">${esc(person.short)}</span>`;
   }
 
   function tastingMarksHTML(wine, variant) {
+    const featuredId = featuredTasterIdFor(wine);
     const marks = tastingEntries(wine)
-      .map((entry) => personMarkHTML(entry.person, entry.tasting))
+      .map((entry) =>
+        personMarkHTML(
+          entry.person,
+          entry.tasting,
+          entry.person.id === featuredId && entry.tasting.status === TASTING_STATUS.DRUNK
+        )
+      )
       .filter(Boolean)
       .join("");
     return marks
@@ -2524,8 +2590,8 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       return (ap - bp) * dir || a.name.localeCompare(b.name, "ko");
     }
     if (state.sortBy === "rating") {
-      const ar = wineAverageRating(a);
-      const br = wineAverageRating(b);
+      const ar = wineDisplayRating(a);
+      const br = wineDisplayRating(b);
       if (ar == null && br == null) return a.name.localeCompare(b.name, "ko");
       if (ar == null) return 1;
       if (br == null) return -1;
@@ -2572,11 +2638,11 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       : "";
     const typeMark = typeIconHTML(w.type);
     const viewed = w.id === state.lastViewedId ? " is-viewed" : "";
-    const avgRating = wineAverageRating(w);
+    const displayRating = wineDisplayRating(w);
     const right =
       kind === "drunk"
         ? `${tastingMarksHTML(w, "row")}<span class="card__rating">${starsHTML(
-            avgRating || 0
+            displayRating || 0
           )}</span>`
         : `<span class="card__price">${won(w.price)}</span>`;
     const variety = w.variety ? `<span class="card__sub">${esc(w.variety)}</span>` : "";
@@ -2606,7 +2672,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
         )}</span>`;
     const meta =
       kind === "drunk"
-        ? `<span class="wine-tile__rating">${starsHTML(wineAverageRating(w) || 0)}</span>`
+        ? `<span class="wine-tile__rating">${starsHTML(wineDisplayRating(w) || 0)}</span>`
         : `<span class="wine-tile__name">${esc(w.name)}</span>`;
     return `<button class="wine-tile wine-tile--${kind}${viewed}" type="button" data-id="${
       w.id
@@ -3140,10 +3206,31 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     </section>`;
   }
 
+  function featuredRatingFormHTML(wine, defaults) {
+    const tastings = defaults || wine?.tastings || {};
+    const selected = featuredTasterIdFromTastings(tastings, wine?.featuredTasterId);
+    return `<div class="featured-rating" data-featured-rating>
+      <span class="featured-rating__label">앞에 보일 별점</span>
+      <input type="hidden" name="featuredTasterId" value="${esc(selected)}" />
+      <div class="featured-rating__options">
+        ${TASTERS.map((person) => {
+          const tasting = normalizeTasting(tastings[person.id], TASTING_STATUS.UNKNOWN);
+          const disabled = tasting.status !== TASTING_STATUS.DRUNK;
+          return `<button type="button" class="featured-rating__btn ${
+            selected === person.id ? "is-active" : ""
+          }" data-featured-taster="${person.id}" ${
+            disabled ? "disabled" : ""
+          }>${personMarkHTML(person, { status: TASTING_STATUS.DRUNK })}</button>`;
+        }).join("")}
+      </div>
+    </div>`;
+  }
+
   function tastingsFormHTML(wine, defaults) {
-    return TASTERS.map((person) =>
+    const tastingForms = TASTERS.map((person) =>
       tastingFormHTML(person, defaults?.[person.id] || tastingOf(wine, person.id))
     ).join("");
+    return `${tastingForms}${featuredRatingFormHTML(wine, defaults)}`;
   }
 
   function setTastingFormStatus(block, status) {
@@ -3157,6 +3244,28 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
 
   function bindTastingForms(root) {
     const ratingGetters = {};
+    const featuredBlock = root.querySelector("[data-featured-rating]");
+    const syncFeaturedRating = (preferredId) => {
+      if (!featuredBlock) return;
+      const hidden = featuredBlock.querySelector('input[type="hidden"]');
+      const drunkIds = TASTERS.filter((person) => {
+        const block = root.querySelector(`[data-tasting-form="${person.id}"]`);
+        return (
+          block?.querySelector('input[type="hidden"]')?.value === TASTING_STATUS.DRUNK
+        );
+      }).map((person) => person.id);
+      let selected = preferredId || hidden?.value || "";
+      if (!drunkIds.includes(selected)) selected = drunkIds[0] || "";
+      if (hidden) hidden.value = selected;
+      featuredBlock.querySelectorAll("[data-featured-taster]").forEach((button) => {
+        const enabled = drunkIds.includes(button.dataset.featuredTaster);
+        button.disabled = !enabled;
+        button.classList.toggle(
+          "is-active",
+          enabled && button.dataset.featuredTaster === selected
+        );
+      });
+    };
     TASTERS.forEach((person) => {
       const block = root.querySelector(`[data-tasting-form="${person.id}"]`);
       if (!block) return;
@@ -3168,9 +3277,16 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       block.querySelectorAll("[data-tasting-status]").forEach((button) => {
         button.addEventListener("click", () => {
           setTastingFormStatus(block, button.dataset.tastingStatus);
+          syncFeaturedRating();
         });
       });
     });
+    featuredBlock?.querySelectorAll("[data-featured-taster]").forEach((button) => {
+      button.addEventListener("click", () => {
+        syncFeaturedRating(button.dataset.featuredTaster);
+      });
+    });
+    syncFeaturedRating();
     return ratingGetters;
   }
 
@@ -3194,6 +3310,13 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       }
     });
     return tastings;
+  }
+
+  function collectFeaturedTasterFromForm(form, tastings) {
+    return featuredTasterIdFromTastings(
+      tastings,
+      form.elements.featuredTasterId?.value || ""
+    );
   }
 
   function defaultDrinkTastings(wine) {
@@ -3675,6 +3798,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
           alert("마신 사람을 한 명 이상 선택해 주세요.");
           return;
         }
+        data.featuredTasterId = collectFeaturedTasterFromForm(f, data.tastings);
       }
 
       if (isEdit) {
@@ -3710,7 +3834,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     if (!w) return;
     const t = typeOf(w.type);
     const isDrunk = w.status === "drunk";
-    const avgRating = wineAverageRating(w);
+    const displayRating = wineDisplayRating(w);
     const typeValue = `${typeIconHTML(w.type, "detail")}<span>${t.label}</span>`;
     const titleVintage = w.vintage
       ? `<span class="detail__title-vintage">${esc(w.vintage)}</span>`
@@ -3735,12 +3859,8 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
         cell("보관 기간", held != null && held >= 0 ? held + "일" : "—")
       );
     } else {
-      if (w.vintage) {
-        cells.push(cell("종류", typeValue));
-        cells.push(cell("빈티지", esc(w.vintage)));
-      } else {
-        cells.push(cell("종류", typeValue, true));
-      }
+      cells.push(cell("종류", typeValue));
+      cells.push(cell("빈티지", w.vintage ? esc(w.vintage) : "—"));
       cells.push(cell("구입일", fmtDate(w.purchaseDate)));
       cells.push(cell("구입 가격", won(w.price)));
     }
@@ -3751,9 +3871,9 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     openSheet(`
       ${
         isDrunk
-          ? `<div class="detail__rating-top" aria-label="평균 별점 ${
-              avgRating || 0
-            }점">${starsHTML(avgRating || 0)}${tastingMarksHTML(w, "detail")}</div>`
+          ? `<div class="detail__rating-top" aria-label="대표 별점 ${
+              displayRating || 0
+            }점">${starsHTML(displayRating || 0)}${tastingMarksHTML(w, "detail")}</div>`
           : ""
       }
       ${w.photo ? `<img class="detail__photo" src="${w.photo}" alt="와인 사진" />` : ""}
@@ -3801,6 +3921,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       delete w.note;
       delete w.drunkDate;
       delete w.tastings;
+      delete w.featuredTasterId;
       if (!persist(makeAuditLog("undoDrunk", backup, w))) {
         Object.assign(w, backup);
         quotaAlert();
@@ -3928,7 +4049,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
         alert("마신 사람을 한 명 이상 선택해 주세요.");
         return;
       }
-      updateWineTastings(w, nextTastings);
+      updateWineTastings(w, nextTastings, collectFeaturedTasterFromForm(f, nextTastings));
       if (!persist(makeAuditLog("markDrunk", backup, w))) {
         Object.assign(w, backup);
         quotaAlert();
