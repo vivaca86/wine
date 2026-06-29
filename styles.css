@@ -1937,53 +1937,55 @@ img.card__photo {
 .list-controls {
   position: relative;
   z-index: 6;
-  margin: 0 0 12px;
-  padding: 8px;
-  border: 1px solid rgba(23, 22, 20, 0.08);
-  border-radius: 17px;
-  background: linear-gradient(
-    180deg,
-    rgba(255, 253, 248, 0.82) 0%,
-    rgba(255, 250, 242, 0.94) 100%
-  );
-  box-shadow: rgba(39, 33, 24, 0.08) 0 10px 24px,
-    rgba(255, 255, 255, 0.68) 0 1px 0 inset;
-  backdrop-filter: blur(14px);
+  display: grid;
+  grid-template-columns: 144px minmax(0, 1fr);
+  align-items: center;
+  gap: 5px;
+  margin: 0 0 9px;
+  padding: 5px;
+  border: 1px solid rgba(23, 22, 20, 0.06);
+  border-radius: 14px;
+  background: rgba(255, 253, 248, 0.78);
+  box-shadow: rgba(39, 33, 24, 0.05) 0 6px 16px,
+    rgba(255, 255, 255, 0.62) 0 1px 0 inset;
+  backdrop-filter: blur(10px);
 }
 .view-mode {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 3px;
-  margin-bottom: 7px;
-  padding: 4px;
+  gap: 2px;
+  margin-bottom: 0;
+  padding: 2px;
   border: 0;
-  border-radius: 13px;
+  border-radius: 10px;
   background: rgba(23, 22, 20, 0.055);
-  box-shadow: rgba(23, 22, 20, 0.04) 0 1px 0 inset,
-    rgba(255, 255, 255, 0.72) 0 1px 0;
+  box-shadow: rgba(23, 22, 20, 0.035) 0 1px 0 inset;
 }
 .view-mode__btn {
   position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  height: 36px;
+  gap: 4px;
+  height: 30px;
   min-width: 0;
   border: 0;
-  border-radius: 10px;
+  border-radius: 8px;
+  padding: 0 4px;
   background: transparent;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 760;
+  line-height: 1;
   letter-spacing: 0;
+  white-space: nowrap;
   transition: background 0.14s ease, color 0.14s ease, box-shadow 0.14s ease,
     transform 0.14s ease;
 }
 .view-mode__btn::before {
   content: "";
-  width: 15px;
-  height: 15px;
+  width: 13px;
+  height: 13px;
   flex: 0 0 auto;
   background: currentColor;
   opacity: 0.64;
@@ -2005,7 +2007,7 @@ img.card__photo {
 .view-mode__btn.is-active {
   background: rgba(255, 253, 248, 0.92);
   color: var(--wine-deep);
-  box-shadow: rgba(39, 33, 24, 0.12) 0 8px 18px,
+  box-shadow: rgba(39, 33, 24, 0.08) 0 4px 10px,
     rgba(255, 255, 255, 0.82) 0 1px 0 inset;
 }
 .view-mode__btn.is-active::before {
@@ -2015,9 +2017,9 @@ img.card__photo {
   content: "";
   position: absolute;
   left: 50%;
-  bottom: 4px;
-  width: 16px;
-  height: 2px;
+  bottom: 3px;
+  width: 12px;
+  height: 1px;
   transform: translateX(-50%);
   border-radius: var(--r-pill);
   background: linear-gradient(90deg, var(--wine), var(--gold));
@@ -2029,8 +2031,8 @@ img.card__photo {
   position: relative;
   z-index: 25;
   display: grid;
-  grid-template-columns: 42px minmax(0, 1fr) minmax(0, 1fr);
-  gap: 6px;
+  grid-template-columns: 34px minmax(0, 1fr) minmax(0, 1fr);
+  gap: 4px;
   margin-bottom: 0;
   padding-bottom: 0;
 }
@@ -2045,17 +2047,17 @@ img.card__photo {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 4px;
   width: 100%;
   min-width: 0;
-  height: 38px;
-  min-height: 38px;
+  height: 34px;
+  min-height: 34px;
   border: 0;
   background: rgba(23, 22, 20, 0.052);
   color: var(--muted);
-  border-radius: 12px;
-  padding: 0 13px;
-  font-size: 13px;
+  border-radius: 9px;
+  padding: 0 9px;
+  font-size: 12px;
   font-weight: 760;
   box-shadow: rgba(23, 22, 20, 0.03) 0 1px 0 inset,
     rgba(255, 255, 255, 0.66) 0 1px 0;
@@ -2065,7 +2067,7 @@ img.card__photo {
 .chip.is-active {
   background: linear-gradient(180deg, #24211d, var(--charcoal));
   color: var(--off-white);
-  box-shadow: rgba(23, 22, 20, 0.14) 0 6px 14px;
+  box-shadow: rgba(23, 22, 20, 0.12) 0 4px 10px;
 }
 .chip:active {
   transform: translateY(1px);
@@ -2083,12 +2085,12 @@ img.card__photo {
   white-space: nowrap;
 }
 .chip--search {
-  width: 42px;
+  width: 34px;
   padding: 0;
 }
 .chip__icon {
-  width: 17px;
-  height: 17px;
+  width: 14px;
+  height: 14px;
   fill: none;
   stroke: currentColor;
   stroke-width: 2.1;
@@ -2097,8 +2099,8 @@ img.card__photo {
 .chip--filter::before,
 .chip--sort::before {
   content: "";
-  width: 15px;
-  height: 15px;
+  width: 13px;
+  height: 13px;
   flex: 0 0 auto;
   background: currentColor;
   opacity: 0.72;
@@ -2122,7 +2124,8 @@ img.card__photo {
 }
 .searchbar {
   position: relative;
-  margin: 8px 0 0;
+  grid-column: 1 / -1;
+  margin: 2px 0 0;
 }
 .searchbar__input {
   width: 100%;
