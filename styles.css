@@ -515,6 +515,7 @@ body.is-refreshing .pull-refresh__ring {
   flex: 0 0 auto;
 }
 .person-mark {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -527,6 +528,7 @@ body.is-refreshing .pull-refresh__ring {
   font-weight: 820;
   line-height: 1;
   box-shadow: rgba(23, 22, 20, 0.16) 0 2px 7px;
+  overflow: visible;
 }
 .person-mark--me {
   background: var(--wine);
@@ -539,10 +541,31 @@ body.is-refreshing .pull-refresh__ring {
   color: rgba(255, 253, 248, 0.88);
   text-decoration: line-through;
 }
-.person-mark--featured {
+.person-mark--featured,
+.featured-rating__btn.is-active .person-mark {
   border-color: rgba(173, 140, 67, 0.92);
-  box-shadow: rgba(173, 140, 67, 0.42) 0 0 0 2px,
+  box-shadow: rgba(173, 140, 67, 0.56) 0 0 0 2px,
     rgba(23, 22, 20, 0.12) 0 2px 7px;
+}
+.person-mark--featured::after,
+.featured-rating__btn.is-active .person-mark::after {
+  content: "♛";
+  position: absolute;
+  top: -9px;
+  right: -6px;
+  display: grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  border: 1px solid rgba(173, 140, 67, 0.52);
+  border-radius: 50%;
+  background: #fff8df;
+  color: #8f6818;
+  font-size: 9px;
+  font-weight: 900;
+  line-height: 1;
+  box-shadow: rgba(23, 22, 20, 0.14) 0 2px 6px;
+  text-decoration: none;
 }
 .person-marks--row .person-mark {
   width: 18px;
@@ -551,7 +574,14 @@ body.is-refreshing .pull-refresh__ring {
   box-shadow: none;
 }
 .person-marks--row .person-mark--featured {
-  box-shadow: rgba(173, 140, 67, 0.42) 0 0 0 2px;
+  box-shadow: rgba(173, 140, 67, 0.5) 0 0 0 2px;
+}
+.person-marks--row .person-mark--featured::after {
+  top: -8px;
+  right: -6px;
+  width: 12px;
+  height: 12px;
+  font-size: 8px;
 }
 
 .image-grid {
@@ -595,7 +625,7 @@ body.is-refreshing .pull-refresh__ring {
 }
 .person-marks--tile {
   position: absolute;
-  top: 5px;
+  top: 12px;
   right: 5px;
   z-index: 1;
 }

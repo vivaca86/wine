@@ -2281,8 +2281,11 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
   function personMarkHTML(person, tasting, featured) {
     const status = tasting.status;
     if (status === TASTING_STATUS.UNKNOWN) return "";
+    const isFeatured = featured && status === TASTING_STATUS.DRUNK;
     const title =
-      status === TASTING_STATUS.DRUNK
+      isFeatured
+        ? `${person.label} 마심, 대표 별점`
+        : status === TASTING_STATUS.DRUNK
         ? `${person.label} 마심`
         : `${person.label} 안마심`;
     return `<span class="person-mark person-mark--${person.className} ${
@@ -3956,6 +3959,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
   function detailTastingsHTML(wine) {
     const entries = knownTastingEntries(wine);
     if (!entries.length) return "";
+    const featuredId = featuredTasterIdFor(wine);
     return `<div class="tasting-detail-list">
       ${entries
         .map(({ person, tasting }) => {
@@ -3974,7 +3978,8 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
             <div class="tasting-detail__head">
               <span class="tasting-detail__person">${personMarkHTML(
                 person,
-                tasting
+                tasting,
+                person.id === featuredId && tasting.status === TASTING_STATUS.DRUNK
               )}</span>
               <span class="tasting-detail__rating">${starsHTML(
                 tasting.rating || 0
