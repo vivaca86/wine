@@ -1357,6 +1357,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
   let unsubscribeCellar = null;
   let currentUser = null;
   let pendingAuditLogs = [];
+  let cloudBackfillInFlight = false;
 
   function seedWines() {
     return SEED_TSV.trim()
@@ -1488,6 +1489,20 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
   }
 
   /* ---------- Helpers ---------- */
+  function stableStringify(value) {
+    if (Array.isArray(value)) {
+      return `[${value.map(stableStringify).join(",")}]`;
+    }
+    if (value && typeof value === "object") {
+      return `{${Object.keys(value)
+        .sort()
+        .map((key) => `${JSON.stringify(key)}:${stableStringify(value[key])}`)
+        .join(",")}}`;
+    }
+    const primitive = JSON.stringify(value);
+    return primitive === undefined ? "undefined" : primitive;
+  }
+
   const $ = (sel, root) => (root || document).querySelector(sel);
   const view = $("#view");
   const sheet = $("#sheet");
@@ -2069,13 +2084,24 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
           return;
         }
         const normalizedWines = normalizeWines(data.wines);
-        const shouldBackfillCloud = JSON.stringify(data.wines) !== JSON.stringify(normalizedWines);
+        const incomingSignature = stableStringify(normalizedWines);
+        const shouldRender = stableStringify(state.wines) !== incomingSignature;
+        const shouldBackfillCloud = stableStringify(data.wines) !== incomingSignature;
         applyingRemote = true;
-        state.wines = normalizedWines;
-        if (!persistLocalOnly()) quotaAlert();
+        if (shouldRender) {
+          state.wines = normalizedWines;
+          if (!persistLocalOnly()) quotaAlert();
+        }
         applyingRemote = false;
-        render();
-        if (shouldBackfillCloud) writeCloudWines().catch(handleSyncError);
+        if (shouldRender) render();
+        if (shouldBackfillCloud && !cloudBackfillInFlight) {
+          cloudBackfillInFlight = true;
+          writeCloudWines()
+            .catch(handleSyncError)
+            .finally(() => {
+              cloudBackfillInFlight = false;
+            });
+        }
         setSyncStatus("synced", "실시간 동기화 중");
       },
       (error) => {
