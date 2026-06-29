@@ -508,6 +508,43 @@ body.is-refreshing .pull-refresh__ring {
   letter-spacing: 0;
   white-space: nowrap;
 }
+.person-marks {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  flex: 0 0 auto;
+}
+.person-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 21px;
+  height: 21px;
+  border: 1px solid rgba(255, 253, 248, 0.76);
+  border-radius: 50%;
+  color: var(--off-white);
+  font-size: 11px;
+  font-weight: 820;
+  line-height: 1;
+  box-shadow: rgba(23, 22, 20, 0.16) 0 2px 7px;
+}
+.person-mark--me {
+  background: var(--wine);
+}
+.person-mark--partner {
+  background: var(--sage);
+}
+.person-mark--skipped {
+  background: rgba(23, 22, 20, 0.22);
+  color: rgba(255, 253, 248, 0.88);
+  text-decoration: line-through;
+}
+.person-marks--row .person-mark {
+  width: 18px;
+  height: 18px;
+  font-size: 10px;
+  box-shadow: none;
+}
 
 .image-grid {
   display: grid;
@@ -540,12 +577,26 @@ body.is-refreshing .pull-refresh__ring {
   background: rgba(255, 247, 239, 0.96);
 }
 .wine-tile__image {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   min-width: 0;
   min-height: 0;
   overflow: hidden;
+}
+.person-marks--tile {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  z-index: 1;
+}
+.person-marks--tile .person-mark {
+  width: 22px;
+  height: 22px;
+}
+.person-marks--detail {
+  margin-left: 8px;
 }
 .wine-tile__photo {
   width: 100%;
@@ -1129,6 +1180,60 @@ body.is-refreshing .pull-refresh__ring {
   border-radius: var(--r-card);
   box-shadow: rgba(39, 33, 24, 0.04) 0 8px 20px;
 }
+.tasting-form {
+  padding: 12px;
+  border: 1px solid rgba(48, 42, 34, 0.08);
+  border-radius: 12px;
+  background: rgba(255, 253, 248, 0.64);
+}
+.tasting-form + .tasting-form {
+  margin-top: 10px;
+}
+.tasting-form__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.tasting-form__person {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  color: var(--charcoal);
+  font-size: 14px;
+  font-weight: 820;
+}
+.tasting-statuses {
+  display: inline-flex;
+  gap: 4px;
+  padding: 3px;
+  border-radius: var(--r-pill);
+  background: rgba(23, 22, 20, 0.045);
+}
+.tasting-status {
+  min-height: 30px;
+  border: none;
+  border-radius: var(--r-pill);
+  padding: 0 9px;
+  background: transparent;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 760;
+  white-space: nowrap;
+}
+.tasting-status.is-active {
+  background: var(--charcoal);
+  color: var(--off-white);
+}
+.tasting-form__body {
+  display: none;
+  margin-top: 12px;
+}
+.tasting-form.is-tasting-active .tasting-form__body {
+  display: block;
+}
 .form-section--drink {
   background: linear-gradient(180deg, rgba(130, 49, 61, 0.06), rgba(255, 253, 248, 0.7));
 }
@@ -1509,7 +1614,9 @@ body.is-refreshing .pull-refresh__ring {
 
 .detail__rating-top {
   display: flex;
+  align-items: center;
   justify-content: center;
+  gap: 6px;
   margin: -2px 0 8px;
 }
 .detail__rating-top .stars {
@@ -1558,7 +1665,6 @@ body.is-refreshing .pull-refresh__ring {
 }
 .note-block--focus {
   margin-top: 10px;
-  min-height: 174px;
   padding: 14px 15px;
 }
 .note-block__label {
@@ -1571,6 +1677,84 @@ body.is-refreshing .pull-refresh__ring {
   font-size: 15px;
   line-height: 1.55;
   white-space: pre-wrap;
+}
+.note-block__text--clamped {
+  max-height: calc(1.55em * 3);
+  overflow: hidden;
+}
+.note-block__toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  margin: 8px 0 -4px;
+  padding: 0 2px;
+  border: none;
+  background: transparent;
+  color: var(--wine);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 760;
+}
+.note-block__toggle[hidden] {
+  display: none;
+}
+.note-block__toggle:active {
+  opacity: 0.72;
+  transform: translateY(1px);
+}
+.tasting-detail-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+.tasting-detail {
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-card);
+  background: rgba(255, 253, 248, 0.68);
+  box-shadow: rgba(39, 33, 24, 0.04) 0 8px 20px;
+}
+.tasting-detail--skipped {
+  background: rgba(23, 22, 20, 0.035);
+  box-shadow: none;
+}
+.tasting-detail__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.tasting-detail__person {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--charcoal);
+  font-size: 14px;
+  font-weight: 820;
+}
+.tasting-detail__rating .stars {
+  font-size: 14px;
+}
+.tasting-detail__state,
+.tasting-detail__date {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+.tasting-detail__date {
+  margin-top: 5px;
+}
+.tasting-detail .note-block {
+  margin-top: 10px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+}
+.tasting-detail .note-block__label {
+  color: var(--muted);
+  margin-bottom: 5px;
 }
 
 .section-label {

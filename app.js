@@ -34,6 +34,15 @@
   ];
   const TYPE_ORDER = ["red", "sparkling", "white", "rose", "dessert", "etc"];
   const FORM_TYPE_IDS = ["red", "white", "rose", "sparkling", "dessert"];
+  const TASTERS = [
+    { id: "me", label: "나", short: "나", className: "me" },
+    { id: "partner", label: "상대", short: "상", className: "partner" },
+  ];
+  const TASTING_STATUS = {
+    DRUNK: "drunk",
+    SKIPPED: "skipped",
+    UNKNOWN: "unknown",
+  };
 
   /* Wine-producing countries: code, name (ko), flag emoji */
   const COUNTRIES = [
@@ -1251,8 +1260,72 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     });
   }
 
+  function emptyTasting(status) {
+    return {
+      status: status || TASTING_STATUS.UNKNOWN,
+      rating: null,
+      drunkDate: "",
+      note: "",
+    };
+  }
+
+  function normalizeTasting(input, fallbackStatus) {
+    const source = input && typeof input === "object" ? input : {};
+    const status =
+      source.status === TASTING_STATUS.DRUNK ||
+      source.status === TASTING_STATUS.SKIPPED ||
+      source.status === TASTING_STATUS.UNKNOWN
+        ? source.status
+        : fallbackStatus || TASTING_STATUS.UNKNOWN;
+    const rating = Number(source.rating);
+    return {
+      status,
+      rating: status === TASTING_STATUS.DRUNK && rating > 0 ? rating : null,
+      drunkDate: status === TASTING_STATUS.DRUNK ? source.drunkDate || "" : "",
+      note: status === TASTING_STATUS.DRUNK ? source.note || "" : "",
+    };
+  }
+
+  function legacyTastingForWine(wine) {
+    if (!wine || wine.status !== "drunk") return emptyTasting();
+    return normalizeTasting(
+      {
+        status: TASTING_STATUS.DRUNK,
+        rating: wine.rating,
+        drunkDate: wine.drunkDate,
+        note: wine.note,
+      },
+      TASTING_STATUS.DRUNK
+    );
+  }
+
+  function normalizeWineTastings(wine) {
+    if (!wine || typeof wine !== "object") return wine;
+    const raw = wine.tastings && typeof wine.tastings === "object" ? wine.tastings : {};
+    const next = Object.assign({}, wine);
+    const tastings = {};
+    TASTERS.forEach((person) => {
+      const fallback =
+        person.id === "me" && !raw[person.id]
+          ? legacyTastingForWine(wine).status
+          : TASTING_STATUS.UNKNOWN;
+      const source = raw[person.id] || (person.id === "me" ? legacyTastingForWine(wine) : null);
+      tastings[person.id] = normalizeTasting(source, fallback);
+    });
+    next.tastings = tastings;
+    const hasKnown = TASTERS.some(
+      (person) => tastings[person.id].status !== TASTING_STATUS.UNKNOWN
+    );
+    next.status = hasKnown ? "drunk" : next.status === "cellar" ? "cellar" : "cellar";
+    return syncLegacyTastingFields(next);
+  }
+
+  function normalizeWineCollection(wines) {
+    return (Array.isArray(wines) ? wines : []).map(normalizeWineTastings);
+  }
+
   function normalizeWines(wines) {
-    return enrichWinesWithVariety(applySeedCorrections(wines));
+    return normalizeWineCollection(enrichWinesWithVariety(applySeedCorrections(wines)));
   }
 
   /* ---------- State ---------- */
@@ -1310,8 +1383,12 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
           wine.rating = null;
           wine.drunkDate = "";
           wine.note = "";
+          wine.tastings = {
+            me: emptyTasting(TASTING_STATUS.DRUNK),
+            partner: emptyTasting(),
+          };
         }
-        return wine;
+        return normalizeWineTastings(wine);
       });
   }
 
@@ -1353,7 +1430,13 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     try {
       if (!applySeedIfNeeded()) {
         const raw = localStorage.getItem(STORE_KEY);
-        if (raw) state.wines = normalizeWines(JSON.parse(raw) || []);
+        if (raw) {
+          const parsedWines = JSON.parse(raw) || [];
+          state.wines = normalizeWines(parsedWines);
+          if (JSON.stringify(parsedWines) !== JSON.stringify(state.wines)) {
+            localStorage.setItem(STORE_KEY, JSON.stringify(state.wines));
+          }
+        }
       }
       const pref = JSON.parse(localStorage.getItem(PREF_KEY) || "{}");
       if (["name", "country", "variety", "price", "rating"].includes(pref.sortBy)) {
@@ -1468,6 +1551,100 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     return Math.round((d2 - d1) / 86400000);
   }
 
+  function tasterById(id) {
+    return TASTERS.find((person) => person.id === id) || TASTERS[0];
+  }
+
+  function tastingOf(wine, personId) {
+    const source =
+      wine && wine.tastings && typeof wine.tastings === "object"
+        ? wine.tastings[personId]
+        : null;
+    return normalizeTasting(source, TASTING_STATUS.UNKNOWN);
+  }
+
+  function tastingEntries(wine) {
+    return TASTERS.map((person) => ({
+      person,
+      tasting: tastingOf(wine, person.id),
+    }));
+  }
+
+  function knownTastingEntries(wine) {
+    return tastingEntries(wine).filter(
+      (entry) => entry.tasting.status !== TASTING_STATUS.UNKNOWN
+    );
+  }
+
+  function drunkTastingEntries(wine) {
+    return tastingEntries(wine).filter(
+      (entry) => entry.tasting.status === TASTING_STATUS.DRUNK
+    );
+  }
+
+  function ratedTastingEntries(wine) {
+    return drunkTastingEntries(wine).filter((entry) => Number(entry.tasting.rating) > 0);
+  }
+
+  function wineAverageRating(wine) {
+    const rated = ratedTastingEntries(wine);
+    if (!rated.length) return null;
+    const avg =
+      rated.reduce((sum, entry) => sum + Number(entry.tasting.rating), 0) / rated.length;
+    return Math.round(avg * 10) / 10;
+  }
+
+  function primaryTasting(wine) {
+    return (
+      tastingOf(wine, "me").status === TASTING_STATUS.DRUNK
+        ? tastingOf(wine, "me")
+        : drunkTastingEntries(wine)[0]?.tasting
+    ) || emptyTasting();
+  }
+
+  function tastingNotesText(wine) {
+    return drunkTastingEntries(wine)
+      .map((entry) => entry.tasting.note || "")
+      .filter(Boolean)
+      .join(" ");
+  }
+
+  function applyWineStatusFromTastings(wine) {
+    const hasKnown = knownTastingEntries(wine).length > 0;
+    wine.status = hasKnown ? "drunk" : "cellar";
+    return wine;
+  }
+
+  function syncLegacyTastingFields(wine) {
+    if (!wine || typeof wine !== "object") return wine;
+    const avg = wineAverageRating(wine);
+    const primary = primaryTasting(wine);
+    wine.rating = avg == null ? null : avg;
+    wine.drunkDate = primary.drunkDate || "";
+    wine.note = primary.note || "";
+    applyWineStatusFromTastings(wine);
+    return wine;
+  }
+
+  function updateWineTastings(wine, tastings) {
+    wine.tastings = {};
+    TASTERS.forEach((person) => {
+      wine.tastings[person.id] = normalizeTasting(
+        tastings && tastings[person.id],
+        TASTING_STATUS.UNKNOWN
+      );
+    });
+    return syncLegacyTastingFields(wine);
+  }
+
+  function hasDrunkTasting(tastings) {
+    return TASTERS.some(
+      (person) =>
+        normalizeTasting(tastings && tastings[person.id], TASTING_STATUS.UNKNOWN).status ===
+        TASTING_STATUS.DRUNK
+    );
+  }
+
   function starsHTML(rating) {
     const value = Number(rating) || 0;
     let out = '<span class="stars">';
@@ -1512,8 +1689,9 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     </span>`;
   }
 
-  function starInputHTML() {
-    return `<div class="star-input" id="starInput">
+  function starInputHTML(id) {
+    const inputId = id || "starInput";
+    return `<div class="star-input" id="${esc(inputId)}">
       ${[1, 2, 3, 4, 5]
         .map(
           (i) =>
@@ -1523,9 +1701,9 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     </div>`;
   }
 
-  function bindStarInput(root, initialRating) {
+  function bindStarInput(root, initialRating, selector) {
     let picked = Number(initialRating) || 0;
-    const stars = () => root.querySelectorAll("#starInput .s");
+    const stars = () => root.querySelectorAll(`${selector || "#starInput"} .s`);
     const pickValue = (star) => {
       const value = Number(star.dataset.v);
       const half = value - 0.5;
@@ -1602,6 +1780,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       rating: w.rating == null ? null : Number(w.rating),
       drunkDate: w.drunkDate || "",
       note: w.note || "",
+      tastings: JSON.stringify(w.tastings || {}),
       hasPhoto: !!w.photo,
     };
   }
@@ -1628,6 +1807,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     rating: "별점",
     drunkDate: "마신 날",
     note: "시음 노트",
+    tastings: "사람별 기록",
     hasPhoto: "사진",
   };
 
@@ -2015,6 +2195,30 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     </svg>`;
   }
 
+  function personMarkHTML(person, tasting) {
+    const status = tasting.status;
+    if (status === TASTING_STATUS.UNKNOWN) return "";
+    const title =
+      status === TASTING_STATUS.DRUNK
+        ? `${person.label} 마심`
+        : `${person.label} 안마심`;
+    return `<span class="person-mark person-mark--${person.className} ${
+      status === TASTING_STATUS.SKIPPED ? "person-mark--skipped" : ""
+    }" title="${esc(title)}" aria-label="${esc(title)}">${esc(person.short)}</span>`;
+  }
+
+  function tastingMarksHTML(wine, variant) {
+    const marks = tastingEntries(wine)
+      .map((entry) => personMarkHTML(entry.person, entry.tasting))
+      .filter(Boolean)
+      .join("");
+    return marks
+      ? `<span class="person-marks ${
+          variant ? `person-marks--${variant}` : ""
+        }">${marks}</span>`
+      : "";
+  }
+
   function sortDefaultDir(key) {
     return key === "name" || key === "country" || key === "variety" ? "asc" : "desc";
   }
@@ -2094,7 +2298,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       const haystack = [
         w.name,
         w.vintage,
-        w.note,
+        tastingNotesText(w),
         w.variety,
         typeOf(w.type).label,
         country ? country.name : "",
@@ -2294,8 +2498,8 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       return (ap - bp) * dir || a.name.localeCompare(b.name, "ko");
     }
     if (state.sortBy === "rating") {
-      const ar = Number(a.rating) > 0 ? Number(a.rating) : null;
-      const br = Number(b.rating) > 0 ? Number(b.rating) : null;
+      const ar = wineAverageRating(a);
+      const br = wineAverageRating(b);
       if (ar == null && br == null) return a.name.localeCompare(b.name, "ko");
       if (ar == null) return 1;
       if (br == null) return -1;
@@ -2342,9 +2546,12 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       : "";
     const typeMark = typeIconHTML(w.type);
     const viewed = w.id === state.lastViewedId ? " is-viewed" : "";
+    const avgRating = wineAverageRating(w);
     const right =
       kind === "drunk"
-        ? `<span class="card__rating">${starsHTML(w.rating || 0)}</span>`
+        ? `${tastingMarksHTML(w, "row")}<span class="card__rating">${starsHTML(
+            avgRating || 0
+          )}</span>`
         : `<span class="card__price">${won(w.price)}</span>`;
     const variety = w.variety ? `<span class="card__sub">${esc(w.variety)}</span>` : "";
     return `
@@ -2373,12 +2580,12 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
         )}</span>`;
     const meta =
       kind === "drunk"
-        ? `<span class="wine-tile__rating">${starsHTML(w.rating || 0)}</span>`
+        ? `<span class="wine-tile__rating">${starsHTML(wineAverageRating(w) || 0)}</span>`
         : `<span class="wine-tile__name">${esc(w.name)}</span>`;
     return `<button class="wine-tile wine-tile--${kind}${viewed}" type="button" data-id="${
       w.id
     }" aria-label="${esc(label)}">
-      <span class="wine-tile__image">${photo}</span>
+      <span class="wine-tile__image">${photo}${tastingMarksHTML(w, "tile")}</span>
       <span class="wine-tile__meta">${meta}</span>
     </button>`;
   }
@@ -2522,10 +2729,22 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       (s, w) => s + (Number(w.price) || 0),
       0
     );
-    const rated = drunk.filter((w) => w.rating);
+    const tastingRows = state.wines.flatMap((wine) =>
+      tastingEntries(wine).map((entry) => ({
+        wine,
+        person: entry.person,
+        tasting: entry.tasting,
+      }))
+    );
+    const drunkRows = tastingRows.filter(
+      (row) => row.tasting.status === TASTING_STATUS.DRUNK
+    );
+    const rated = drunkRows.filter((row) => Number(row.tasting.rating) > 0);
     const hasRatings = rated.length > 0;
     const avg = hasRatings
-      ? (rated.reduce((s, w) => s + w.rating, 0) / rated.length).toFixed(1)
+      ? (
+          rated.reduce((s, row) => s + Number(row.tasting.rating), 0) / rated.length
+        ).toFixed(1)
       : null;
     const avgDisplay = hasRatings ? avg : "없음";
     const avgHint = hasRatings
@@ -2546,8 +2765,8 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
 
     // Top rated wine
     let best = null;
-    rated.forEach((w) => {
-      if (!best || w.rating > best.rating) best = w;
+    rated.forEach((row) => {
+      if (!best || row.tasting.rating > best.tasting.rating) best = row;
     });
     const total = state.wines.length;
     const cellarPct = total ? Math.round((cellar.length / total) * 100) : 0;
@@ -2608,6 +2827,36 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
             <div class="stat__hint">${favN ? favN + "병" : "기록 없음"}</div>
           </div>
         </div>
+        ${TASTERS.map((person) => {
+          const rows = tastingRows.filter((row) => row.person.id === person.id);
+          const personDrunk = rows.filter(
+            (row) => row.tasting.status === TASTING_STATUS.DRUNK
+          );
+          const personSkipped = rows.filter(
+            (row) => row.tasting.status === TASTING_STATUS.SKIPPED
+          );
+          const personRated = personDrunk.filter(
+            (row) => Number(row.tasting.rating) > 0
+          );
+          const personAvg = personRated.length
+            ? (
+                personRated.reduce(
+                  (sum, row) => sum + Number(row.tasting.rating),
+                  0
+                ) / personRated.length
+              ).toFixed(1)
+            : "없음";
+          return `<div class="stat">
+            <div class="stat__icon">${personMarkHTML(person, {
+              status: TASTING_STATUS.DRUNK,
+            })}</div>
+            <div class="stat__body">
+              <div class="stat__label">${person.label} 기록</div>
+              <div class="stat__num stat__num--text">${personAvg}</div>
+              <div class="stat__hint">마심 ${personDrunk.length} · 안마심 ${personSkipped.length}</div>
+            </div>
+          </div>`;
+        }).join("")}
         <div class="stat stat--wide stat--spent">
           <div class="stat__icon">Σ</div>
           <div class="stat__body">
@@ -2622,15 +2871,16 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
           ? `<section class="best-stat">
               <div class="best-stat__head">
                 <span>최고 평점 와인</span>
-                ${starsHTML(best.rating)}
+                ${starsHTML(best.tasting.rating)}
               </div>
               <div class="best-stat__wine">
-                ${flagBadge(best.country)}
-                <span class="best-stat__name">${esc(best.name)}</span>
+                ${flagBadge(best.wine.country)}
+                <span class="best-stat__name">${esc(best.wine.name)}</span>
+                <span class="best-stat__vintage">· ${esc(best.person.label)}</span>
                 ${
-                  best.vintage
+                  best.wine.vintage
                     ? `<span class="best-stat__vintage">· ${esc(
-                        best.vintage
+                        best.wine.vintage
                       )}</span>`
                     : ""
                 }
@@ -2808,6 +3058,136 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     });
   }
 
+  function tastingStatusOptionsHTML(personId, currentStatus) {
+    return [
+      [TASTING_STATUS.DRUNK, "마심"],
+      [TASTING_STATUS.SKIPPED, "안마심"],
+      [TASTING_STATUS.UNKNOWN, "미정"],
+    ]
+      .map(
+        ([status, label]) =>
+          `<button type="button" class="tasting-status ${
+            currentStatus === status ? "is-active" : ""
+          }" data-tasting-status="${status}" data-tasting-person="${personId}">${label}</button>`
+      )
+      .join("");
+  }
+
+  function tastingFormHTML(person, tasting) {
+    const safe = normalizeTasting(tasting, TASTING_STATUS.UNKNOWN);
+    const isActive = safe.status === TASTING_STATUS.DRUNK;
+    return `<section class="tasting-form ${
+      isActive ? "is-tasting-active" : ""
+    }" data-tasting-form="${person.id}" data-initial-rating="${esc(safe.rating || 0)}">
+      <div class="tasting-form__head">
+        <span class="tasting-form__person">${personMarkHTML(person, {
+          status: TASTING_STATUS.DRUNK,
+        })}<span>${person.label}</span></span>
+        <div class="tasting-statuses">
+          ${tastingStatusOptionsHTML(person.id, safe.status)}
+        </div>
+      </div>
+      <input type="hidden" name="tastingStatus_${person.id}" value="${safe.status}" />
+      <div class="tasting-form__body">
+        <div class="field">
+          <label class="field__label">별점</label>
+          ${starInputHTML(`starInput-${person.id}`)}
+        </div>
+        <div class="field">
+          <label class="field__label">마신 날</label>
+          <div class="date-row">
+            <input class="input" name="drunkDate_${person.id}" type="date" value="${esc(
+              safe.drunkDate || ""
+            )}" />
+            <button type="button" class="date-clear" data-clear-date="drunkDate_${
+              person.id
+            }" aria-label="마신 날 비우기" title="마신 날 비우기">-</button>
+          </div>
+        </div>
+        <div class="field">
+          <label class="field__label">시음 노트 <span class="opt">(선택)</span></label>
+          <textarea class="textarea textarea--note" name="note_${
+            person.id
+          }" placeholder="향, 맛, 함께한 음식, 분위기…">${esc(safe.note || "")}</textarea>
+        </div>
+      </div>
+    </section>`;
+  }
+
+  function tastingsFormHTML(wine, defaults) {
+    return TASTERS.map((person) =>
+      tastingFormHTML(person, defaults?.[person.id] || tastingOf(wine, person.id))
+    ).join("");
+  }
+
+  function setTastingFormStatus(block, status) {
+    const hidden = block.querySelector('input[type="hidden"]');
+    if (hidden) hidden.value = status;
+    block.classList.toggle("is-tasting-active", status === TASTING_STATUS.DRUNK);
+    block.querySelectorAll("[data-tasting-status]").forEach((button) => {
+      button.classList.toggle("is-active", button.dataset.tastingStatus === status);
+    });
+  }
+
+  function bindTastingForms(root) {
+    const ratingGetters = {};
+    TASTERS.forEach((person) => {
+      const block = root.querySelector(`[data-tasting-form="${person.id}"]`);
+      if (!block) return;
+      ratingGetters[person.id] = bindStarInput(
+        root,
+        Number(block.dataset.initialRating) || 0,
+        `#starInput-${person.id}`
+      );
+      block.querySelectorAll("[data-tasting-status]").forEach((button) => {
+        button.addEventListener("click", () => {
+          setTastingFormStatus(block, button.dataset.tastingStatus);
+        });
+      });
+    });
+    return ratingGetters;
+  }
+
+  function collectTastingsFromForm(form, ratingGetters) {
+    const tastings = {};
+    TASTERS.forEach((person) => {
+      const status =
+        form.elements[`tastingStatus_${person.id}`]?.value || TASTING_STATUS.UNKNOWN;
+      if (status === TASTING_STATUS.DRUNK) {
+        tastings[person.id] = normalizeTasting(
+          {
+            status,
+            rating: ratingGetters[person.id] ? ratingGetters[person.id]() : null,
+            drunkDate: form.elements[`drunkDate_${person.id}`]?.value || "",
+            note: form.elements[`note_${person.id}`]?.value.trim() || "",
+          },
+          TASTING_STATUS.DRUNK
+        );
+      } else {
+        tastings[person.id] = emptyTasting(status);
+      }
+    });
+    return tastings;
+  }
+
+  function defaultDrinkTastings(wine) {
+    const known = knownTastingEntries(wine);
+    if (known.length) {
+      const tastings = {};
+      TASTERS.forEach((person) => {
+        tastings[person.id] = tastingOf(wine, person.id);
+      });
+      return tastings;
+    }
+    return {
+      me: normalizeTasting(
+        { status: TASTING_STATUS.DRUNK, drunkDate: today() },
+        TASTING_STATUS.DRUNK
+      ),
+      partner: emptyTasting(),
+    };
+  }
+
   /* ---------- Add / Edit form ---------- */
   function openForm(existing) {
     const w = existing || { type: "red", purchaseDate: today() };
@@ -2916,28 +3296,8 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
         ${
           isDrunkEdit
             ? `<div class="form-section form-section--drink">
-                <div class="form-section__title">시음 기록</div>
-                <div class="field">
-                  <label class="field__label">별점</label>
-                  ${starInputHTML()}
-                </div>
-
-                <div class="field">
-                  <label class="field__label">마신 날</label>
-                  <div class="date-row">
-                    <input class="input" name="drunkDate" type="date" value="${esc(
-                      w.drunkDate || ""
-                    )}" />
-                    <button type="button" class="date-clear" data-clear-date="drunkDate" aria-label="마신 날 비우기" title="마신 날 비우기">-</button>
-                  </div>
-                </div>
-
-                <div class="field">
-                  <label class="field__label">시음 노트 <span class="opt">(어땠는지 자유롭게)</span></label>
-                  <textarea class="textarea textarea--note" name="note" placeholder="향, 맛, 함께한 음식, 분위기…">${esc(
-                    w.note || ""
-                  )}</textarea>
-                </div>
+                <div class="form-section__title">사람별 기록</div>
+                ${tastingsFormHTML(w)}
               </div>`
             : ""
         }
@@ -2951,9 +3311,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       </form>
     `);
 
-    const getRating = isDrunkEdit
-      ? bindStarInput(sheet, existing.rating || 0)
-      : null;
+    const tastingRatingGetters = isDrunkEdit ? bindTastingForms(sheet) : null;
     const form = $("#wineForm");
     const nameInput = form.elements.name;
     const vintageInput = form.elements.vintage;
@@ -3286,14 +3644,17 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
         photo: photo || null,
       };
       if (isDrunkEdit) {
-        data.rating = getRating();
-        data.drunkDate = f.drunkDate.value || "";
-        data.note = f.note.value.trim();
+        data.tastings = collectTastingsFromForm(f, tastingRatingGetters);
+        if (!hasDrunkTasting(data.tastings)) {
+          alert("마신 사람을 한 명 이상 선택해 주세요.");
+          return;
+        }
       }
 
       if (isEdit) {
         const backup = Object.assign({}, existing);
         Object.assign(existing, data);
+        if (isDrunkEdit) syncLegacyTastingFields(existing);
         if (!persist(makeAuditLog("update", backup, existing))) {
           Object.assign(existing, backup);
           quotaAlert();
@@ -3323,6 +3684,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     if (!w) return;
     const t = typeOf(w.type);
     const isDrunk = w.status === "drunk";
+    const avgRating = wineAverageRating(w);
     const typeValue = `${typeIconHTML(w.type, "detail")}<span>${t.label}</span>`;
     const titleVintage = w.vintage
       ? `<span class="detail__title-vintage">${esc(w.vintage)}</span>`
@@ -3363,9 +3725,9 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     openSheet(`
       ${
         isDrunk
-          ? `<div class="detail__rating-top" aria-label="별점 ${
-              w.rating || 0
-            }점">${starsHTML(w.rating || 0)}</div>`
+          ? `<div class="detail__rating-top" aria-label="평균 별점 ${
+              avgRating || 0
+            }점">${starsHTML(avgRating || 0)}${tastingMarksHTML(w, "detail")}</div>`
           : ""
       }
       ${w.photo ? `<img class="detail__photo" src="${w.photo}" alt="와인 사진" />` : ""}
@@ -3377,14 +3739,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
 
       ${grid}
 
-      ${
-        isDrunk && w.note
-          ? `<div class="note-block note-block--focus">
-               <div class="note-block__label">시음 노트</div>
-               <div class="note-block__text">${esc(w.note)}</div>
-             </div>`
-          : ""
-      }
+      ${isDrunk ? detailTastingsHTML(w) : ""}
 
       <div class="detail-actions">
         <div class="detail-actions__bar">
@@ -3399,6 +3754,8 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
         </div>
       </div>
     `);
+
+    bindNoteBlocks(sheet);
 
     sheet
       .querySelector('[data-action="drink"]')
@@ -3417,6 +3774,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       delete w.rating;
       delete w.note;
       delete w.drunkDate;
+      delete w.tastings;
       if (!persist(makeAuditLog("undoDrunk", backup, w))) {
         Object.assign(w, backup);
         quotaAlert();
@@ -3438,6 +3796,74 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       });
   }
 
+  function noteBlockHTML(label, note) {
+    return `<div class="note-block note-block--focus" data-note-block>
+      <div class="note-block__label">${esc(label)}</div>
+      <div class="note-block__text note-block__text--clamped" data-note-text>${esc(
+        note
+      )}</div>
+      <button class="note-block__toggle" type="button" data-note-toggle hidden aria-expanded="false">더보기</button>
+    </div>`;
+  }
+
+  function detailTastingsHTML(wine) {
+    const entries = knownTastingEntries(wine);
+    if (!entries.length) return "";
+    return `<div class="tasting-detail-list">
+      ${entries
+        .map(({ person, tasting }) => {
+          if (tasting.status === TASTING_STATUS.SKIPPED) {
+            return `<section class="tasting-detail tasting-detail--skipped">
+              <div class="tasting-detail__head">
+                <span class="tasting-detail__person">${personMarkHTML(
+                  person,
+                  tasting
+                )}<span>${person.label}</span></span>
+                <span class="tasting-detail__state">안마심</span>
+              </div>
+            </section>`;
+          }
+          return `<section class="tasting-detail">
+            <div class="tasting-detail__head">
+              <span class="tasting-detail__person">${personMarkHTML(
+                person,
+                tasting
+              )}<span>${person.label}</span></span>
+              <span class="tasting-detail__rating">${starsHTML(
+                tasting.rating || 0
+              )}</span>
+            </div>
+            ${
+              tasting.drunkDate
+                ? `<div class="tasting-detail__date">${fmtDate(tasting.drunkDate)}</div>`
+                : ""
+            }
+            ${tasting.note ? noteBlockHTML(`${person.label}의 노트`, tasting.note) : ""}
+          </section>`;
+        })
+        .join("")}
+    </div>`;
+  }
+
+  function bindNoteBlocks(root) {
+    root.querySelectorAll("[data-note-block]").forEach((block) => {
+      const text = block.querySelector("[data-note-text]");
+      const toggle = block.querySelector("[data-note-toggle]");
+      if (!text || !toggle) return;
+
+      requestAnimationFrame(() => {
+        toggle.hidden = text.scrollHeight <= text.clientHeight + 2;
+      });
+
+      toggle.addEventListener("click", () => {
+        const expanded = toggle.getAttribute("aria-expanded") === "true";
+        text.classList.toggle("note-block__text--clamped", expanded);
+        toggle.setAttribute("aria-expanded", expanded ? "false" : "true");
+        toggle.textContent = expanded ? "더보기" : "접기";
+      });
+    });
+  }
+
   function cell(label, val, full) {
     return `<div class="dcell ${
       full ? "dcell--full" : ""
@@ -3446,33 +3872,16 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
 
   /* ---------- Drink form (mark as drunk) ---------- */
   function openDrinkForm(w) {
-    let picked = w.rating || 0;
+    const defaults = defaultDrinkTastings(w);
 
     openSheet(`
       <h2 class="sheet__title">마신 기록</h2>
       <p class="sheet__subtitle">${esc(w.name)}, 어땠나요?</p>
 
       <form id="drinkForm">
-        <div class="field">
-          <label class="field__label">별점</label>
-          ${starInputHTML()}
-        </div>
-
-        <div class="field">
-          <label class="field__label">마신 날</label>
-          <div class="date-row">
-            <input class="input" name="drunkDate" type="date" value="${esc(
-              w.drunkDate || ""
-            )}" />
-            <button type="button" class="date-clear" data-clear-date="drunkDate" aria-label="마신 날 비우기" title="마신 날 비우기">-</button>
-          </div>
-        </div>
-
-        <div class="field">
-          <label class="field__label">시음 노트 <span class="opt">(어땠는지 자유롭게)</span></label>
-          <textarea class="textarea textarea--note" name="note" placeholder="향, 맛, 함께한 음식, 분위기…">${esc(
-            w.note || ""
-          )}</textarea>
+        <div class="form-section form-section--drink">
+          <div class="form-section__title">사람별 기록</div>
+          ${tastingsFormHTML(w, defaults)}
         </div>
 
         <div class="btn-stack">
@@ -3482,16 +3891,18 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       </form>
     `);
 
-    const getRating = bindStarInput(sheet, picked);
+    const tastingRatingGetters = bindTastingForms(sheet);
 
     $("#drinkForm").addEventListener("submit", (e) => {
       e.preventDefault();
       const f = e.target;
       const backup = Object.assign({}, w);
-      w.status = "drunk";
-      w.rating = getRating();
-      w.drunkDate = f.drunkDate.value || "";
-      w.note = f.note.value.trim();
+      const nextTastings = collectTastingsFromForm(f, tastingRatingGetters);
+      if (!hasDrunkTasting(nextTastings)) {
+        alert("마신 사람을 한 명 이상 선택해 주세요.");
+        return;
+      }
+      updateWineTastings(w, nextTastings);
       if (!persist(makeAuditLog("markDrunk", backup, w))) {
         Object.assign(w, backup);
         quotaAlert();
