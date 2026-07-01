@@ -84,8 +84,8 @@
   const TAB_SWIPE_VERTICAL_CANCEL_Y = 34;
   const TAB_SWIPE_NEXT_VERTICAL_CANCEL_RATIO = 1.55;
   const TAB_SWIPE_PREV_VERTICAL_CANCEL_RATIO = 1.9;
-  const TAB_SWIPE_DRAG_MAX = 116;
-  const TAB_TRANSITION_MS = 240;
+  const TAB_SWIPE_EDGE_MAX = 54;
+  const TAB_TRANSITION_MS = 280;
   const SEED_TSV = `status	type	country_code	country_name	name	vintage
 cellar	red	FR	프랑스	프리에르 로크, 르 끌라우드	2019
 cellar	red	FR	프랑스	Moillard Gevrey-Chambertin	2018
@@ -2332,19 +2332,183 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
         verticalCancelRatio: isPrev
           ? TAB_SWIPE_PREV_VERTICAL_CANCEL_RATIO
           : TAB_SWIPE_NEXT_VERTICAL_CANCEL_RATIO,
-        resistance: isPrev ? 0.94 : 0.9,
       };
     };
 
     const clearSwipeProps = () => {
-      view.classList.remove("is-tab-swiping", "is-tab-swipe-return");
+      view.classList.remove(
+        "is-tab-swiping",
+        "is-tab-swipe-return",
+        "is-tab-track-active"
+      );
       view.style.removeProperty("--tab-swipe-x");
+    };
+
+    const navigationSnapshot = () => ({
+      tab: state.tab,
+      typeFilters: [...state.typeFilters],
+      countryFilters: [...state.countryFilters],
+      varietyFilters: [...state.varietyFilters],
+      filterPanel: state.filterPanel,
+      searchOpen: state.searchOpen,
+      searchQuery: state.searchQuery,
+      sortBy: state.sortBy,
+      sortDir: state.sortDir,
+    });
+
+    const restoreNavigationSnapshot = (snapshot) => {
+      state.tab = snapshot.tab;
+      state.typeFilters = [...snapshot.typeFilters];
+      state.countryFilters = [...snapshot.countryFilters];
+      state.varietyFilters = [...snapshot.varietyFilters];
+      state.filterPanel = snapshot.filterPanel;
+      state.searchOpen = snapshot.searchOpen;
+      state.searchQuery = snapshot.searchQuery;
+      state.sortBy = snapshot.sortBy;
+      state.sortDir = snapshot.sortDir;
+    };
+
+    const resetNavigationForTab = (tab) => {
+      state.tab = tab;
+      state.typeFilters = [];
+      state.countryFilters = [];
+      state.varietyFilters = [];
+      state.filterPanel = null;
+      state.searchOpen = false;
+      state.searchQuery = "";
+    };
+
+    const paneHTML = (html) => html.replace(/\sid=/g, " data-swipe-id=");
+
+    const captureTabHTML = (tab) => {
+      const snapshot = navigationSnapshot();
+      const currentHTML = view.innerHTML;
+      const addBtn = $("#addBtn");
+      const headerSub = $("#headerSub");
+      const addHidden = addBtn.hidden;
+      const headerText = headerSub.textContent;
+
+      resetNavigationForTab(tab);
+      render();
+      const html = view.innerHTML;
+
+      restoreNavigationSnapshot(snapshot);
+      view.innerHTML = currentHTML;
+      syncTabButtons();
+      addBtn.hidden = addHidden;
+      headerSub.textContent = headerText;
+      return html;
+    };
+
+    const setTrackX = (track, x) => {
+      track.currentX = x;
+      track.el.style.setProperty("--tab-track-x", `${Math.round(x)}px`);
+    };
+
+    const finishSwipeTrack = (track, commit) => {
+      if (!track?.el) {
+        clearSwipeProps();
+        if (commit && track?.nextTab) setTab(track.nextTab);
+        else render();
+        return;
+      }
+      if (swipeReturnTimer) {
+        clearTimeout(swipeReturnTimer);
+        swipeReturnTimer = 0;
+      }
+      const finalX = commit
+        ? track.direction === "next"
+          ? -track.width
+          : 0
+        : track.baseX;
+      const remaining = Math.abs(finalX - (track.currentX ?? track.baseX));
+      const duration = Math.round(
+        Math.min(320, Math.max(170, (remaining / track.width) * TAB_TRANSITION_MS))
+      );
+
+      track.el.style.setProperty("--tab-settle-ms", `${duration}ms`);
+      track.el.classList.add("is-settling");
+      setTrackX(track, finalX);
+      swipeReturnTimer = setTimeout(() => {
+        swipeReturnTimer = 0;
+        clearSwipeProps();
+        if (commit) {
+          setTab(track.nextTab);
+        } else {
+          render();
+        }
+      }, duration + 40);
+    };
+
+    const buildSwipeTrack = (nextTab, direction) => {
+      const currentHTML = paneHTML(view.innerHTML);
+      const nextHTML = paneHTML(captureTabHTML(nextTab));
+      const width = Math.max(
+        1,
+        Math.round(view.getBoundingClientRect().width || window.innerWidth || 1)
+      );
+      const panes =
+        direction === "next"
+          ? [
+              { tab: state.tab, html: currentHTML, current: true },
+              { tab: nextTab, html: nextHTML, current: false },
+            ]
+          : [
+              { tab: nextTab, html: nextHTML, current: false },
+              { tab: state.tab, html: currentHTML, current: true },
+            ];
+      const baseX = direction === "next" ? 0 : -width;
+
+      view.classList.remove(
+        "view--tab-enter-next",
+        "view--tab-enter-prev",
+        "is-tab-swipe-return"
+      );
+      view.style.removeProperty("--tab-swipe-x");
+      view.innerHTML = `<div class="tab-swipe-track" style="--tab-track-x:${baseX}px">${panes
+        .map(
+          (pane) =>
+            `<section class="tab-swipe-pane" data-swipe-tab="${esc(
+              pane.tab
+            )}" aria-hidden="${pane.current ? "false" : "true"}">${pane.html}</section>`
+        )
+        .join("")}</div>`;
+      view.classList.add("is-tab-track-active", "is-tab-swiping");
+
+      const el = view.querySelector(".tab-swipe-track");
+      if (!el) return null;
+      return {
+        el,
+        nextTab,
+        direction,
+        width,
+        baseX,
+        currentX: baseX,
+      };
+    };
+
+    const ensureSwipeTrack = (dx) => {
+      if (gesture.track) return gesture.track;
+      const nextTab = adjacentTabFromSwipe(dx);
+      if (!nextTab) return null;
+      const direction = dx < 0 ? "next" : "prev";
+      gesture.track = buildSwipeTrack(nextTab, direction);
+      return gesture.track;
     };
 
     const clearSwipeVisual = (animateBack = false) => {
       if (swipeReturnTimer) {
         clearTimeout(swipeReturnTimer);
         swipeReturnTimer = 0;
+      }
+      if (gesture?.track) {
+        if (animateBack) {
+          finishSwipeTrack(gesture.track, false);
+        } else {
+          clearSwipeProps();
+          render();
+        }
+        return;
       }
       if (!animateBack) {
         clearSwipeProps();
@@ -2359,12 +2523,17 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     };
 
     const setSwipeVisual = (dx) => {
-      const settings = swipeSettings(dx);
-      const hasAdjacent = !!adjacentTabFromSwipe(dx);
-      const resistance = hasAdjacent ? settings.resistance : 0.16;
+      const track = ensureSwipeTrack(dx);
+      if (track) {
+        const offset = Math.max(-track.width, Math.min(0, track.baseX + dx));
+        view.classList.add("is-tab-swiping");
+        setTrackX(track, offset);
+        gesture.visualOffset = Math.round(offset);
+        return;
+      }
       const offset = Math.max(
-        -TAB_SWIPE_DRAG_MAX,
-        Math.min(TAB_SWIPE_DRAG_MAX, dx * resistance)
+        -TAB_SWIPE_EDGE_MAX,
+        Math.min(TAB_SWIPE_EDGE_MAX, dx * 0.16)
       );
       view.classList.add("is-tab-swiping");
       view.style.setProperty("--tab-swipe-x", `${Math.round(offset)}px`);
@@ -2386,6 +2555,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     };
 
     const begin = (point, target, pointerId = null) => {
+      if (swipeReturnTimer) return;
       if (isTabSwipeBlockedTarget(target)) return;
       const scroller = appScroller();
       gesture = {
@@ -2399,6 +2569,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
         lastMoveAt: Date.now(),
         pointerId,
         active: false,
+        track: null,
       };
     };
 
@@ -2453,30 +2624,27 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
         absX >= settings.flickMinX && velocity >= settings.velocity;
       const horizontalIntent =
         gesture.active && absX > absY * settings.finishRatio;
+      const track = gesture.track;
+      const directionConsistent =
+        !track || (track.direction === "next" ? dx < 0 : dx > 0);
       const shouldSwitch =
-        horizontalIntent && (absX >= settings.minX || isFlick);
-      const nextTab = shouldSwitch ? adjacentTabFromSwipe(dx) : null;
-      const enterOffset = Number.isFinite(gesture.visualOffset)
-        ? gesture.visualOffset
-        : Math.round(
-            Math.max(
-              -TAB_SWIPE_DRAG_MAX,
-              Math.min(TAB_SWIPE_DRAG_MAX, dx * settings.resistance)
-            )
-          );
+        horizontalIntent && directionConsistent && (absX >= settings.minX || isFlick);
+      const nextTab = shouldSwitch
+        ? track?.nextTab || adjacentTabFromSwipe(dx)
+        : null;
 
       if (horizontalIntent && absX >= 18) {
         suppressNextClick();
         if (e?.preventDefault) e.preventDefault();
       }
-      clearSwipeVisual(!nextTab && horizontalIntent);
-      if (nextTab) {
+      if (track) {
+        finishSwipeTrack(track, !!nextTab);
+      } else {
+        clearSwipeVisual(!nextTab && horizontalIntent);
+      }
+      if (nextTab && !track) {
         holdSwipeScroll();
-        setTab(nextTab, {
-          animate: true,
-          direction: dx < 0 ? "next" : "prev",
-          enterOffset,
-        });
+        setTab(nextTab, { animate: true, direction: dx < 0 ? "next" : "prev" });
       }
 
       if (gesture.pointerId != null && view.releasePointerCapture) {
