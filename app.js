@@ -71,12 +71,16 @@
   const SEED_KEY = "wine-cellar-seed-version";
   const SEED_VERSION = "user-wine-list-2026-06-29-english-wine-names";
   const TAB_ORDER = ["cellar", "drunk", "stats"];
-  const TAB_SWIPE_MIN_X = 42;
-  const TAB_SWIPE_FLICK_MIN_X = 26;
-  const TAB_SWIPE_VELOCITY = 0.34;
-  const TAB_SWIPE_RATIO = 1.08;
-  const TAB_SWIPE_DRAG_MAX = 34;
-  const TAB_TRANSITION_MS = 190;
+  const TAB_SWIPE_MIN_X = 36;
+  const TAB_SWIPE_FLICK_MIN_X = 24;
+  const TAB_SWIPE_VELOCITY = 0.3;
+  const TAB_SWIPE_LOCK_X = 12;
+  const TAB_SWIPE_LOCK_RATIO = 0.78;
+  const TAB_SWIPE_FINISH_RATIO = 0.78;
+  const TAB_SWIPE_VERTICAL_CANCEL_Y = 34;
+  const TAB_SWIPE_VERTICAL_CANCEL_RATIO = 1.55;
+  const TAB_SWIPE_DRAG_MAX = 56;
+  const TAB_TRANSITION_MS = 250;
   const SEED_TSV = `status	type	country_code	country_name	name	vintage
 cellar	red	FR	프랑스	프리에르 로크, 르 끌라우드	2019
 cellar	red	FR	프랑스	Moillard Gevrey-Chambertin	2018
@@ -2321,7 +2325,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
 
     const setSwipeVisual = (dx) => {
       const hasAdjacent = !!adjacentTabFromSwipe(dx);
-      const resistance = hasAdjacent ? 0.34 : 0.16;
+      const resistance = hasAdjacent ? 0.56 : 0.18;
       const offset = Math.max(
         -TAB_SWIPE_DRAG_MAX,
         Math.min(TAB_SWIPE_DRAG_MAX, dx * resistance)
@@ -2362,12 +2366,15 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
 
       if (!gesture.active) {
         if (absX < 10 && absY < 10) return;
-        if (absY > absX) {
+        const verticalDominant =
+          absY >= TAB_SWIPE_VERTICAL_CANCEL_Y &&
+          absY > absX * TAB_SWIPE_VERTICAL_CANCEL_RATIO;
+        if (verticalDominant) {
           clearSwipeVisual(false);
           gesture = null;
           return;
         }
-        if (absX > 16 && absX > absY * TAB_SWIPE_RATIO) {
+        if (absX >= TAB_SWIPE_LOCK_X && absX > absY * TAB_SWIPE_LOCK_RATIO) {
           gesture.active = true;
           if (gesture.pointerId != null && view.setPointerCapture) {
             try {
@@ -2395,7 +2402,8 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       const velocity = absX / elapsed;
       const isFlick =
         absX >= TAB_SWIPE_FLICK_MIN_X && velocity >= TAB_SWIPE_VELOCITY;
-      const horizontalIntent = gesture.active && absX > absY * TAB_SWIPE_RATIO;
+      const horizontalIntent =
+        gesture.active && absX > absY * TAB_SWIPE_FINISH_RATIO;
       const shouldSwitch =
         horizontalIntent && (absX >= TAB_SWIPE_MIN_X || isFlick);
       const nextTab = shouldSwitch ? adjacentTabFromSwipe(dx) : null;
