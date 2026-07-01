@@ -84,8 +84,8 @@
   const TAB_SWIPE_VERTICAL_CANCEL_Y = 34;
   const TAB_SWIPE_NEXT_VERTICAL_CANCEL_RATIO = 1.55;
   const TAB_SWIPE_PREV_VERTICAL_CANCEL_RATIO = 1.9;
-  const TAB_SWIPE_DRAG_MAX = 92;
-  const TAB_TRANSITION_MS = 330;
+  const TAB_SWIPE_DRAG_MAX = 46;
+  const TAB_TRANSITION_MS = 260;
   const SEED_TSV = `status	type	country_code	country_name	name	vintage
 cellar	red	FR	프랑스	프리에르 로크, 르 끌라우드	2019
 cellar	red	FR	프랑스	Moillard Gevrey-Chambertin	2018
@@ -2247,14 +2247,9 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       "view--tab-enter-next",
       "view--tab-enter-prev",
       "is-tab-swiping",
-      "is-tab-swipe-return",
-      "is-tab-swipe-next",
-      "is-tab-swipe-prev"
+      "is-tab-swipe-return"
     );
     view.style.removeProperty("--tab-swipe-x");
-    view.style.removeProperty("--tab-swipe-opacity");
-    view.style.removeProperty("--tab-swipe-scale");
-    view.style.removeProperty("--tab-swipe-edge-opacity");
     void view.offsetWidth;
     view.classList.add(
       direction === "next" ? "view--tab-enter-next" : "view--tab-enter-prev"
@@ -2331,21 +2326,13 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
         verticalCancelRatio: isPrev
           ? TAB_SWIPE_PREV_VERTICAL_CANCEL_RATIO
           : TAB_SWIPE_NEXT_VERTICAL_CANCEL_RATIO,
-        resistance: isPrev ? 0.92 : 0.82,
+        resistance: isPrev ? 0.66 : 0.58,
       };
     };
 
     const clearSwipeProps = () => {
-      view.classList.remove(
-        "is-tab-swiping",
-        "is-tab-swipe-return",
-        "is-tab-swipe-next",
-        "is-tab-swipe-prev"
-      );
+      view.classList.remove("is-tab-swiping", "is-tab-swipe-return");
       view.style.removeProperty("--tab-swipe-x");
-      view.style.removeProperty("--tab-swipe-opacity");
-      view.style.removeProperty("--tab-swipe-scale");
-      view.style.removeProperty("--tab-swipe-edge-opacity");
     };
 
     const clearSwipeVisual = (animateBack = false) => {
@@ -2359,40 +2346,27 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       }
       view.classList.add("is-tab-swipe-return");
       view.style.setProperty("--tab-swipe-x", "0px");
-      view.style.setProperty("--tab-swipe-opacity", "1");
-      view.style.setProperty("--tab-swipe-scale", "1");
-      view.style.setProperty("--tab-swipe-edge-opacity", "0");
       swipeReturnTimer = setTimeout(() => {
         clearSwipeProps();
         swipeReturnTimer = 0;
-      }, 220);
+      }, 190);
     };
 
     const setSwipeVisual = (dx) => {
       const settings = swipeSettings(dx);
       const hasAdjacent = !!adjacentTabFromSwipe(dx);
-      const resistance = hasAdjacent ? settings.resistance : 0.24;
+      const resistance = hasAdjacent ? settings.resistance : 0.16;
       const offset = Math.max(
         -TAB_SWIPE_DRAG_MAX,
         Math.min(TAB_SWIPE_DRAG_MAX, dx * resistance)
       );
-      const progress = Math.min(1, Math.abs(offset) / TAB_SWIPE_DRAG_MAX);
       view.classList.add("is-tab-swiping");
-      view.classList.toggle("is-tab-swipe-next", dx < 0);
-      view.classList.toggle("is-tab-swipe-prev", dx > 0);
       view.style.setProperty("--tab-swipe-x", `${Math.round(offset)}px`);
-      view.style.setProperty(
-        "--tab-swipe-opacity",
-        `${(1 - progress * 0.08).toFixed(3)}`
-      );
-      view.style.setProperty(
-        "--tab-swipe-scale",
-        `${(1 - progress * 0.008).toFixed(3)}`
-      );
-      view.style.setProperty(
-        "--tab-swipe-edge-opacity",
-        `${(progress * 0.5).toFixed(3)}`
-      );
+    };
+
+    const holdSwipeScroll = () => {
+      if (!gesture?.scroller) return;
+      gesture.scroller.scrollTop = gesture.startScrollTop;
     };
 
     const suppressNextClick = () => {
@@ -2406,11 +2380,14 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
 
     const begin = (point, target, pointerId = null) => {
       if (isTabSwipeBlockedTarget(target)) return;
+      const scroller = appScroller();
       gesture = {
         startX: point.clientX,
         startY: point.clientY,
         lastX: point.clientX,
         lastY: point.clientY,
+        startScrollTop: scroller.scrollTop,
+        scroller,
         startedAt: Date.now(),
         lastMoveAt: Date.now(),
         pointerId,
@@ -2438,6 +2415,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
         }
         if (absX >= 10 && absX > absY * settings.lockRatio) {
           gesture.active = true;
+          holdSwipeScroll();
           if (gesture.pointerId != null && view.setPointerCapture) {
             try {
               view.setPointerCapture(gesture.pointerId);
@@ -2450,6 +2428,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       gesture.lastX = point.clientX;
       gesture.lastY = point.clientY;
       gesture.lastMoveAt = Date.now();
+      holdSwipeScroll();
       setSwipeVisual(dx);
       e.preventDefault();
     };
@@ -2477,6 +2456,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       }
       clearSwipeVisual(!nextTab && horizontalIntent);
       if (nextTab) {
+        holdSwipeScroll();
         setTab(nextTab, {
           animate: true,
           direction: dx < 0 ? "next" : "prev",
