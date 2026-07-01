@@ -1511,62 +1511,12 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
   const view = $("#view");
   const sheet = $("#sheet");
   const backdrop = $("#backdrop");
-  let floatingChromeRaf = 0;
 
   const uid = () =>
     Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
-  function viewportPageTop() {
-    const vv = window.visualViewport;
-    if (vv && Number.isFinite(vv.pageTop)) return vv.pageTop;
-    return window.scrollY || document.documentElement.scrollTop || 0;
-  }
-
-  function viewportHeight() {
-    const vv = window.visualViewport;
-    if (vv && Number.isFinite(vv.height)) return vv.height;
-    return window.innerHeight || document.documentElement.clientHeight || 0;
-  }
-
-  function updateFloatingChromePosition() {
-    floatingChromeRaf = 0;
-    const tabs = $(".tabs");
-    const addBtn = $("#addBtn");
-    if (!tabs) return;
-    document.documentElement.classList.add("has-floating-chrome");
-    const viewportBottom = viewportPageTop() + viewportHeight();
-    const tabsHeight = tabs.offsetHeight || 0;
-    const fabHeight = addBtn ? addBtn.offsetHeight || 46 : 46;
-    document.documentElement.style.setProperty(
-      "--floating-tabs-y",
-      `${Math.max(0, Math.round(viewportBottom - tabsHeight))}px`
-    );
-    document.documentElement.style.setProperty(
-      "--floating-fab-y",
-      `${Math.max(0, Math.round(viewportBottom - 64 - fabHeight))}px`
-    );
-  }
-
-  function requestFloatingChromePosition() {
-    if (floatingChromeRaf) return;
-    floatingChromeRaf = requestAnimationFrame(updateFloatingChromePosition);
-  }
-
-  function bindFloatingChromePosition() {
-    document.documentElement.classList.add("has-floating-chrome");
-    window.addEventListener("scroll", requestFloatingChromePosition, {
-      passive: true,
-    });
-    window.addEventListener("resize", requestFloatingChromePosition);
-    window.addEventListener("orientationchange", requestFloatingChromePosition);
-    if (window.visualViewport) {
-      window.visualViewport.addEventListener("scroll", requestFloatingChromePosition, {
-        passive: true,
-      });
-      window.visualViewport.addEventListener("resize", requestFloatingChromePosition);
-    }
-    requestFloatingChromePosition();
-    setTimeout(requestFloatingChromePosition, 250);
+  function appScroller() {
+    return $(".app") || document.scrollingElement || document.documentElement;
   }
 
   const typeOf = (id) =>
@@ -2279,9 +2229,9 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
   }
 
   function scrollCurrentTabToTop() {
-    const scroller = document.scrollingElement || document.documentElement;
-    if (window.scrollTo) {
-      window.scrollTo({ top: 0, behavior: "smooth" });
+    const scroller = appScroller();
+    if (scroller && scroller.scrollTo) {
+      scroller.scrollTo({ top: 0, behavior: "smooth" });
     } else {
       scroller.scrollTop = 0;
     }
@@ -2293,7 +2243,6 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     else renderStats();
     $("#addBtn").hidden = state.tab === "stats";
     updateHeaderSub();
-    requestFloatingChromePosition();
   }
 
   function markViewedCard() {
@@ -3063,26 +3012,18 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
 
   function lockPageScroll() {
     if (document.body.classList.contains("is-sheet-locked")) return;
-    lockedScrollY = window.scrollY || document.documentElement.scrollTop || 0;
+    const scroller = appScroller();
+    lockedScrollY = scroller.scrollTop || 0;
     document.body.classList.add("is-sheet-locked");
-    document.body.style.position = "fixed";
-    document.body.style.top = `-${lockedScrollY}px`;
-    document.body.style.left = "0";
-    document.body.style.right = "0";
-    document.body.style.width = "100%";
-    document.body.style.overflow = "hidden";
+    scroller.style.overflow = "hidden";
   }
 
   function unlockPageScroll() {
     if (!document.body.classList.contains("is-sheet-locked")) return;
+    const scroller = appScroller();
     document.body.classList.remove("is-sheet-locked");
-    document.body.style.position = "";
-    document.body.style.top = "";
-    document.body.style.left = "";
-    document.body.style.right = "";
-    document.body.style.width = "";
-    document.body.style.overflow = "";
-    window.scrollTo(0, lockedScrollY);
+    scroller.style.overflow = "";
+    scroller.scrollTop = lockedScrollY;
   }
 
   function openSheet(html) {
@@ -4194,8 +4135,8 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     let refreshing = false;
 
     const atTop = () => {
-      const scroller = document.scrollingElement || document.documentElement;
-      return window.scrollY <= 0 && scroller.scrollTop <= 0;
+      const scroller = appScroller();
+      return (scroller.scrollTop || 0) <= 0;
     };
 
     const setPull = (value, pulling = true) => {
@@ -4273,7 +4214,6 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
   /* ---------- Boot ---------- */
   load();
   render();
-  bindFloatingChromePosition();
   setupSync();
   setupPullToRefresh();
 })();
