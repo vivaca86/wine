@@ -3096,6 +3096,52 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     }, 260);
   }
 
+  function openConfirmDialog({ title, message, tone = "default" }) {
+    return new Promise((resolve) => {
+      const root = document.createElement("div");
+      const titleId = `confirmTitle_${Date.now()}`;
+      const messageId = `confirmMessage_${Date.now()}`;
+      root.className = `app-confirm app-confirm--${tone}`;
+      root.innerHTML = `
+        <div class="app-confirm__scrim" data-confirm-cancel></div>
+        <section class="app-confirm__card" role="dialog" aria-modal="true" aria-labelledby="${titleId}" aria-describedby="${messageId}">
+          <h2 class="app-confirm__title" id="${titleId}">${esc(title)}</h2>
+          <p class="app-confirm__message" id="${messageId}">${esc(message)}</p>
+          <div class="app-confirm__actions">
+            <button type="button" class="btn btn--quiet" data-confirm-cancel>취소</button>
+            <button type="button" class="btn btn--dark" data-confirm-ok>확인</button>
+          </div>
+        </section>
+      `;
+
+      let done = false;
+      const finish = (confirmed) => {
+        if (done) return;
+        done = true;
+        document.removeEventListener("keydown", onKeyDown);
+        root.classList.remove("is-open");
+        setTimeout(() => root.remove(), 180);
+        resolve(confirmed);
+      };
+      const onKeyDown = (e) => {
+        if (e.key === "Escape") finish(false);
+      };
+
+      root
+        .querySelectorAll("[data-confirm-cancel]")
+        .forEach((btn) => btn.addEventListener("click", () => finish(false)));
+      root
+        .querySelector("[data-confirm-ok]")
+        ?.addEventListener("click", () => finish(true));
+      document.addEventListener("keydown", onKeyDown);
+      document.body.appendChild(root);
+      requestAnimationFrame(() => {
+        root.classList.add("is-open");
+        root.querySelector("[data-confirm-cancel]")?.focus();
+      });
+    });
+  }
+
   function sheetTouchPoint(e) {
     return (e.touches && e.touches[0]) || (e.changedTouches && e.changedTouches[0]) || null;
   }
@@ -4058,8 +4104,12 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       closeSheet();
       setTimeout(() => openForm(w), 280);
     });
-    sheet.querySelector('[data-action="undo"]')?.addEventListener("click", () => {
-      if (!confirm(`셀러로 되돌릴까요?\n\n${w.name}`)) return;
+    sheet.querySelector('[data-action="undo"]')?.addEventListener("click", async () => {
+      const confirmed = await openConfirmDialog({
+        title: "셀러로 되돌릴까요?",
+        message: w.name
+      });
+      if (!confirmed) return;
       const backup = Object.assign({}, w);
       w.status = "cellar";
       delete w.rating;
@@ -4077,14 +4127,18 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     });
     sheet
       .querySelector('[data-action="delete"]')
-      ?.addEventListener("click", () => {
-        if (confirm(`정말 삭제할까요?\n\n${w.name}`)) {
-          const backup = Object.assign({}, w);
-          state.wines = state.wines.filter((x) => x.id !== w.id);
-          persist(makeAuditLog("delete", backup, null));
-          closeSheet();
-          render();
-        }
+      ?.addEventListener("click", async () => {
+        const confirmed = await openConfirmDialog({
+          title: "정말 삭제할까요?",
+          message: w.name,
+          tone: "danger"
+        });
+        if (!confirmed) return;
+        const backup = Object.assign({}, w);
+        state.wines = state.wines.filter((x) => x.id !== w.id);
+        persist(makeAuditLog("delete", backup, null));
+        closeSheet();
+        render();
       });
   }
 

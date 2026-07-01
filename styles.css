@@ -1175,6 +1175,71 @@ body.is-refreshing .pull-refresh__ring {
   color: var(--muted);
 }
 
+.app-confirm {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s ease;
+}
+.app-confirm.is-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+.app-confirm__scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(23, 22, 20, 0.28);
+  backdrop-filter: blur(2px);
+}
+.app-confirm__card {
+  position: relative;
+  width: min(342px, 100%);
+  padding: 18px 16px 14px;
+  border: 1px solid rgba(48, 42, 34, 0.12);
+  border-radius: 18px;
+  background: linear-gradient(180deg, var(--off-white), var(--surface-soft));
+  box-shadow: rgba(18, 15, 12, 0.2) 0 18px 48px;
+  transform: translateY(8px) scale(0.98);
+  transition: transform 0.18s cubic-bezier(0.22, 0.85, 0.18, 1);
+}
+.app-confirm.is-open .app-confirm__card {
+  transform: translateY(0) scale(1);
+}
+.app-confirm__title {
+  margin: 0;
+  color: var(--charcoal);
+  font-size: 18px;
+  font-weight: 820;
+  letter-spacing: 0;
+}
+.app-confirm__message {
+  margin: 8px 0 16px;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 640;
+  line-height: 1.45;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+.app-confirm__actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 7px;
+}
+.app-confirm__actions .btn {
+  min-height: 44px;
+  border-radius: 12px;
+}
+.app-confirm--danger .app-confirm__title {
+  color: var(--wine);
+}
+
 /* ---------- Forms ---------- */
 .field {
   margin-bottom: 16px;
