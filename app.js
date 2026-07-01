@@ -2335,6 +2335,74 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       };
     };
 
+    const tabsNav = document.querySelector(".tabs");
+    const tabButtonFor = (tab) => document.querySelector(`.tab[data-tab="${tab}"]`);
+
+    const measureTabIndicator = (tab) => {
+      const button = tabButtonFor(tab);
+      if (!tabsNav || !button) return null;
+      const navRect = tabsNav.getBoundingClientRect();
+      const buttonRect = button.getBoundingClientRect();
+      return {
+        x: buttonRect.left - navRect.left,
+        w: buttonRect.width,
+        lineX: buttonRect.left - navRect.left + buttonRect.width / 2 - 7,
+      };
+    };
+
+    const clearTabIndicator = () => {
+      if (!tabsNav) return;
+      tabsNav.classList.remove(
+        "is-tab-indicator-active",
+        "is-tab-indicator-settling"
+      );
+      tabsNav.style.removeProperty("--tab-indicator-opacity");
+      tabsNav.style.removeProperty("--tab-indicator-x");
+      tabsNav.style.removeProperty("--tab-indicator-w");
+      tabsNav.style.removeProperty("--tab-indicator-line-x");
+      tabsNav.style.removeProperty("--tab-settle-ms");
+      document.querySelectorAll(".tab.is-swipe-source, .tab.is-swipe-target").forEach((tab) => {
+        tab.classList.remove("is-swipe-source", "is-swipe-target");
+      });
+    };
+
+    const setupTabIndicator = (track) => {
+      if (!tabsNav) return;
+      track.sourceMetrics = measureTabIndicator(track.sourceTab);
+      track.targetMetrics = measureTabIndicator(track.nextTab);
+      const sourceButton = tabButtonFor(track.sourceTab);
+      const targetButton = tabButtonFor(track.nextTab);
+      if (!track.sourceMetrics || !track.targetMetrics || !sourceButton || !targetButton) {
+        clearTabIndicator();
+        return;
+      }
+      sourceButton.classList.add("is-swipe-source");
+      targetButton.classList.add("is-swipe-target");
+      tabsNav.classList.add("is-tab-indicator-active");
+      tabsNav.style.setProperty("--tab-indicator-opacity", "1");
+    };
+
+    const setTabIndicatorProgress = (track, progress, settling = false) => {
+      if (!tabsNav || !track.sourceMetrics || !track.targetMetrics) return;
+      const p = Math.max(0, Math.min(1, progress));
+      const x =
+        track.sourceMetrics.x + (track.targetMetrics.x - track.sourceMetrics.x) * p;
+      const w =
+        track.sourceMetrics.w + (track.targetMetrics.w - track.sourceMetrics.w) * p;
+      const lineX =
+        track.sourceMetrics.lineX +
+        (track.targetMetrics.lineX - track.sourceMetrics.lineX) * p;
+      tabsNav.classList.toggle("is-tab-indicator-settling", settling);
+      tabsNav.style.setProperty("--tab-indicator-x", `${Math.round(x)}px`);
+      tabsNav.style.setProperty("--tab-indicator-w", `${Math.round(w)}px`);
+      tabsNav.style.setProperty("--tab-indicator-line-x", `${Math.round(lineX)}px`);
+    };
+
+    const tabIndicatorProgressFor = (track, x = track.currentX) => {
+      if (!track?.width) return 0;
+      return Math.max(0, Math.min(1, Math.abs(x - track.baseX) / track.width));
+    };
+
     const clearSwipeProps = () => {
       view.classList.remove(
         "is-tab-swiping",
@@ -2388,9 +2456,10 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       return html;
     };
 
-    const setTrackX = (track, x) => {
+    const setTrackX = (track, x, settling = false) => {
       track.currentX = x;
       track.el.style.setProperty("--tab-track-x", `${Math.round(x)}px`);
+      setTabIndicatorProgress(track, tabIndicatorProgressFor(track, x), settling);
     };
 
     const restorePaneIds = (root) => {
@@ -2434,6 +2503,21 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       bindSettledTabContent(state.tab);
     };
 
+    const restoreSwipeToCurrent = (track) => {
+      const pane =
+        track.el.querySelector(`[data-swipe-tab="${track.sourceTab}"]`) ||
+        track.el.querySelector('.tab-swipe-pane[aria-hidden="false"]');
+      if (!pane) {
+        render();
+        return;
+      }
+      view.replaceChildren(...Array.from(pane.childNodes));
+      restorePaneIds(view);
+      syncTabButtons();
+      $("#addBtn").hidden = state.tab === "stats";
+      updateHeaderSub();
+    };
+
     const finishSwipeTrack = (track, commit) => {
       if (!track?.el) {
         clearSwipeProps();
@@ -2456,16 +2540,18 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       );
 
       track.el.style.setProperty("--tab-settle-ms", `${duration}ms`);
+      if (tabsNav) tabsNav.style.setProperty("--tab-settle-ms", `${duration}ms`);
       track.el.classList.add("is-settling");
-      setTrackX(track, finalX);
+      setTrackX(track, finalX, true);
       swipeReturnTimer = setTimeout(() => {
         swipeReturnTimer = 0;
         clearSwipeProps();
         if (commit) {
           settleSwipeToTab(track);
         } else {
-          render();
+          restoreSwipeToCurrent(track);
         }
+        clearTabIndicator();
       }, duration + 40);
     };
 
@@ -2507,14 +2593,18 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
 
       const el = track;
       if (!el) return null;
-      return {
+      const swipeTrack = {
         el,
+        sourceTab: state.tab,
         nextTab,
         direction,
         width,
         baseX,
         currentX: baseX,
       };
+      setupTabIndicator(swipeTrack);
+      setTabIndicatorProgress(swipeTrack, 0);
+      return swipeTrack;
     };
 
     const ensureSwipeTrack = (dx) => {
@@ -2536,7 +2626,8 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
           finishSwipeTrack(gesture.track, false);
         } else {
           clearSwipeProps();
-          render();
+          restoreSwipeToCurrent(gesture.track);
+          clearTabIndicator();
         }
         return;
       }
