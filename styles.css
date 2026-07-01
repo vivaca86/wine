@@ -65,6 +65,7 @@
 html,
 body {
   margin: 0;
+  min-height: 100%;
   padding: 0;
 }
 
@@ -177,7 +178,7 @@ button {
   position: fixed;
   left: 50%;
   bottom: 0;
-  transform: translateX(-50%);
+  transform: translate3d(-50%, 0, 0);
   z-index: 35;
   display: flex;
   gap: 6px;
@@ -195,6 +196,8 @@ button {
   box-shadow: rgba(39, 33, 24, 0.11) 0 -10px 24px,
     rgba(255, 255, 255, 0.62) 0 1px 0 inset;
   backdrop-filter: blur(14px);
+  contain: layout paint;
+  will-change: transform;
 }
 body.is-sheet-locked .tabs,
 body.is-sheet-locked .fab {
@@ -1095,6 +1098,7 @@ body.is-refreshing .pull-refresh__ring {
   gap: 8px;
   box-shadow: rgba(92, 32, 43, 0.28) 0px 10px 22px;
   transition: opacity 0.15s ease, transform 0.15s ease;
+  will-change: transform;
 }
 .fab[hidden] {
   display: none;

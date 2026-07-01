@@ -14,7 +14,7 @@
   <link rel="icon" type="image/png" sizes="192x192" href="icons/app-icon-192.png?v=20260624-cellar-icon" />
   <link rel="apple-touch-icon" href="icons/app-icon-180.png?v=20260624-cellar-icon" />
   <link rel="manifest" href="manifest.json?v=20260624-cellar-icon" />
-  <link rel="stylesheet" href="styles.css?v=20260701-badge-nav-fix" />
+  <link rel="stylesheet" href="styles.css?v=20260701-fixed-nav-root" />
   <title>셀러</title>
 </head>
 <body>
@@ -33,18 +33,18 @@
       <p class="app-header__sub" id="headerSub">나의 와인 컬렉션</p>
     </header>
 
-    <nav class="tabs" role="tablist">
-      <button class="tab is-active" data-tab="cellar" role="tab">셀러</button>
-      <button class="tab" data-tab="drunk" role="tab">기록</button>
-      <button class="tab" data-tab="stats" role="tab">통계</button>
-    </nav>
-
     <main class="view" id="view"></main>
-
-    <button class="fab" id="addBtn" aria-label="와인 추가">
-      <span class="fab__plus">+</span>
-    </button>
   </div>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab is-active" data-tab="cellar" role="tab">셀러</button>
+    <button class="tab" data-tab="drunk" role="tab">기록</button>
+    <button class="tab" data-tab="stats" role="tab">통계</button>
+  </nav>
+
+  <button class="fab" id="addBtn" aria-label="와인 추가">
+    <span class="fab__plus">+</span>
+  </button>
 
   <div class="backdrop" id="backdrop" hidden></div>
   <section class="sheet" id="sheet" role="dialog" aria-modal="true" hidden></section>
