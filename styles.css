@@ -1269,6 +1269,11 @@ body.is-refreshing .pull-refresh__ring {
   font-weight: 760;
   letter-spacing: 0;
 }
+.sheet__title--question {
+  margin-bottom: 16px;
+  line-height: 1.18;
+  overflow-wrap: anywhere;
+}
 .sheet__subtitle {
   margin: 0 0 16px;
   font-size: 14px;

@@ -4205,19 +4205,6 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     let aiStatus = "";
 
     openSheet(`
-      ${
-        isEdit
-          ? `<h2 class="sheet__title">${
-              isDrunkEdit ? "수정" : "와인 수정"
-            }</h2>
-            ${
-              isDrunkEdit
-                ? ""
-                : `<p class="sheet__subtitle">정보를 고쳐서 저장하세요.</p>`
-            }`
-          : ""
-      }
-
       <form id="wineForm">
         <div class="form-section">
           <div class="form-section__title">와인 정보</div>
@@ -4890,8 +4877,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     const defaults = defaultDrinkTastings(w);
 
     openSheet(`
-      <h2 class="sheet__title">기록</h2>
-      <p class="sheet__subtitle">${esc(w.name)}, 어땠나요?</p>
+      <h2 class="sheet__title sheet__title--question">${esc(w.name)}, 어땠나요?</h2>
 
       <form id="drinkForm">
         <div class="form-section form-section--drink">
