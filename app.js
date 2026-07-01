@@ -84,8 +84,8 @@
   const TAB_SWIPE_VERTICAL_CANCEL_Y = 34;
   const TAB_SWIPE_NEXT_VERTICAL_CANCEL_RATIO = 1.55;
   const TAB_SWIPE_PREV_VERTICAL_CANCEL_RATIO = 1.9;
-  const TAB_SWIPE_DRAG_MAX = 46;
-  const TAB_TRANSITION_MS = 260;
+  const TAB_SWIPE_DRAG_MAX = 38;
+  const TAB_TRANSITION_MS = 230;
   const SEED_TSV = `status	type	country_code	country_name	name	vintage
 cellar	red	FR	프랑스	프리에르 로크, 르 끌라우드	2019
 cellar	red	FR	프랑스	Moillard Gevrey-Chambertin	2018
