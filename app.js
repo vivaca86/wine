@@ -71,8 +71,12 @@
   const SEED_KEY = "wine-cellar-seed-version";
   const SEED_VERSION = "user-wine-list-2026-06-29-english-wine-names";
   const TAB_ORDER = ["cellar", "drunk", "stats"];
-  const TAB_SWIPE_MIN_X = 64;
-  const TAB_SWIPE_RATIO = 1.25;
+  const TAB_SWIPE_MIN_X = 42;
+  const TAB_SWIPE_FLICK_MIN_X = 26;
+  const TAB_SWIPE_VELOCITY = 0.34;
+  const TAB_SWIPE_RATIO = 1.08;
+  const TAB_SWIPE_DRAG_MAX = 34;
+  const TAB_TRANSITION_MS = 190;
   const SEED_TSV = `status	type	country_code	country_name	name	vintage
 cellar	red	FR	프랑스	프리에르 로크, 르 끌라우드	2019
 cellar	red	FR	프랑스	Moillard Gevrey-Chambertin	2018
@@ -2228,8 +2232,27 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     });
   }
 
-  function setTab(tab) {
+  function animateTabView(direction) {
+    if (!view || !direction) return;
+    view.classList.remove(
+      "view--tab-enter-next",
+      "view--tab-enter-prev",
+      "is-tab-swiping",
+      "is-tab-swipe-return"
+    );
+    view.style.removeProperty("--tab-swipe-x");
+    void view.offsetWidth;
+    view.classList.add(
+      direction === "next" ? "view--tab-enter-next" : "view--tab-enter-prev"
+    );
+    setTimeout(() => {
+      view.classList.remove("view--tab-enter-next", "view--tab-enter-prev");
+    }, TAB_TRANSITION_MS + 40);
+  }
+
+  function setTab(tab, options = {}) {
     if (!TAB_ORDER.includes(tab)) return;
+    const previousTab = state.tab;
     state.tab = tab;
     state.typeFilters = [];
     state.countryFilters = [];
@@ -2240,6 +2263,12 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     syncTabButtons();
     savePref();
     render();
+    if (options.animate && previousTab !== tab) {
+      const direction =
+        options.direction ||
+        (TAB_ORDER.indexOf(tab) > TAB_ORDER.indexOf(previousTab) ? "next" : "prev");
+      animateTabView(direction);
+    }
   }
 
   function adjacentTabFromSwipe(deltaX) {
@@ -2269,6 +2298,37 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     let gesture = null;
     let suppressClick = false;
     let suppressClickTimer = 0;
+    let swipeReturnTimer = 0;
+
+    const clearSwipeVisual = (animateBack = false) => {
+      if (swipeReturnTimer) {
+        clearTimeout(swipeReturnTimer);
+        swipeReturnTimer = 0;
+      }
+      if (!animateBack) {
+        view.classList.remove("is-tab-swiping", "is-tab-swipe-return");
+        view.style.removeProperty("--tab-swipe-x");
+        return;
+      }
+      view.classList.add("is-tab-swipe-return");
+      view.style.setProperty("--tab-swipe-x", "0px");
+      swipeReturnTimer = setTimeout(() => {
+        view.classList.remove("is-tab-swiping", "is-tab-swipe-return");
+        view.style.removeProperty("--tab-swipe-x");
+        swipeReturnTimer = 0;
+      }, 170);
+    };
+
+    const setSwipeVisual = (dx) => {
+      const hasAdjacent = !!adjacentTabFromSwipe(dx);
+      const resistance = hasAdjacent ? 0.34 : 0.16;
+      const offset = Math.max(
+        -TAB_SWIPE_DRAG_MAX,
+        Math.min(TAB_SWIPE_DRAG_MAX, dx * resistance)
+      );
+      view.classList.add("is-tab-swiping");
+      view.style.setProperty("--tab-swipe-x", `${Math.round(offset)}px`);
+    };
 
     const suppressNextClick = () => {
       suppressClick = true;
@@ -2286,6 +2346,8 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
         startY: point.clientY,
         lastX: point.clientX,
         lastY: point.clientY,
+        startedAt: Date.now(),
+        lastMoveAt: Date.now(),
         pointerId,
         active: false,
       };
@@ -2301,6 +2363,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       if (!gesture.active) {
         if (absX < 10 && absY < 10) return;
         if (absY > absX) {
+          clearSwipeVisual(false);
           gesture = null;
           return;
         }
@@ -2317,6 +2380,8 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       if (!gesture.active) return;
       gesture.lastX = point.clientX;
       gesture.lastY = point.clientY;
+      gesture.lastMoveAt = Date.now();
+      setSwipeVisual(dx);
       e.preventDefault();
     };
 
@@ -2326,13 +2391,25 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       const dy = (point?.clientY ?? gesture.lastY) - gesture.startY;
       const absX = Math.abs(dx);
       const absY = Math.abs(dy);
-      const shouldSwitch = gesture.active && absX >= TAB_SWIPE_MIN_X && absX > absY * TAB_SWIPE_RATIO;
+      const elapsed = Math.max(1, Date.now() - gesture.startedAt);
+      const velocity = absX / elapsed;
+      const isFlick =
+        absX >= TAB_SWIPE_FLICK_MIN_X && velocity >= TAB_SWIPE_VELOCITY;
+      const horizontalIntent = gesture.active && absX > absY * TAB_SWIPE_RATIO;
+      const shouldSwitch =
+        horizontalIntent && (absX >= TAB_SWIPE_MIN_X || isFlick);
+      const nextTab = shouldSwitch ? adjacentTabFromSwipe(dx) : null;
 
-      if (shouldSwitch) {
+      if (horizontalIntent && absX >= 18) {
         suppressNextClick();
-        const nextTab = adjacentTabFromSwipe(dx);
-        if (nextTab) setTab(nextTab);
         if (e?.preventDefault) e.preventDefault();
+      }
+      clearSwipeVisual(!nextTab && horizontalIntent);
+      if (nextTab) {
+        setTab(nextTab, {
+          animate: true,
+          direction: dx < 0 ? "next" : "prev",
+        });
       }
 
       if (gesture.pointerId != null && view.releasePointerCapture) {
@@ -2384,6 +2461,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
         { passive: false }
       );
       view.addEventListener("pointercancel", () => {
+        clearSwipeVisual(true);
         gesture = null;
       });
       return;
@@ -2411,6 +2489,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       { passive: false }
     );
     view.addEventListener("touchcancel", () => {
+      clearSwipeVisual(true);
       gesture = null;
     });
   }
