@@ -199,6 +199,11 @@ button {
   contain: layout paint;
   will-change: transform;
 }
+html.has-floating-chrome .tabs {
+  position: absolute;
+  top: var(--floating-tabs-y, auto);
+  bottom: auto;
+}
 body.is-sheet-locked .tabs,
 body.is-sheet-locked .fab {
   opacity: 0;
@@ -1099,6 +1104,11 @@ body.is-refreshing .pull-refresh__ring {
   box-shadow: rgba(92, 32, 43, 0.28) 0px 10px 22px;
   transition: opacity 0.15s ease, transform 0.15s ease;
   will-change: transform;
+}
+html.has-floating-chrome .fab {
+  position: absolute;
+  top: var(--floating-fab-y, auto);
+  bottom: auto;
 }
 .fab[hidden] {
   display: none;
