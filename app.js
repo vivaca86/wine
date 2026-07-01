@@ -84,8 +84,8 @@
   const TAB_SWIPE_VERTICAL_CANCEL_Y = 34;
   const TAB_SWIPE_NEXT_VERTICAL_CANCEL_RATIO = 1.55;
   const TAB_SWIPE_PREV_VERTICAL_CANCEL_RATIO = 1.9;
-  const TAB_SWIPE_DRAG_MAX = 38;
-  const TAB_TRANSITION_MS = 230;
+  const TAB_SWIPE_DRAG_MAX = 116;
+  const TAB_TRANSITION_MS = 240;
   const SEED_TSV = `status	type	country_code	country_name	name	vintage
 cellar	red	FR	프랑스	프리에르 로크, 르 끌라우드	2019
 cellar	red	FR	프랑스	Moillard Gevrey-Chambertin	2018
@@ -2241,7 +2241,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     });
   }
 
-  function animateTabView(direction) {
+  function animateTabView(direction, enterOffset = null) {
     if (!view || !direction) return;
     view.classList.remove(
       "view--tab-enter-next",
@@ -2250,12 +2250,18 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       "is-tab-swipe-return"
     );
     view.style.removeProperty("--tab-swipe-x");
+    if (Number.isFinite(enterOffset)) {
+      view.style.setProperty("--tab-enter-x", `${Math.round(enterOffset)}px`);
+    } else {
+      view.style.removeProperty("--tab-enter-x");
+    }
     void view.offsetWidth;
     view.classList.add(
       direction === "next" ? "view--tab-enter-next" : "view--tab-enter-prev"
     );
     setTimeout(() => {
       view.classList.remove("view--tab-enter-next", "view--tab-enter-prev");
+      view.style.removeProperty("--tab-enter-x");
     }, TAB_TRANSITION_MS + 40);
   }
 
@@ -2276,7 +2282,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       const direction =
         options.direction ||
         (TAB_ORDER.indexOf(tab) > TAB_ORDER.indexOf(previousTab) ? "next" : "prev");
-      animateTabView(direction);
+      animateTabView(direction, options.enterOffset);
     }
   }
 
@@ -2326,7 +2332,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
         verticalCancelRatio: isPrev
           ? TAB_SWIPE_PREV_VERTICAL_CANCEL_RATIO
           : TAB_SWIPE_NEXT_VERTICAL_CANCEL_RATIO,
-        resistance: isPrev ? 0.66 : 0.58,
+        resistance: isPrev ? 0.94 : 0.9,
       };
     };
 
@@ -2362,6 +2368,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       );
       view.classList.add("is-tab-swiping");
       view.style.setProperty("--tab-swipe-x", `${Math.round(offset)}px`);
+      gesture.visualOffset = Math.round(offset);
     };
 
     const holdSwipeScroll = () => {
@@ -2449,6 +2456,14 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       const shouldSwitch =
         horizontalIntent && (absX >= settings.minX || isFlick);
       const nextTab = shouldSwitch ? adjacentTabFromSwipe(dx) : null;
+      const enterOffset = Number.isFinite(gesture.visualOffset)
+        ? gesture.visualOffset
+        : Math.round(
+            Math.max(
+              -TAB_SWIPE_DRAG_MAX,
+              Math.min(TAB_SWIPE_DRAG_MAX, dx * settings.resistance)
+            )
+          );
 
       if (horizontalIntent && absX >= 18) {
         suppressNextClick();
@@ -2460,6 +2475,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
         setTab(nextTab, {
           animate: true,
           direction: dx < 0 ? "next" : "prev",
+          enterOffset,
         });
       }
 

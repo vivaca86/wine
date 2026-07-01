@@ -305,14 +305,14 @@ body.is-sheet-locked .fab {
   transition: transform 0.19s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 .view--tab-enter-next {
-  animation: tab-enter-next 0.23s cubic-bezier(0.18, 0.78, 0.18, 1);
+  animation: tab-enter-next 0.24s cubic-bezier(0.18, 0.78, 0.18, 1);
 }
 .view--tab-enter-prev {
-  animation: tab-enter-prev 0.23s cubic-bezier(0.18, 0.78, 0.18, 1);
+  animation: tab-enter-prev 0.24s cubic-bezier(0.18, 0.78, 0.18, 1);
 }
 @keyframes tab-enter-next {
   from {
-    transform: translateX(-34px);
+    transform: translateX(var(--tab-enter-x, -92px));
   }
   to {
     transform: translateX(0);
@@ -320,7 +320,7 @@ body.is-sheet-locked .fab {
 }
 @keyframes tab-enter-prev {
   from {
-    transform: translateX(34px);
+    transform: translateX(var(--tab-enter-x, 92px));
   }
   to {
     transform: translateX(0);
