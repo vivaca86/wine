@@ -3009,6 +3009,10 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
   /* ---------- Sheet (bottom modal) ---------- */
   let sheetOpen = false;
   let lockedScrollY = 0;
+  let sheetCloseTimer = 0;
+  let sheetDrag = null;
+  const SHEET_DISMISS_DISTANCE = 92;
+  const SHEET_DISMISS_VELOCITY = 0.65;
 
   function lockPageScroll() {
     if (document.body.classList.contains("is-sheet-locked")) return;
@@ -3026,29 +3030,149 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     scroller.scrollTop = lockedScrollY;
   }
 
+  function clearSheetDragStyles() {
+    sheet.classList.remove("is-dragging");
+    sheet.style.transition = "";
+    sheet.style.transform = "";
+    backdrop.style.opacity = "";
+  }
+
   function openSheet(html) {
+    if (sheetCloseTimer) {
+      clearTimeout(sheetCloseTimer);
+      sheetCloseTimer = 0;
+    }
+    sheetDrag = null;
+    clearSheetDragStyles();
     lockPageScroll();
-    sheet.innerHTML = '<div class="sheet__handle"></div>' + html;
+    sheet.innerHTML = '<div class="sheet__handle" data-sheet-handle></div>' + html;
     sheet.hidden = false;
     backdrop.hidden = false;
+    sheet.scrollTop = 0;
     void sheet.offsetWidth; // force reflow for transition
     requestAnimationFrame(() => {
+      sheet.scrollTop = 0;
       sheet.classList.add("is-open");
       backdrop.classList.add("is-open");
     });
     sheetOpen = true;
   }
-  function closeSheet() {
+  function closeSheet(options = {}) {
     if (!sheetOpen) return;
+    const fromDrag = options.fromDrag === true;
+    if (sheetCloseTimer) {
+      clearTimeout(sheetCloseTimer);
+      sheetCloseTimer = 0;
+    }
     sheet.classList.remove("is-open");
     backdrop.classList.remove("is-open");
     sheetOpen = false;
+    sheetDrag = null;
+    if (fromDrag) {
+      sheet.classList.remove("is-dragging");
+      sheet.style.transition = "transform 0.2s cubic-bezier(0.32, 0.72, 0, 1)";
+      sheet.style.transform = "translate(-50%, 100%)";
+      backdrop.style.opacity = "0";
+    } else {
+      clearSheetDragStyles();
+    }
     unlockPageScroll();
-    setTimeout(() => {
+    sheetCloseTimer = setTimeout(() => {
       sheet.hidden = true;
       backdrop.hidden = true;
       sheet.innerHTML = "";
+      sheet.scrollTop = 0;
+      clearSheetDragStyles();
+      sheetCloseTimer = 0;
     }, 260);
+  }
+
+  function sheetTouchPoint(e) {
+    return (e.touches && e.touches[0]) || (e.changedTouches && e.changedTouches[0]) || null;
+  }
+
+  function isSheetInteractiveTarget(target) {
+    return !!(
+      target &&
+      target.closest &&
+      target.closest(
+        "button, input, select, textarea, a, label, [contenteditable='true'], .variety-suggest"
+      )
+    );
+  }
+
+  function isSheetHandleTarget(target, y) {
+    if (target && target.closest && target.closest(".sheet__handle")) return true;
+    const rect = sheet.getBoundingClientRect();
+    return y - rect.top <= 54;
+  }
+
+  function settleSheetDrag() {
+    sheetDrag = null;
+    sheet.classList.remove("is-dragging");
+    sheet.style.transition = "transform 0.18s cubic-bezier(0.32, 0.72, 0, 1)";
+    sheet.style.transform = "translate(-50%, 0)";
+    backdrop.style.opacity = "";
+    setTimeout(() => {
+      if (sheetOpen && !sheetDrag) clearSheetDragStyles();
+    }, 200);
+  }
+
+  function onSheetTouchStart(e) {
+    if (!sheetOpen || !e.touches || e.touches.length !== 1) return;
+    const point = sheetTouchPoint(e);
+    if (!point) return;
+    sheetDrag = {
+      startX: point.clientX,
+      startY: point.clientY,
+      lastY: point.clientY,
+      startedAt: Date.now(),
+      dragging: false,
+      fromHandle: isSheetHandleTarget(e.target, point.clientY),
+      fromInteractive: isSheetInteractiveTarget(e.target),
+    };
+  }
+
+  function onSheetTouchMove(e) {
+    if (!sheetOpen || !sheetDrag) return;
+    const point = sheetTouchPoint(e);
+    if (!point) return;
+    const dy = point.clientY - sheetDrag.startY;
+    const dx = Math.abs(point.clientX - sheetDrag.startX);
+    sheetDrag.lastY = point.clientY;
+
+    if (!sheetDrag.dragging) {
+      if (sheetDrag.fromInteractive && !sheetDrag.fromHandle) return;
+      if (dy <= 8 || dx > dy * 0.9) return;
+      if (!sheetDrag.fromHandle && sheet.scrollTop > 0) return;
+      sheetDrag.dragging = true;
+      sheet.classList.add("is-dragging");
+      sheet.style.transition = "none";
+    }
+
+    if (!sheetDrag.dragging) return;
+    e.preventDefault();
+    const pull = Math.max(0, dy);
+    const translate = pull <= 160 ? pull : 160 + (pull - 160) * 0.35;
+    sheet.style.transform = `translate(-50%, ${Math.round(translate)}px)`;
+    backdrop.style.opacity = `${Math.max(0.2, 1 - translate / 320)}`;
+  }
+
+  function onSheetTouchEnd() {
+    if (!sheetDrag) return;
+    const dy = Math.max(0, sheetDrag.lastY - sheetDrag.startY);
+    const elapsed = Math.max(1, Date.now() - sheetDrag.startedAt);
+    const velocity = dy / elapsed;
+    const shouldClose =
+      sheetDrag.dragging &&
+      (dy >= SHEET_DISMISS_DISTANCE || velocity >= SHEET_DISMISS_VELOCITY);
+    if (shouldClose) {
+      closeSheet({ fromDrag: true });
+    } else if (sheetDrag.dragging) {
+      settleSheetDrag();
+    } else {
+      sheetDrag = null;
+    }
   }
 
   function quotaAlert() {
@@ -4093,6 +4217,10 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
   });
   $("#addBtn").addEventListener("click", () => openForm(null));
   backdrop.addEventListener("click", closeSheet);
+  sheet.addEventListener("touchstart", onSheetTouchStart, { passive: true });
+  sheet.addEventListener("touchmove", onSheetTouchMove, { passive: false });
+  sheet.addEventListener("touchend", onSheetTouchEnd);
+  sheet.addEventListener("touchcancel", onSheetTouchEnd);
   sheet.addEventListener("click", (e) => {
     const clearDate = e.target.closest("[data-clear-date]");
     if (clearDate) {

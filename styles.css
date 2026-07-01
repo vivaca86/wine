@@ -1141,6 +1141,7 @@ body.is-refreshing .pull-refresh__ring {
 }
 
 .sheet {
+  --sheet-pad-x: 16px;
   position: fixed;
   left: 50%;
   bottom: 0;
@@ -1151,12 +1152,13 @@ body.is-refreshing .pull-refresh__ring {
   max-height: 93dvh;
   overflow-y: auto;
   overflow-x: hidden;
+  overscroll-behavior: contain;
   background: linear-gradient(180deg, var(--off-white), var(--surface-soft));
   border: 1px solid var(--border);
   border-bottom: none;
   border-radius: 22px 22px 0 0;
   z-index: 50;
-  padding: 10px 16px calc(24px + env(safe-area-inset-bottom));
+  padding: 10px var(--sheet-pad-x) 0;
   transition: transform 0.26s cubic-bezier(0.32, 0.72, 0, 1);
   -webkit-overflow-scrolling: touch;
   box-shadow: var(--shadow-sheet);
@@ -1164,12 +1166,18 @@ body.is-refreshing .pull-refresh__ring {
 .sheet.is-open {
   transform: translate(-50%, 0);
 }
+.sheet.is-dragging {
+  transition: none;
+  user-select: none;
+}
 .sheet__handle {
   width: 42px;
   height: 4px;
   border-radius: var(--r-pill);
   background: rgba(23, 22, 20, 0.12);
   margin: 6px auto 14px;
+  cursor: grab;
+  touch-action: none;
 }
 .sheet__title {
   margin: 0 0 4px;
@@ -1456,7 +1464,7 @@ body.is-refreshing .pull-refresh__ring {
 
 @media (max-width: 360px) {
   .sheet {
-    padding-inline: 12px;
+    --sheet-pad-x: 12px;
   }
 
   .form-section {
@@ -1619,14 +1627,24 @@ body.is-refreshing .pull-refresh__ring {
   border: none;
 }
 .btn-stack {
+  position: sticky;
+  bottom: 0;
+  z-index: 6;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 6px;
-  margin-top: 16px;
-  padding: 5px;
-  background: rgba(23, 22, 20, 0.045);
-  border: 1px solid var(--border);
-  border-radius: 16px;
+  margin: 16px calc(var(--sheet-pad-x) * -1) 0;
+  padding: 9px var(--sheet-pad-x) calc(12px + env(safe-area-inset-bottom));
+  background: linear-gradient(
+    180deg,
+    rgba(255, 253, 248, 0),
+    rgba(255, 253, 248, 0.96) 32%,
+    var(--surface-soft)
+  );
+  border: none;
+  border-top: 1px solid rgba(23, 22, 20, 0.08);
+  border-radius: 0;
+  backdrop-filter: blur(12px);
 }
 .btn-stack .btn {
   min-height: 44px;
@@ -1635,7 +1653,19 @@ body.is-refreshing .pull-refresh__ring {
 }
 
 .detail-actions {
-  margin-top: 16px;
+  position: sticky;
+  bottom: 0;
+  z-index: 6;
+  margin: 16px calc(var(--sheet-pad-x) * -1) 0;
+  padding: 9px var(--sheet-pad-x) calc(12px + env(safe-area-inset-bottom));
+  background: linear-gradient(
+    180deg,
+    rgba(255, 253, 248, 0),
+    rgba(255, 253, 248, 0.96) 32%,
+    var(--surface-soft)
+  );
+  border-top: 1px solid rgba(23, 22, 20, 0.08);
+  backdrop-filter: blur(12px);
 }
 .detail-actions__bar {
   display: grid;
