@@ -2284,10 +2284,8 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
 
   function cellarReturnIconHTML() {
     return `<svg class="detail-actions__delete-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path d="M9 7H5v4"></path>
-      <path d="M5 7c2.1-2.2 5.6-3.1 8.7-1.7 3.7 1.7 5.3 6 3.6 9.7-1.3 2.8-4.2 4.4-7.1 4.1"></path>
-      <path d="M8 16h6"></path>
-      <path d="M8 19h4"></path>
+      <path d="M7.5 7.5H4.25V4.25"></path>
+      <path d="M4.55 7.25a7.3 7.3 0 1 1 1.95 7.25"></path>
     </svg>`;
   }
 

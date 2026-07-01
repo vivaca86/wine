@@ -567,20 +567,12 @@ body.is-refreshing .pull-refresh__ring {
 }
 .person-mark--featured,
 .featured-rating__btn.is-active .person-mark {
-  border-color: rgba(173, 140, 67, 0.4);
-  background: rgba(173, 140, 67, 0.11);
-  box-shadow: rgba(173, 140, 67, 0.22) 0 0 0 1px;
+  border-color: rgba(23, 22, 20, 0.14);
+  box-shadow: rgba(23, 22, 20, 0.12) 0 1px 4px;
 }
 .person-mark--featured:not(.person-mark--dot)::after,
 .featured-rating__btn.is-active .person-mark::after {
-  content: "";
-  position: absolute;
-  left: 5px;
-  right: 5px;
-  bottom: -3px;
-  height: 2px;
-  border-radius: var(--r-pill);
-  background: rgba(173, 140, 67, 0.76);
+  content: none;
 }
 .person-mark--dot {
   width: 11px;
@@ -602,13 +594,11 @@ body.is-refreshing .pull-refresh__ring {
   background: rgba(23, 22, 20, 0.2);
 }
 .person-mark--dot.person-mark--featured {
-  width: 13px;
-  min-width: 13px;
-  height: 13px;
+  width: 12px;
+  min-width: 12px;
+  height: 12px;
   border-color: rgba(255, 253, 248, 0.92);
-  box-shadow: rgba(173, 140, 67, 0.42) 0 0 0 1.5px,
-    rgba(173, 140, 67, 0.16) 0 0 0 3px,
-    rgba(23, 22, 20, 0.1) 0 1px 4px;
+  box-shadow: rgba(23, 22, 20, 0.12) 0 1px 4px;
 }
 .person-mark--dot.person-mark--featured::after {
   content: none;
@@ -621,13 +611,10 @@ body.is-refreshing .pull-refresh__ring {
   box-shadow: none;
 }
 .person-marks--row .person-mark--featured {
-  box-shadow: rgba(173, 140, 67, 0.18) 0 0 0 1px;
+  box-shadow: none;
 }
 .person-marks--row .person-mark--featured:not(.person-mark--dot)::after {
-  left: 4px;
-  right: 4px;
-  bottom: -3px;
-  height: 2px;
+  content: none;
 }
 .person-marks--row .person-mark--dot {
   width: 10px;
@@ -695,13 +682,11 @@ body.is-refreshing .pull-refresh__ring {
   box-shadow: none;
 }
 .person-marks--tile .person-mark--dot.person-mark--featured {
-  width: 13px;
-  min-width: 13px;
-  height: 13px;
+  width: 12px;
+  min-width: 12px;
+  height: 12px;
   border-color: rgba(255, 253, 248, 0.94);
-  box-shadow: rgba(173, 140, 67, 0.42) 0 0 0 1.5px,
-    rgba(173, 140, 67, 0.14) 0 0 0 3px,
-    rgba(23, 22, 20, 0.1) 0 1px 4px;
+  box-shadow: rgba(23, 22, 20, 0.12) 0 1px 4px;
 }
 .person-marks--detail {
   margin-left: 8px;
@@ -735,9 +720,8 @@ body.is-refreshing .pull-refresh__ring {
 }
 .person-marks--detail .person-mark--featured,
 .tasting-detail__person .person-mark--featured {
-  border-color: rgba(173, 140, 67, 0.92);
-  box-shadow: rgba(173, 140, 67, 0.42) 0 0 0 2px,
-    rgba(23, 22, 20, 0.12) 0 2px 7px;
+  border-color: rgba(255, 253, 248, 0.82);
+  box-shadow: rgba(23, 22, 20, 0.16) 0 2px 7px;
 }
 .person-marks--detail .person-mark--featured::after,
 .tasting-detail__person .person-mark--featured::after {
@@ -1456,13 +1440,12 @@ body.is-refreshing .pull-refresh__ring {
   content: none;
 }
 .featured-rating__btn.is-active {
-  border-color: rgba(173, 140, 67, 0.24);
-  background: rgba(173, 140, 67, 0.1);
+  border-color: rgba(130, 49, 61, 0.2);
+  background: rgba(130, 49, 61, 0.07);
 }
 .featured-rating__btn.is-active .person-mark {
-  border-color: rgba(173, 140, 67, 0.92);
-  box-shadow: rgba(173, 140, 67, 0.42) 0 0 0 2px,
-    rgba(23, 22, 20, 0.12) 0 2px 6px;
+  border-color: rgba(255, 253, 248, 0.86);
+  box-shadow: rgba(23, 22, 20, 0.14) 0 2px 6px;
 }
 .featured-rating__btn:disabled {
   opacity: 0.34;
@@ -1706,7 +1689,7 @@ body.is-refreshing .pull-refresh__ring {
 }
 .detail-actions__tools {
   display: flex;
-  justify-content: flex-end;
+  justify-content: flex-start;
   gap: 6px;
   margin-bottom: 8px;
 }
@@ -1776,9 +1759,9 @@ body.is-refreshing .pull-refresh__ring {
   transition: opacity 0.12s ease, transform 0.12s ease;
 }
 .detail-actions__icon--undo {
-  border-color: rgba(101, 115, 95, 0.24);
-  background: rgba(101, 115, 95, 0.08);
-  color: #3f4f3a;
+  border-color: rgba(67, 105, 153, 0.24);
+  background: rgba(67, 105, 153, 0.1);
+  color: #42699a;
 }
 .detail-actions__delete-icon {
   width: 18px;
