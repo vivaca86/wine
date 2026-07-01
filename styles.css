@@ -68,6 +68,7 @@ body {
   margin: 0;
   min-height: 100%;
   overflow: hidden;
+  overscroll-behavior-x: none;
   padding: 0;
 }
 
@@ -288,33 +289,63 @@ body.is-sheet-locked .fab {
   transform: translateY(1px);
 }
 .view {
+  position: relative;
   width: 100%;
   min-width: 0;
   overflow-x: hidden;
   touch-action: pan-y;
-  transform: translateX(var(--tab-swipe-x, 0));
+  overscroll-behavior-x: contain;
+  opacity: var(--tab-swipe-opacity, 1);
+  transform: translateX(var(--tab-swipe-x, 0)) scale(var(--tab-swipe-scale, 1));
+  transform-origin: center center;
   will-change: transform, opacity;
+}
+.view::after {
+  content: "";
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  width: 76px;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 32;
+  transition: opacity 0.12s ease;
+  background: linear-gradient(
+    90deg,
+    rgba(130, 49, 61, 0.17),
+    rgba(130, 49, 61, 0)
+  );
 }
 .view.is-tab-swiping {
   transition: none;
 }
+.view.is-tab-swipe-prev::after {
+  left: 0;
+  opacity: var(--tab-swipe-edge-opacity, 0);
+}
+.view.is-tab-swipe-next::after {
+  right: 0;
+  opacity: var(--tab-swipe-edge-opacity, 0);
+  transform: scaleX(-1);
+}
 .view.is-tab-swipe-return {
-  transition: transform 0.18s cubic-bezier(0.2, 0.9, 0.2, 1);
+  transition: transform 0.22s cubic-bezier(0.18, 0.92, 0.18, 1),
+    opacity 0.18s ease;
 }
 .view--tab-enter-next {
-  animation: tab-enter-next 0.25s cubic-bezier(0.2, 0.9, 0.2, 1);
+  animation: tab-enter-next 0.33s cubic-bezier(0.16, 0.92, 0.18, 1);
 }
 .view--tab-enter-prev {
-  animation: tab-enter-prev 0.25s cubic-bezier(0.2, 0.9, 0.2, 1);
+  animation: tab-enter-prev 0.33s cubic-bezier(0.16, 0.92, 0.18, 1);
 }
 @keyframes tab-enter-next {
   0% {
-    opacity: 0.66;
-    transform: translateX(54px);
+    opacity: 0.58;
+    transform: translateX(96px) scale(0.988);
   }
-  72% {
+  68% {
     opacity: 1;
-    transform: translateX(-3px);
+    transform: translateX(-8px) scale(1);
   }
   100% {
     opacity: 1;
@@ -323,12 +354,12 @@ body.is-sheet-locked .fab {
 }
 @keyframes tab-enter-prev {
   0% {
-    opacity: 0.66;
-    transform: translateX(-54px);
+    opacity: 0.58;
+    transform: translateX(-96px) scale(0.988);
   }
-  72% {
+  68% {
     opacity: 1;
-    transform: translateX(3px);
+    transform: translateX(8px) scale(1);
   }
   100% {
     opacity: 1;

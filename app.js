@@ -71,16 +71,21 @@
   const SEED_KEY = "wine-cellar-seed-version";
   const SEED_VERSION = "user-wine-list-2026-06-29-english-wine-names";
   const TAB_ORDER = ["cellar", "drunk", "stats"];
-  const TAB_SWIPE_MIN_X = 36;
-  const TAB_SWIPE_FLICK_MIN_X = 24;
-  const TAB_SWIPE_VELOCITY = 0.3;
-  const TAB_SWIPE_LOCK_X = 12;
-  const TAB_SWIPE_LOCK_RATIO = 0.78;
-  const TAB_SWIPE_FINISH_RATIO = 0.78;
+  const TAB_SWIPE_NEXT_MIN_X = 36;
+  const TAB_SWIPE_PREV_MIN_X = 28;
+  const TAB_SWIPE_NEXT_FLICK_MIN_X = 24;
+  const TAB_SWIPE_PREV_FLICK_MIN_X = 18;
+  const TAB_SWIPE_NEXT_VELOCITY = 0.3;
+  const TAB_SWIPE_PREV_VELOCITY = 0.24;
+  const TAB_SWIPE_NEXT_LOCK_RATIO = 0.78;
+  const TAB_SWIPE_PREV_LOCK_RATIO = 0.58;
+  const TAB_SWIPE_NEXT_FINISH_RATIO = 0.78;
+  const TAB_SWIPE_PREV_FINISH_RATIO = 0.58;
   const TAB_SWIPE_VERTICAL_CANCEL_Y = 34;
-  const TAB_SWIPE_VERTICAL_CANCEL_RATIO = 1.55;
-  const TAB_SWIPE_DRAG_MAX = 56;
-  const TAB_TRANSITION_MS = 250;
+  const TAB_SWIPE_NEXT_VERTICAL_CANCEL_RATIO = 1.55;
+  const TAB_SWIPE_PREV_VERTICAL_CANCEL_RATIO = 1.9;
+  const TAB_SWIPE_DRAG_MAX = 92;
+  const TAB_TRANSITION_MS = 330;
   const SEED_TSV = `status	type	country_code	country_name	name	vintage
 cellar	red	FR	프랑스	프리에르 로크, 르 끌라우드	2019
 cellar	red	FR	프랑스	Moillard Gevrey-Chambertin	2018
@@ -2242,9 +2247,14 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       "view--tab-enter-next",
       "view--tab-enter-prev",
       "is-tab-swiping",
-      "is-tab-swipe-return"
+      "is-tab-swipe-return",
+      "is-tab-swipe-next",
+      "is-tab-swipe-prev"
     );
     view.style.removeProperty("--tab-swipe-x");
+    view.style.removeProperty("--tab-swipe-opacity");
+    view.style.removeProperty("--tab-swipe-scale");
+    view.style.removeProperty("--tab-swipe-edge-opacity");
     void view.offsetWidth;
     view.classList.add(
       direction === "next" ? "view--tab-enter-next" : "view--tab-enter-prev"
@@ -2304,34 +2314,85 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     let suppressClickTimer = 0;
     let swipeReturnTimer = 0;
 
+    const swipeSettings = (dx) => {
+      const isPrev = dx > 0;
+      return {
+        minX: isPrev ? TAB_SWIPE_PREV_MIN_X : TAB_SWIPE_NEXT_MIN_X,
+        flickMinX: isPrev
+          ? TAB_SWIPE_PREV_FLICK_MIN_X
+          : TAB_SWIPE_NEXT_FLICK_MIN_X,
+        velocity: isPrev ? TAB_SWIPE_PREV_VELOCITY : TAB_SWIPE_NEXT_VELOCITY,
+        lockRatio: isPrev
+          ? TAB_SWIPE_PREV_LOCK_RATIO
+          : TAB_SWIPE_NEXT_LOCK_RATIO,
+        finishRatio: isPrev
+          ? TAB_SWIPE_PREV_FINISH_RATIO
+          : TAB_SWIPE_NEXT_FINISH_RATIO,
+        verticalCancelRatio: isPrev
+          ? TAB_SWIPE_PREV_VERTICAL_CANCEL_RATIO
+          : TAB_SWIPE_NEXT_VERTICAL_CANCEL_RATIO,
+        resistance: isPrev ? 0.92 : 0.82,
+      };
+    };
+
+    const clearSwipeProps = () => {
+      view.classList.remove(
+        "is-tab-swiping",
+        "is-tab-swipe-return",
+        "is-tab-swipe-next",
+        "is-tab-swipe-prev"
+      );
+      view.style.removeProperty("--tab-swipe-x");
+      view.style.removeProperty("--tab-swipe-opacity");
+      view.style.removeProperty("--tab-swipe-scale");
+      view.style.removeProperty("--tab-swipe-edge-opacity");
+    };
+
     const clearSwipeVisual = (animateBack = false) => {
       if (swipeReturnTimer) {
         clearTimeout(swipeReturnTimer);
         swipeReturnTimer = 0;
       }
       if (!animateBack) {
-        view.classList.remove("is-tab-swiping", "is-tab-swipe-return");
-        view.style.removeProperty("--tab-swipe-x");
+        clearSwipeProps();
         return;
       }
       view.classList.add("is-tab-swipe-return");
       view.style.setProperty("--tab-swipe-x", "0px");
+      view.style.setProperty("--tab-swipe-opacity", "1");
+      view.style.setProperty("--tab-swipe-scale", "1");
+      view.style.setProperty("--tab-swipe-edge-opacity", "0");
       swipeReturnTimer = setTimeout(() => {
-        view.classList.remove("is-tab-swiping", "is-tab-swipe-return");
-        view.style.removeProperty("--tab-swipe-x");
+        clearSwipeProps();
         swipeReturnTimer = 0;
-      }, 170);
+      }, 220);
     };
 
     const setSwipeVisual = (dx) => {
+      const settings = swipeSettings(dx);
       const hasAdjacent = !!adjacentTabFromSwipe(dx);
-      const resistance = hasAdjacent ? 0.56 : 0.18;
+      const resistance = hasAdjacent ? settings.resistance : 0.24;
       const offset = Math.max(
         -TAB_SWIPE_DRAG_MAX,
         Math.min(TAB_SWIPE_DRAG_MAX, dx * resistance)
       );
+      const progress = Math.min(1, Math.abs(offset) / TAB_SWIPE_DRAG_MAX);
       view.classList.add("is-tab-swiping");
+      view.classList.toggle("is-tab-swipe-next", dx < 0);
+      view.classList.toggle("is-tab-swipe-prev", dx > 0);
       view.style.setProperty("--tab-swipe-x", `${Math.round(offset)}px`);
+      view.style.setProperty(
+        "--tab-swipe-opacity",
+        `${(1 - progress * 0.08).toFixed(3)}`
+      );
+      view.style.setProperty(
+        "--tab-swipe-scale",
+        `${(1 - progress * 0.008).toFixed(3)}`
+      );
+      view.style.setProperty(
+        "--tab-swipe-edge-opacity",
+        `${(progress * 0.5).toFixed(3)}`
+      );
     };
 
     const suppressNextClick = () => {
@@ -2366,15 +2427,16 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
 
       if (!gesture.active) {
         if (absX < 10 && absY < 10) return;
+        const settings = swipeSettings(dx);
         const verticalDominant =
           absY >= TAB_SWIPE_VERTICAL_CANCEL_Y &&
-          absY > absX * TAB_SWIPE_VERTICAL_CANCEL_RATIO;
+          absY > absX * settings.verticalCancelRatio;
         if (verticalDominant) {
           clearSwipeVisual(false);
           gesture = null;
           return;
         }
-        if (absX >= TAB_SWIPE_LOCK_X && absX > absY * TAB_SWIPE_LOCK_RATIO) {
+        if (absX >= 10 && absX > absY * settings.lockRatio) {
           gesture.active = true;
           if (gesture.pointerId != null && view.setPointerCapture) {
             try {
@@ -2400,12 +2462,13 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       const absY = Math.abs(dy);
       const elapsed = Math.max(1, Date.now() - gesture.startedAt);
       const velocity = absX / elapsed;
+      const settings = swipeSettings(dx);
       const isFlick =
-        absX >= TAB_SWIPE_FLICK_MIN_X && velocity >= TAB_SWIPE_VELOCITY;
+        absX >= settings.flickMinX && velocity >= settings.velocity;
       const horizontalIntent =
-        gesture.active && absX > absY * TAB_SWIPE_FINISH_RATIO;
+        gesture.active && absX > absY * settings.finishRatio;
       const shouldSwitch =
-        horizontalIntent && (absX >= TAB_SWIPE_MIN_X || isFlick);
+        horizontalIntent && (absX >= settings.minX || isFlick);
       const nextTab = shouldSwitch ? adjacentTabFromSwipe(dx) : null;
 
       if (horizontalIntent && absX >= 18) {
