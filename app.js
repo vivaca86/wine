@@ -2382,27 +2382,56 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
 
     const captureTabHTML = (tab) => {
       const snapshot = navigationSnapshot();
-      const currentHTML = view.innerHTML;
-      const addBtn = $("#addBtn");
-      const headerSub = $("#headerSub");
-      const addHidden = addBtn.hidden;
-      const headerText = headerSub.textContent;
-
       resetNavigationForTab(tab);
-      render();
-      const html = view.innerHTML;
-
+      const html = tabContentHTML(tab);
       restoreNavigationSnapshot(snapshot);
-      view.innerHTML = currentHTML;
-      syncTabButtons();
-      addBtn.hidden = addHidden;
-      headerSub.textContent = headerText;
       return html;
     };
 
     const setTrackX = (track, x) => {
       track.currentX = x;
       track.el.style.setProperty("--tab-track-x", `${Math.round(x)}px`);
+    };
+
+    const restorePaneIds = (root) => {
+      root.querySelectorAll("[data-swipe-id]").forEach((node) => {
+        node.id = node.dataset.swipeId;
+        node.removeAttribute("data-swipe-id");
+      });
+    };
+
+    const bindSettledTabContent = (tab) => {
+      if (tab === "cellar") {
+        const wines = cellarWines();
+        if (wines.length) {
+          normalizeSortForKind("cellar");
+          bindListControls(wines, "cellar");
+          bindCards();
+        }
+      } else if (tab === "drunk") {
+        const wines = drunkWines();
+        if (wines.length) {
+          normalizeSortForKind("drunk");
+          bindListControls(wines, "drunk");
+          bindCards();
+        }
+      }
+    };
+
+    const settleSwipeToTab = (track) => {
+      const pane = track.el.querySelector(`[data-swipe-tab="${track.nextTab}"]`);
+      if (!pane) {
+        setTab(track.nextTab);
+        return;
+      }
+      resetNavigationForTab(track.nextTab);
+      view.replaceChildren(...Array.from(pane.childNodes));
+      restorePaneIds(view);
+      syncTabButtons();
+      savePref();
+      $("#addBtn").hidden = state.tab === "stats";
+      updateHeaderSub();
+      bindSettledTabContent(state.tab);
     };
 
     const finishSwipeTrack = (track, commit) => {
@@ -2433,7 +2462,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
         swipeReturnTimer = 0;
         clearSwipeProps();
         if (commit) {
-          setTab(track.nextTab);
+          settleSwipeToTab(track);
         } else {
           render();
         }
@@ -2441,23 +2470,31 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     };
 
     const buildSwipeTrack = (nextTab, direction) => {
-      const currentHTML = paneHTML(view.innerHTML);
       const nextHTML = paneHTML(captureTabHTML(nextTab));
       const width = Math.max(
         1,
         Math.round(view.getBoundingClientRect().width || window.innerWidth || 1)
       );
-      const panes =
-        direction === "next"
-          ? [
-              { tab: state.tab, html: currentHTML, current: true },
-              { tab: nextTab, html: nextHTML, current: false },
-            ]
-          : [
-              { tab: nextTab, html: nextHTML, current: false },
-              { tab: state.tab, html: currentHTML, current: true },
-            ];
       const baseX = direction === "next" ? 0 : -width;
+      const currentPane = document.createElement("section");
+      const nextPane = document.createElement("section");
+      const track = document.createElement("div");
+
+      currentPane.className = "tab-swipe-pane";
+      currentPane.dataset.swipeTab = state.tab;
+      currentPane.setAttribute("aria-hidden", "false");
+      nextPane.className = "tab-swipe-pane";
+      nextPane.dataset.swipeTab = nextTab;
+      nextPane.setAttribute("aria-hidden", "true");
+      nextPane.innerHTML = nextHTML;
+      while (view.firstChild) currentPane.appendChild(view.firstChild);
+      track.className = "tab-swipe-track";
+      track.style.setProperty("--tab-track-x", `${baseX}px`);
+      if (direction === "next") {
+        track.append(currentPane, nextPane);
+      } else {
+        track.append(nextPane, currentPane);
+      }
 
       view.classList.remove(
         "view--tab-enter-next",
@@ -2465,17 +2502,10 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
         "is-tab-swipe-return"
       );
       view.style.removeProperty("--tab-swipe-x");
-      view.innerHTML = `<div class="tab-swipe-track" style="--tab-track-x:${baseX}px">${panes
-        .map(
-          (pane) =>
-            `<section class="tab-swipe-pane" data-swipe-tab="${esc(
-              pane.tab
-            )}" aria-hidden="${pane.current ? "false" : "true"}">${pane.html}</section>`
-        )
-        .join("")}</div>`;
+      view.appendChild(track);
       view.classList.add("is-tab-track-active", "is-tab-swiping");
 
-      const el = view.querySelector(".tab-swipe-track");
+      const el = track;
       if (!el) return null;
       return {
         el,
@@ -3146,11 +3176,16 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
   }
 
   /* shared list renderer for cellar / drunk tabs */
-  function renderList(wines, kind) {
+  function listHTML(wines, kind) {
     normalizeSortForKind(kind);
     if (state.viewMode !== "list" && state.viewMode !== "image") state.viewMode = "list";
     let html = listControlsHTML(wines, kind);
     html += `<div id="wineListResults">${listResultsHTML(wines, kind)}</div>`;
+    return html;
+  }
+
+  function renderList(wines, kind) {
+    const html = listHTML(wines, kind);
     view.innerHTML = html;
     bindListControls(wines, kind);
     bindCards();
@@ -3307,6 +3342,22 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
   }
 
   /* ---------- Cellar tab ---------- */
+  function cellarWines() {
+    return state.wines.filter((w) => w.status === "cellar");
+  }
+
+  function cellarContentHTML() {
+    const wines = cellarWines();
+    if (!wines.length) {
+      return emptyState(
+        "🍷",
+        "셀러가 비어 있어요",
+        "아래 오른쪽 추가 버튼으로 보유한 와인을 등록해 보세요."
+      );
+    }
+    return listHTML(wines, "cellar");
+  }
+
   function renderCellar() {
     const wines = state.wines
       .filter((w) => w.status === "cellar");
@@ -3322,6 +3373,22 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
   }
 
   /* ---------- Drunk tab ---------- */
+  function drunkWines() {
+    return state.wines.filter((w) => w.status === "drunk");
+  }
+
+  function drunkContentHTML() {
+    const wines = drunkWines();
+    if (!wines.length) {
+      return emptyState(
+        "🍾",
+        "아직 마신 와인이 없어요",
+        "셀러에서 와인을 열고 마셨어요를 누르면 여기에 기록돼요."
+      );
+    }
+    return listHTML(wines, "drunk");
+  }
+
   function renderDrunk() {
     const wines = state.wines
       .filter((w) => w.status === "drunk");
@@ -3337,7 +3404,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
   }
 
   /* ---------- Stats tab ---------- */
-  function renderStats() {
+  function statsContentHTML() {
     const cellar = state.wines.filter((w) => w.status === "cellar");
     const drunk = state.wines.filter((w) => w.status === "drunk");
 
@@ -3391,15 +3458,14 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     const avgText = hasRatings ? `${avg}점 평균` : "별점 기록 없음";
 
     if (!state.wines.length) {
-      view.innerHTML = emptyState(
+      return emptyState(
         "📖",
         "기록이 없어요",
         "와인을 추가하면 컬렉션 통계가 여기에 모여요."
       );
-      return;
     }
 
-    view.innerHTML = `
+    return `
       <section class="stats-hero">
         <div>
           <div class="stats-hero__label">전체 기록</div>
@@ -3505,6 +3571,16 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
             </section>`
           : ""
       }`;
+  }
+
+  function renderStats() {
+    view.innerHTML = statsContentHTML();
+  }
+
+  function tabContentHTML(tab) {
+    if (tab === "cellar") return cellarContentHTML();
+    if (tab === "drunk") return drunkContentHTML();
+    return statsContentHTML();
   }
 
   function emptyState(icon, title, text) {
