@@ -2278,13 +2278,6 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     </svg>`;
   }
 
-  function crownIconHTML() {
-    return `<svg class="person-mark__crown" viewBox="0 0 18 18" aria-hidden="true" focusable="false">
-      <path class="person-mark__crown-fill" d="M3 6.7l2.6 2 3-4.5 3 4.5 2.6-2 .9 6.3H2.1L3 6.7z"></path>
-      <path class="person-mark__crown-stroke" d="M2.4 13h13.2M3 6.7l2.6 2 3-4.5 3 4.5 2.6-2 .9 6.3H2.1L3 6.7z"></path>
-    </svg>`;
-  }
-
   function personMarkHTML(person, tasting, featured, variant) {
     const status = tasting.status;
     if (status === TASTING_STATUS.UNKNOWN) return "";
@@ -2301,7 +2294,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
         status === TASTING_STATUS.SKIPPED ? "person-mark--skipped" : ""
       } ${
         featured ? "person-mark--featured" : ""
-      }" title="${esc(title)}" aria-label="${esc(title)}">${isFeatured ? crownIconHTML() : ""}</span>`;
+      }" title="${esc(title)}" aria-label="${esc(title)}"></span>`;
     }
     return `<span class="person-mark person-mark--${person.className} ${
       status === TASTING_STATUS.SKIPPED ? "person-mark--skipped" : ""
