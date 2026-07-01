@@ -3011,8 +3011,10 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
   let lockedScrollY = 0;
   let sheetCloseTimer = 0;
   let sheetDrag = null;
-  const SHEET_DISMISS_DISTANCE = 92;
-  const SHEET_DISMISS_VELOCITY = 0.65;
+  const SHEET_DRAG_ACTIVATE_DISTANCE = 4;
+  const SHEET_SCROLL_TOP_TOLERANCE = 12;
+  const SHEET_DISMISS_DISTANCE = 76;
+  const SHEET_DISMISS_VELOCITY = 1.15;
 
   function lockPageScroll() {
     if (document.body.classList.contains("is-sheet-locked")) return;
@@ -3070,7 +3072,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     sheetDrag = null;
     if (fromDrag) {
       sheet.classList.remove("is-dragging");
-      sheet.style.transition = "transform 0.2s cubic-bezier(0.32, 0.72, 0, 1)";
+      sheet.style.transition = "transform 0.22s cubic-bezier(0.22, 0.85, 0.18, 1)";
       sheet.style.transform = "translate(-50%, 100%)";
       backdrop.style.opacity = "0";
     } else {
@@ -3096,7 +3098,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       target &&
       target.closest &&
       target.closest(
-        "button, input, select, textarea, a, label, [contenteditable='true'], .variety-suggest"
+        "button, input, select, textarea, a, [contenteditable='true'], .photo-drop, .variety-suggest"
       )
     );
   }
@@ -3110,7 +3112,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
   function settleSheetDrag() {
     sheetDrag = null;
     sheet.classList.remove("is-dragging");
-    sheet.style.transition = "transform 0.18s cubic-bezier(0.32, 0.72, 0, 1)";
+    sheet.style.transition = "transform 0.22s cubic-bezier(0.22, 0.85, 0.18, 1)";
     sheet.style.transform = "translate(-50%, 0)";
     backdrop.style.opacity = "";
     setTimeout(() => {
@@ -3126,7 +3128,10 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       startX: point.clientX,
       startY: point.clientY,
       lastY: point.clientY,
+      dragStartY: point.clientY,
+      lastPull: 0,
       startedAt: Date.now(),
+      dragStartedAt: 0,
       dragging: false,
       fromHandle: isSheetHandleTarget(e.target, point.clientY),
       fromInteractive: isSheetInteractiveTarget(e.target),
@@ -3143,29 +3148,33 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
 
     if (!sheetDrag.dragging) {
       if (sheetDrag.fromInteractive && !sheetDrag.fromHandle) return;
-      if (dy <= 8 || dx > dy * 0.9) return;
-      if (!sheetDrag.fromHandle && sheet.scrollTop > 0) return;
+      if (dy <= SHEET_DRAG_ACTIVATE_DISTANCE || dx > dy * 0.9) return;
+      if (!sheetDrag.fromHandle && sheet.scrollTop > SHEET_SCROLL_TOP_TOLERANCE) return;
+      if (sheet.scrollTop > 0) sheet.scrollTop = 0;
       sheetDrag.dragging = true;
+      sheetDrag.dragStartY = point.clientY;
+      sheetDrag.dragStartedAt = Date.now();
+      sheetDrag.lastPull = 0;
       sheet.classList.add("is-dragging");
       sheet.style.transition = "none";
     }
 
     if (!sheetDrag.dragging) return;
     e.preventDefault();
-    const pull = Math.max(0, dy);
+    const pull = Math.max(0, point.clientY - sheetDrag.dragStartY);
     const translate = pull <= 160 ? pull : 160 + (pull - 160) * 0.35;
+    sheetDrag.lastPull = translate;
     sheet.style.transform = `translate(-50%, ${Math.round(translate)}px)`;
     backdrop.style.opacity = `${Math.max(0.2, 1 - translate / 320)}`;
   }
 
   function onSheetTouchEnd() {
     if (!sheetDrag) return;
-    const dy = Math.max(0, sheetDrag.lastY - sheetDrag.startY);
-    const elapsed = Math.max(1, Date.now() - sheetDrag.startedAt);
-    const velocity = dy / elapsed;
+    const elapsed = Math.max(1, Date.now() - (sheetDrag.dragStartedAt || sheetDrag.startedAt));
+    const velocity = sheetDrag.lastPull / elapsed;
     const shouldClose =
       sheetDrag.dragging &&
-      (dy >= SHEET_DISMISS_DISTANCE || velocity >= SHEET_DISMISS_VELOCITY);
+      (sheetDrag.lastPull >= SHEET_DISMISS_DISTANCE || velocity >= SHEET_DISMISS_VELOCITY);
     if (shouldClose) {
       closeSheet({ fromDrag: true });
     } else if (sheetDrag.dragging) {
