@@ -196,6 +196,11 @@ button {
     rgba(255, 255, 255, 0.62) 0 1px 0 inset;
   backdrop-filter: blur(14px);
 }
+body.is-sheet-locked .tabs,
+body.is-sheet-locked .fab {
+  opacity: 0;
+  pointer-events: none;
+}
 .tabs::before {
   display: none;
 }
@@ -566,9 +571,9 @@ body.is-refreshing .pull-refresh__ring {
   background: rgba(173, 140, 67, 0.76);
 }
 .person-mark--dot {
-  width: 15px;
-  min-width: 15px;
-  height: 15px;
+  width: 11px;
+  min-width: 11px;
+  height: 11px;
   padding: 0;
   border-radius: 50%;
   border-color: rgba(255, 253, 248, 0.72);
@@ -585,13 +590,13 @@ body.is-refreshing .pull-refresh__ring {
   background: rgba(23, 22, 20, 0.2);
 }
 .person-mark--dot.person-mark--featured {
-  width: 18px;
-  min-width: 18px;
-  height: 18px;
+  width: 13px;
+  min-width: 13px;
+  height: 13px;
   border-color: rgba(255, 253, 248, 0.92);
-  box-shadow: rgba(173, 140, 67, 0.42) 0 0 0 2px,
-    rgba(173, 140, 67, 0.18) 0 0 0 5px,
-    rgba(23, 22, 20, 0.12) 0 2px 6px;
+  box-shadow: rgba(173, 140, 67, 0.42) 0 0 0 1.5px,
+    rgba(173, 140, 67, 0.16) 0 0 0 3px,
+    rgba(23, 22, 20, 0.1) 0 1px 4px;
 }
 .person-mark--dot.person-mark--featured::after {
   content: none;
@@ -613,15 +618,15 @@ body.is-refreshing .pull-refresh__ring {
   height: 2px;
 }
 .person-marks--row .person-mark--dot {
-  width: 14px;
-  min-width: 14px;
-  height: 14px;
+  width: 10px;
+  min-width: 10px;
+  height: 10px;
   padding: 0;
 }
 .person-marks--row .person-mark--dot.person-mark--featured {
-  width: 17px;
-  min-width: 17px;
-  height: 17px;
+  width: 12px;
+  min-width: 12px;
+  height: 12px;
 }
 
 .image-grid {
@@ -671,23 +676,60 @@ body.is-refreshing .pull-refresh__ring {
   gap: 4px;
 }
 .person-marks--tile .person-mark {
-  width: 16px;
-  min-width: 16px;
-  height: 16px;
+  width: 11px;
+  min-width: 11px;
+  height: 11px;
   padding: 0;
   box-shadow: none;
 }
 .person-marks--tile .person-mark--dot.person-mark--featured {
-  width: 19px;
-  min-width: 19px;
-  height: 19px;
+  width: 13px;
+  min-width: 13px;
+  height: 13px;
   border-color: rgba(255, 253, 248, 0.94);
-  box-shadow: rgba(173, 140, 67, 0.46) 0 0 0 2px,
-    rgba(173, 140, 67, 0.16) 0 0 0 5px,
-    rgba(23, 22, 20, 0.12) 0 2px 6px;
+  box-shadow: rgba(173, 140, 67, 0.42) 0 0 0 1.5px,
+    rgba(173, 140, 67, 0.14) 0 0 0 3px,
+    rgba(23, 22, 20, 0.1) 0 1px 4px;
 }
 .person-marks--detail {
   margin-left: 8px;
+}
+.person-marks--detail .person-mark,
+.tasting-detail__person .person-mark {
+  width: 21px;
+  min-width: 21px;
+  height: 21px;
+  padding: 0;
+  border: 1px solid rgba(255, 253, 248, 0.76);
+  border-radius: 50%;
+  color: var(--off-white);
+  font-size: 11px;
+  font-weight: 820;
+  line-height: 1;
+  box-shadow: rgba(23, 22, 20, 0.16) 0 2px 7px;
+}
+.person-marks--detail .person-mark--me,
+.tasting-detail__person .person-mark--me {
+  background: var(--wine);
+}
+.person-marks--detail .person-mark--partner,
+.tasting-detail__person .person-mark--partner {
+  background: var(--sage);
+}
+.person-marks--detail .person-mark--skipped,
+.tasting-detail__person .person-mark--skipped {
+  background: rgba(23, 22, 20, 0.22);
+  color: rgba(255, 253, 248, 0.88);
+}
+.person-marks--detail .person-mark--featured,
+.tasting-detail__person .person-mark--featured {
+  border-color: rgba(173, 140, 67, 0.92);
+  box-shadow: rgba(173, 140, 67, 0.42) 0 0 0 2px,
+    rgba(23, 22, 20, 0.12) 0 2px 7px;
+}
+.person-marks--detail .person-mark--featured::after,
+.tasting-detail__person .person-mark--featured::after {
+  content: none;
 }
 .wine-tile__photo {
   width: 100%;
