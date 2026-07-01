@@ -70,6 +70,9 @@
   const PREF_KEY = "wine-cellar-pref";
   const SEED_KEY = "wine-cellar-seed-version";
   const SEED_VERSION = "user-wine-list-2026-06-29-english-wine-names";
+  const TAB_ORDER = ["cellar", "drunk", "stats"];
+  const TAB_SWIPE_MIN_X = 64;
+  const TAB_SWIPE_RATIO = 1.25;
   const SEED_TSV = `status	type	country_code	country_name	name	vintage
 cellar	red	FR	프랑스	프리에르 로크, 르 끌라우드	2019
 cellar	red	FR	프랑스	Moillard Gevrey-Chambertin	2018
@@ -2228,6 +2231,179 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     render();
   }
 
+  function adjacentTabFromSwipe(deltaX) {
+    const index = TAB_ORDER.indexOf(state.tab);
+    if (index === -1) return null;
+    const direction = deltaX < 0 ? 1 : -1;
+    return TAB_ORDER[index + direction] || null;
+  }
+
+  function isTabSwipeBlockedTarget(target) {
+    if (!target || sheetOpen || document.querySelector(".app-confirm")) return true;
+    if (
+      target.closest(
+        ".sheet, .app-confirm, .tabs, .fab, .filter-options, .variety-suggest"
+      )
+    ) {
+      return true;
+    }
+    if (target.closest("input, textarea, select, option, label, a, [contenteditable]")) {
+      return true;
+    }
+    const button = target.closest("button");
+    return !!button && !button.matches(".card, .wine-tile");
+  }
+
+  function setupTabSwipeNavigation() {
+    let gesture = null;
+    let suppressClick = false;
+    let suppressClickTimer = 0;
+
+    const suppressNextClick = () => {
+      suppressClick = true;
+      if (suppressClickTimer) clearTimeout(suppressClickTimer);
+      suppressClickTimer = setTimeout(() => {
+        suppressClick = false;
+        suppressClickTimer = 0;
+      }, 450);
+    };
+
+    const begin = (point, target, pointerId = null) => {
+      if (isTabSwipeBlockedTarget(target)) return;
+      gesture = {
+        startX: point.clientX,
+        startY: point.clientY,
+        lastX: point.clientX,
+        lastY: point.clientY,
+        pointerId,
+        active: false,
+      };
+    };
+
+    const move = (point, e) => {
+      if (!gesture) return;
+      const dx = point.clientX - gesture.startX;
+      const dy = point.clientY - gesture.startY;
+      const absX = Math.abs(dx);
+      const absY = Math.abs(dy);
+
+      if (!gesture.active) {
+        if (absX < 10 && absY < 10) return;
+        if (absY > absX) {
+          gesture = null;
+          return;
+        }
+        if (absX > 16 && absX > absY * TAB_SWIPE_RATIO) {
+          gesture.active = true;
+          if (gesture.pointerId != null && view.setPointerCapture) {
+            try {
+              view.setPointerCapture(gesture.pointerId);
+            } catch (err) {}
+          }
+        }
+      }
+
+      if (!gesture.active) return;
+      gesture.lastX = point.clientX;
+      gesture.lastY = point.clientY;
+      e.preventDefault();
+    };
+
+    const finish = (point, e) => {
+      if (!gesture) return;
+      const dx = (point?.clientX ?? gesture.lastX) - gesture.startX;
+      const dy = (point?.clientY ?? gesture.lastY) - gesture.startY;
+      const absX = Math.abs(dx);
+      const absY = Math.abs(dy);
+      const shouldSwitch = gesture.active && absX >= TAB_SWIPE_MIN_X && absX > absY * TAB_SWIPE_RATIO;
+
+      if (shouldSwitch) {
+        suppressNextClick();
+        const nextTab = adjacentTabFromSwipe(dx);
+        if (nextTab) setTab(nextTab);
+        if (e?.preventDefault) e.preventDefault();
+      }
+
+      if (gesture.pointerId != null && view.releasePointerCapture) {
+        try {
+          view.releasePointerCapture(gesture.pointerId);
+        } catch (err) {}
+      }
+      gesture = null;
+    };
+
+    view.addEventListener(
+      "click",
+      (e) => {
+        if (!suppressClick) return;
+        suppressClick = false;
+        if (suppressClickTimer) {
+          clearTimeout(suppressClickTimer);
+          suppressClickTimer = 0;
+        }
+        e.preventDefault();
+        e.stopPropagation();
+      },
+      true
+    );
+
+    if (window.PointerEvent) {
+      view.addEventListener(
+        "pointerdown",
+        (e) => {
+          if (e.pointerType === "mouse" && e.button !== 0) return;
+          begin(e, e.target, e.pointerId);
+        },
+        { passive: true }
+      );
+      view.addEventListener(
+        "pointermove",
+        (e) => {
+          if (!gesture || gesture.pointerId !== e.pointerId) return;
+          move(e, e);
+        },
+        { passive: false }
+      );
+      view.addEventListener(
+        "pointerup",
+        (e) => {
+          if (!gesture || gesture.pointerId !== e.pointerId) return;
+          finish(e, e);
+        },
+        { passive: false }
+      );
+      view.addEventListener("pointercancel", () => {
+        gesture = null;
+      });
+      return;
+    }
+
+    view.addEventListener(
+      "touchstart",
+      (e) => {
+        if (e.touches.length !== 1) return;
+        begin(e.touches[0], e.target);
+      },
+      { passive: true }
+    );
+    view.addEventListener(
+      "touchmove",
+      (e) => {
+        if (!gesture || e.touches.length !== 1) return;
+        move(e.touches[0], e);
+      },
+      { passive: false }
+    );
+    view.addEventListener(
+      "touchend",
+      (e) => finish(e.changedTouches[0], e),
+      { passive: false }
+    );
+    view.addEventListener("touchcancel", () => {
+      gesture = null;
+    });
+  }
+
   function scrollCurrentTabToTop() {
     const scroller = appScroller();
     if (scroller && scroller.scrollTo) {
@@ -4283,6 +4459,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     });
   });
   $("#addBtn").addEventListener("click", () => openForm(null));
+  setupTabSwipeNavigation();
   backdrop.addEventListener("click", closeSheet);
   sheet.addEventListener("touchstart", onSheetTouchStart, { passive: true });
   sheet.addEventListener("touchmove", onSheetTouchMove, { passive: false });

@@ -291,6 +291,7 @@ body.is-sheet-locked .fab {
   width: 100%;
   min-width: 0;
   overflow-x: hidden;
+  touch-action: pan-y;
 }
 
 /* ---------- Pull to refresh ---------- */
