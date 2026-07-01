@@ -2282,6 +2282,15 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     </svg>`;
   }
 
+  function cellarReturnIconHTML() {
+    return `<svg class="detail-actions__delete-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M9 7H5v4"></path>
+      <path d="M5 7c2.1-2.2 5.6-3.1 8.7-1.7 3.7 1.7 5.3 6 3.6 9.7-1.3 2.8-4.2 4.4-7.1 4.1"></path>
+      <path d="M8 16h6"></path>
+      <path d="M8 19h4"></path>
+    </svg>`;
+  }
+
   function personMarkHTML(person, tasting, featured, variant) {
     const status = tasting.status;
     if (status === TASTING_STATUS.UNKNOWN) return "";
@@ -3339,7 +3348,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     const tastings = defaults || wine?.tastings || {};
     const selected = featuredTasterIdFromTastings(tastings, wine?.featuredTasterId);
     return `<div class="featured-rating" data-featured-rating>
-      <span class="featured-rating__label">앞에 보일 별점</span>
+      <span class="featured-rating__label">대표 별점</span>
       <input type="hidden" name="featuredTasterId" value="${esc(selected)}" />
       <div class="featured-rating__options">
         ${TASTERS.map((person) => {
@@ -3483,16 +3492,18 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     let aiStatus = "";
 
     openSheet(`
-      <h2 class="sheet__title">${
-        isDrunkEdit ? "마신 와인 수정" : isEdit ? "와인 수정" : "와인 추가"
-      }</h2>
-      <p class="sheet__subtitle">${
-        isDrunkEdit
-          ? "기본 정보와 시음 기록을 함께 고칠 수 있어요."
-          : isEdit
-          ? "정보를 고쳐서 저장하세요."
-          : "보유한 와인을 셀러에 등록해요."
-      }</p>
+      ${
+        isEdit
+          ? `<h2 class="sheet__title">${
+              isDrunkEdit ? "마신 와인 수정" : "와인 수정"
+            }</h2>
+            <p class="sheet__subtitle">${
+              isDrunkEdit
+                ? "기본 정보와 시음 기록을 함께 고칠 수 있어요."
+                : "정보를 고쳐서 저장하세요."
+            }</p>`
+          : ""
+      }
 
       <form id="wineForm">
         <div class="form-section">
@@ -3583,7 +3594,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
         <div class="btn-stack">
           <button type="button" class="btn btn--quiet" data-close>취소</button>
           <button type="submit" class="btn btn--dark">${
-            isEdit ? "저장" : "셀러에 추가"
+            isEdit ? "저장" : "등록"
           }</button>
         </div>
       </form>
@@ -4017,14 +4028,21 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       ${isDrunk ? detailTastingsHTML(w) : ""}
 
       <div class="detail-actions">
-        <div class="detail-actions__bar">
-          <button class="detail-actions__delete" data-action="delete" aria-label="삭제" title="삭제">${trashIconHTML()}</button>
+        <div class="detail-actions__tools">
+          <button class="detail-actions__icon detail-actions__icon--delete" data-action="delete" aria-label="삭제" title="삭제">${trashIconHTML()}</button>
         ${
           isDrunk
-            ? `<button class="detail-action detail-action--secondary" data-action="undo">셀러로 되돌리기</button>
-               <button class="detail-action detail-action--primary" data-action="edit">수정</button>`
-            : `<button class="detail-action detail-action--secondary" data-action="edit">수정</button>
-               <button class="detail-action detail-action--primary" data-action="drink">🍷 마셨어요</button>`
+            ? `<button class="detail-actions__icon detail-actions__icon--undo" data-action="undo" aria-label="셀러로 되돌리기" title="셀러로 되돌리기">${cellarReturnIconHTML()}</button>`
+            : ""
+        }
+        </div>
+        <div class="btn-stack detail-actions__main">
+        ${
+          isDrunk
+            ? `<button type="button" class="btn btn--quiet" data-close>취소</button>
+               <button type="button" class="btn btn--dark" data-action="edit">수정</button>`
+            : `<button type="button" class="btn btn--quiet" data-action="edit">수정</button>
+               <button type="button" class="btn btn--dark" data-action="drink">🍷 마셨어요</button>`
         }
         </div>
       </div>
@@ -4153,7 +4171,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     const defaults = defaultDrinkTastings(w);
 
     openSheet(`
-      <h2 class="sheet__title">마신 기록</h2>
+      <h2 class="sheet__title">기록</h2>
       <p class="sheet__subtitle">${esc(w.name)}, 어땠나요?</p>
 
       <form id="drinkForm">
@@ -4164,7 +4182,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
 
         <div class="btn-stack">
           <button type="button" class="btn btn--quiet" data-close>취소</button>
-          <button type="submit" class="btn btn--dark">기록 저장</button>
+          <button type="submit" class="btn btn--dark">저장</button>
         </div>
       </form>
     `);
