@@ -3093,16 +3093,6 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     return (e.touches && e.touches[0]) || (e.changedTouches && e.changedTouches[0]) || null;
   }
 
-  function isSheetInteractiveTarget(target) {
-    return !!(
-      target &&
-      target.closest &&
-      target.closest(
-        "button, input, select, textarea, a, [contenteditable='true'], .photo-drop, .variety-suggest"
-      )
-    );
-  }
-
   function isSheetHandleTarget(target, y) {
     if (target && target.closest && target.closest(".sheet__handle")) return true;
     const rect = sheet.getBoundingClientRect();
@@ -3134,7 +3124,6 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       dragStartedAt: 0,
       dragging: false,
       fromHandle: isSheetHandleTarget(e.target, point.clientY),
-      fromInteractive: isSheetInteractiveTarget(e.target),
     };
   }
 
@@ -3147,7 +3136,6 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     sheetDrag.lastY = point.clientY;
 
     if (!sheetDrag.dragging) {
-      if (sheetDrag.fromInteractive && !sheetDrag.fromHandle) return;
       if (dy <= SHEET_DRAG_ACTIVATE_DISTANCE || dx > dy * 0.9) return;
       if (!sheetDrag.fromHandle && sheet.scrollTop > SHEET_SCROLL_TOP_TOLERANCE) return;
       if (sheet.scrollTop > 0) sheet.scrollTop = 0;
