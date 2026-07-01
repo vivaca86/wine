@@ -3873,13 +3873,13 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       ${
         isEdit
           ? `<h2 class="sheet__title">${
-              isDrunkEdit ? "마신 와인 수정" : "와인 수정"
+              isDrunkEdit ? "수정" : "와인 수정"
             }</h2>
-            <p class="sheet__subtitle">${
+            ${
               isDrunkEdit
-                ? "기본 정보와 시음 기록을 함께 고칠 수 있어요."
-                : "정보를 고쳐서 저장하세요."
-            }</p>`
+                ? ""
+                : `<p class="sheet__subtitle">정보를 고쳐서 저장하세요.</p>`
+            }`
           : ""
       }
 
