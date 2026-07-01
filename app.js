@@ -1456,6 +1456,9 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       if (pref.viewMode === "list" || pref.viewMode === "image") {
         state.viewMode = pref.viewMode;
       }
+      if (TAB_ORDER.includes(pref.tab)) {
+        state.tab = pref.tab;
+      }
     } catch (e) {
       state.wines = seedWines();
     }
@@ -1465,6 +1468,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       localStorage.setItem(
         PREF_KEY,
         JSON.stringify({
+          tab: state.tab,
           sortBy: state.sortBy,
           sortDir: state.sortDir,
           viewMode: state.viewMode,
@@ -2216,7 +2220,16 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
   }
 
   /* ---------- Tabs ---------- */
+  function syncTabButtons() {
+    document.querySelectorAll(".tab").forEach((b) => {
+      const active = b.dataset.tab === state.tab;
+      b.classList.toggle("is-active", active);
+      b.setAttribute("aria-selected", active ? "true" : "false");
+    });
+  }
+
   function setTab(tab) {
+    if (!TAB_ORDER.includes(tab)) return;
     state.tab = tab;
     state.typeFilters = [];
     state.countryFilters = [];
@@ -2224,9 +2237,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     state.filterPanel = null;
     state.searchOpen = false;
     state.searchQuery = "";
-    document.querySelectorAll(".tab").forEach((b) => {
-      b.classList.toggle("is-active", b.dataset.tab === tab);
-    });
+    syncTabButtons();
     savePref();
     render();
   }
@@ -2414,6 +2425,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
   }
 
   function render() {
+    syncTabButtons();
     if (state.tab === "cellar") renderCellar();
     else if (state.tab === "drunk") renderDrunk();
     else renderStats();
@@ -4179,9 +4191,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
           return;
         }
         state.tab = "cellar";
-        document.querySelectorAll(".tab").forEach((b) => {
-          b.classList.toggle("is-active", b.dataset.tab === "cellar");
-        });
+        savePref();
       }
       closeSheet();
       render();
