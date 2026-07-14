@@ -7,6 +7,8 @@
   "use strict";
 
   const STORE_KEY = "wine-cellar-v1";
+  const DELETED_SEEDS_KEY = "wine-cellar-deleted-seeds-v1";
+  const LOCAL_SYNC_BACKUP_KEY = "wine-cellar-pre-sync-backup-v1";
   const FIREBASE_EMAIL_KEY = "wine-cellar-firebase-email";
   const FIREBASE_LOGIN_SESSION_KEY = "wine-cellar-login-audit-uid";
   const FIREBASE_CONFIG = {
@@ -22,6 +24,8 @@
   const FIRESTORE_COLLECTION = "cellars";
   const FIRESTORE_DOC_ID = "main";
   const FIRESTORE_LOGS_COLLECTION = "logs";
+  // Keep headroom for Firestore field names and document metadata (hard limit: 1 MiB).
+  const FIRESTORE_SAFE_MAX_BYTES = 900 * 1024;
 
   /* Wine types: id, label, emoji swatch, icon color */
   const TYPES = [
@@ -33,7 +37,7 @@
     { id: "etc", label: "기타", emoji: "🍇", color: "#6a5577" },
   ];
   const TYPE_ORDER = ["red", "sparkling", "white", "rose", "dessert", "etc"];
-  const FORM_TYPE_IDS = ["red", "white", "rose", "sparkling", "dessert"];
+  const FORM_TYPE_IDS = ["red", "white", "rose", "sparkling", "dessert", "etc"];
   const TASTERS = [
     { id: "me", label: "심", short: "심", className: "me" },
     { id: "partner", label: "꽁", short: "꽁", className: "partner" },
@@ -1216,8 +1220,10 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     const canonicalName = canonicalSeedNameForId(wine.id);
     if (!canonicalName) return wine;
 
+    // New seed records already use the canonical name. Existing records may have
+    // been intentionally renamed by the user, so normalization must never rename
+    // them again. Exact legacy corrections are handled separately below.
     const updates = {};
-    if ((wine.name || "").trim() !== canonicalName) updates.name = canonicalName;
     const variety = seedVarietyForId(wine.id, wine.name, wine.type, wine.country);
     if (variety && !(wine.variety || "").trim()) updates.variety = variety;
     return Object.keys(updates).length ? Object.assign({}, wine, updates) : wine;
@@ -1227,6 +1233,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     if (!Array.isArray(wines)) return [];
     return wines.map((wine) => {
       let nextWine = wine;
+      if (wine && wine.userModified) return nextWine;
       const correction = wine && SEED_CORRECTIONS[wine.id];
       if (!correction) return applyEnglishSeedName(nextWine);
 
@@ -1244,6 +1251,8 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       if (!matchesOldSeed) return applyEnglishSeedName(nextWine);
 
       nextWine = Object.assign({}, wine, correction.next);
+      const canonicalName = canonicalSeedNameForId(nextWine.id);
+      if (canonicalName) nextWine.name = canonicalName;
       const mappedVariety = seedVarietyForId(
         nextWine.id,
         nextWine.name,
@@ -1266,8 +1275,21 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
         varietyForName(wine.name, wine.type, wine.country);
       const photo = defaultPhotoForWineId(wine.id) || defaultPhotoForWineName(wine.name);
       const updates = {};
-      if (variety && !(wine.variety || "").trim()) updates.variety = variety;
-      if (photo && (!(wine.photo || "").trim() || isDefaultPhoto(wine.photo))) {
+      const preserveEditedSeedFields =
+        /^seed-\d{3}$/.test(wine.id || "") && wine.userModified;
+      if (variety && !preserveEditedSeedFields && !(wine.variety || "").trim()) {
+        updates.variety = variety;
+      }
+      const explicitEmptySeedPhoto =
+        /^seed-\d{3}$/.test(wine.id || "") &&
+        Object.prototype.hasOwnProperty.call(wine, "photo") &&
+        !(wine.photo || "").trim();
+      if (
+        photo &&
+        !wine.photoRemoved &&
+        !explicitEmptySeedPhoto &&
+        (!(wine.photo || "").trim() || isDefaultPhoto(wine.photo))
+      ) {
         updates.photo = photo;
       }
       if (!photo && isDefaultPhoto(wine.photo)) updates.photo = null;
@@ -1362,6 +1384,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     sortDir: "asc",
     viewMode: "list",
     lastViewedId: null,
+    deletedSeedIds: [],
     syncStatus: "local",
     syncMessage: "",
     lastSyncedAt: "",
@@ -1378,6 +1401,37 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
   let currentUser = null;
   let pendingAuditLogs = [];
   let cloudBackfillInFlight = false;
+  let initialCloudSyncReady = false;
+  let syncQueuedUntilInitial = false;
+
+  function sanitizeDeletedSeedIds(value) {
+    return Array.from(
+      new Set(
+        (Array.isArray(value) ? value : []).filter(
+          (id) => typeof id === "string" && /^seed-\d{3}$/.test(id)
+        )
+      )
+    ).sort();
+  }
+
+  function inferDeletedSeedIds(wines, seedVersion) {
+    if (seedVersion !== SEED_VERSION || !Array.isArray(wines)) return [];
+    const presentIds = new Set(wines.map((wine) => wine && wine.id).filter(Boolean));
+    return seedWines()
+      .map((seed) => seed.id)
+      .filter((id) => !presentIds.has(id));
+  }
+
+  function loadDeletedSeedIds() {
+    try {
+      return sanitizeDeletedSeedIds(
+        JSON.parse(localStorage.getItem(DELETED_SEEDS_KEY) || "[]")
+      );
+    } catch (error) {
+      console.warn("삭제된 기본 와인 기록을 읽지 못했어요.", error);
+      return [];
+    }
+  }
 
   function seedWines() {
     return SEED_TSV.trim()
@@ -1419,8 +1473,11 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     if (raw && currentSeed === SEED_VERSION) return false;
 
     const seeds = seedWines();
+    const deletedSeedIds = new Set(state.deletedSeedIds);
     if (raw) {
-      const existing = normalizeWines(JSON.parse(raw) || []);
+      const existing = normalizeWines(JSON.parse(raw) || []).filter(
+        (wine) => !deletedSeedIds.has(wine.id)
+      );
       const seedById = new Map(seeds.map((seed) => [seed.id, seed]));
       const existingIds = new Set(existing.map((w) => w.id));
       existing.forEach((wine) => {
@@ -1428,18 +1485,23 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
         if (seed && !wine.variety && seed.variety) {
           wine.variety = seed.variety;
         }
-        if (seed && !wine.photo && seed.photo) {
+        if (
+          seed &&
+          wine.photo === undefined &&
+          !wine.photoRemoved &&
+          seed.photo
+        ) {
           wine.photo = seed.photo;
         }
       });
       seeds.forEach((seed) => {
-        if (!existingIds.has(seed.id)) {
+        if (!existingIds.has(seed.id) && !deletedSeedIds.has(seed.id)) {
           existing.push(seed);
         }
       });
       state.wines = normalizeWines(existing);
     } else {
-      state.wines = seeds;
+      state.wines = seeds.filter((seed) => !deletedSeedIds.has(seed.id));
     }
 
     localStorage.setItem(STORE_KEY, JSON.stringify(state.wines));
@@ -1447,18 +1509,45 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     return true;
   }
 
-  function load() {
+  function loadWineData() {
+    state.deletedSeedIds = loadDeletedSeedIds();
+    const storedRaw = localStorage.getItem(STORE_KEY);
+    const storedSeedVersion = localStorage.getItem(SEED_KEY);
+    if (storedRaw && storedSeedVersion === SEED_VERSION) {
+      try {
+        state.deletedSeedIds = sanitizeDeletedSeedIds(
+          state.deletedSeedIds.concat(
+            inferDeletedSeedIds(JSON.parse(storedRaw) || [], storedSeedVersion)
+          )
+        );
+        localStorage.setItem(DELETED_SEEDS_KEY, JSON.stringify(state.deletedSeedIds));
+      } catch (error) {
+        // Wine parsing below owns recovery; this migration must not hide that error.
+      }
+    }
     try {
       if (!applySeedIfNeeded()) {
         const raw = localStorage.getItem(STORE_KEY);
         if (raw) {
           const parsedWines = JSON.parse(raw) || [];
-          state.wines = normalizeWines(parsedWines);
+          const deletedSeedIds = new Set(state.deletedSeedIds);
+          state.wines = normalizeWines(parsedWines).filter(
+            (wine) => !deletedSeedIds.has(wine.id)
+          );
           if (JSON.stringify(parsedWines) !== JSON.stringify(state.wines)) {
             localStorage.setItem(STORE_KEY, JSON.stringify(state.wines));
           }
         }
       }
+    } catch (error) {
+      console.warn("저장된 와인 데이터를 읽지 못해 기본 목록을 사용해요.", error);
+      const deletedSeedIds = new Set(state.deletedSeedIds);
+      state.wines = seedWines().filter((seed) => !deletedSeedIds.has(seed.id));
+    }
+  }
+
+  function loadPreferences() {
+    try {
       const pref = JSON.parse(localStorage.getItem(PREF_KEY) || "{}");
       if (["name", "country", "variety", "price", "rating"].includes(pref.sortBy)) {
         state.sortBy = pref.sortBy;
@@ -1472,9 +1561,16 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       if (TAB_ORDER.includes(pref.tab)) {
         state.tab = pref.tab;
       }
-    } catch (e) {
-      state.wines = seedWines();
+    } catch (error) {
+      // Preferences are disposable UI state. A malformed preference must never
+      // replace the independently loaded wine collection.
+      console.warn("화면 설정을 읽지 못해 기본 설정을 사용해요.", error);
     }
+  }
+
+  function load() {
+    loadWineData();
+    loadPreferences();
   }
   function savePref() {
     try {
@@ -1491,10 +1587,24 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
   }
   /* Persist locally; returns false if storage quota is exceeded. */
   function persistLocalOnly() {
+    const previousDeletedSeedIds = localStorage.getItem(DELETED_SEEDS_KEY);
+    const previousWines = localStorage.getItem(STORE_KEY);
+    const restoreStorageValue = (key, value) => {
+      if (value === null) localStorage.removeItem(key);
+      else localStorage.setItem(key, value);
+    };
     try {
+      state.deletedSeedIds = sanitizeDeletedSeedIds(state.deletedSeedIds);
+      localStorage.setItem(DELETED_SEEDS_KEY, JSON.stringify(state.deletedSeedIds));
       localStorage.setItem(STORE_KEY, JSON.stringify(state.wines));
       return true;
     } catch (e) {
+      try {
+        restoreStorageValue(DELETED_SEEDS_KEY, previousDeletedSeedIds);
+        restoreStorageValue(STORE_KEY, previousWines);
+      } catch (restoreError) {
+        console.warn("로컬 저장 실패 후 이전 데이터를 복원하지 못했어요.", restoreError);
+      }
       return false;
     }
   }
@@ -1525,6 +1635,139 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     }
     const primitive = JSON.stringify(value);
     return primitive === undefined ? "undefined" : primitive;
+  }
+
+  function comparableWine(wine) {
+    if (!wine || typeof wine !== "object") return null;
+    const fields = [
+      "id",
+      "status",
+      "name",
+      "country",
+      "type",
+      "vintage",
+      "variety",
+      "price",
+      "purchaseDate",
+      "photo",
+      "photoRemoved",
+      "rating",
+      "drunkDate",
+      "note",
+      "tastings",
+      "featuredTasterId",
+    ];
+    return fields.reduce((result, field) => {
+      if (wine[field] !== undefined) result[field] = wine[field];
+      return result;
+    }, {});
+  }
+
+  let seedBaselineById = null;
+  function pristineSeedWine(wine) {
+    if (!wine || !/^seed-\d{3}$/.test(wine.id || "") || wine.userModified) return false;
+    if (!seedBaselineById) {
+      seedBaselineById = new Map(seedWines().map((seed) => [seed.id, seed]));
+    }
+    const seed = seedBaselineById.get(wine.id);
+    return !!seed && stableStringify(comparableWine(wine)) === stableStringify(comparableWine(seed));
+  }
+
+  function modifiedTime(wine) {
+    const time = Date.parse((wine && wine.clientUpdatedAt) || "");
+    return Number.isFinite(time) ? time : 0;
+  }
+
+  function restoreObject(target, backup) {
+    Object.keys(target || {}).forEach((key) => delete target[key]);
+    Object.assign(target, JSON.parse(JSON.stringify(backup || {})));
+    return target;
+  }
+
+  function markWineModified(wine) {
+    if (!wine || typeof wine !== "object") return wine;
+    wine.userModified = true;
+    wine.clientUpdatedAt = new Date().toISOString();
+    return wine;
+  }
+
+  function pickInitialSyncConflict(localWine, cloudWine) {
+    const localSignature = stableStringify(localWine);
+    const cloudSignature = stableStringify(cloudWine);
+    if (localSignature === cloudSignature) return localWine;
+
+    const localPristine = pristineSeedWine(localWine);
+    const cloudPristine = pristineSeedWine(cloudWine);
+    if (localPristine && !cloudPristine) return cloudWine;
+    if (cloudPristine && !localPristine) return localWine;
+
+    const localTime = modifiedTime(localWine);
+    const cloudTime = modifiedTime(cloudWine);
+    if (cloudTime && (!localTime || cloudTime > localTime)) return cloudWine;
+    return localWine;
+  }
+
+  function mergeInitialCloudWines(localWines, cloudWines) {
+    const cloudById = new Map(
+      (Array.isArray(cloudWines) ? cloudWines : []).map((wine) => [wine.id, wine])
+    );
+    const merged = (Array.isArray(localWines) ? localWines : []).map((localWine) => {
+      const cloudWine = cloudById.get(localWine.id);
+      cloudById.delete(localWine.id);
+      return cloudWine ? pickInitialSyncConflict(localWine, cloudWine) : localWine;
+    });
+    cloudById.forEach((wine) => merged.push(wine));
+    return normalizeWines(merged);
+  }
+
+  function backupLocalBeforeFirstSync(cloudWines = []) {
+    if (!state.wines.length) return true;
+    try {
+      localStorage.setItem(
+        LOCAL_SYNC_BACKUP_KEY,
+        JSON.stringify({
+          createdAt: new Date().toISOString(),
+          wines: state.wines,
+          cloudWines: Array.isArray(cloudWines) ? cloudWines : [],
+          deletedSeedIds: state.deletedSeedIds,
+        })
+      );
+      return true;
+    } catch (error) {
+      console.warn("동기화 전 로컬 백업을 저장할 공간이 부족해요.", error);
+      return false;
+    }
+  }
+
+  function utf8ByteLength(value) {
+    const text = typeof value === "string" ? value : JSON.stringify(value);
+    if (typeof TextEncoder !== "undefined") return new TextEncoder().encode(text).length;
+    return encodeURIComponent(text).replace(/%[0-9A-F]{2}|./gi, "x").length;
+  }
+
+  function cloudDataSizeBytes(wines = state.wines, deletedSeedIds = state.deletedSeedIds) {
+    return utf8ByteLength({
+      version: 1,
+      seedVersion: SEED_VERSION,
+      updatedAt: "server-timestamp",
+      updatedBy: currentUser ? currentUser.uid : "",
+      wines,
+      deletedSeedIds: sanitizeDeletedSeedIds(deletedSeedIds),
+    });
+  }
+
+  function formatDataSize(bytes) {
+    if (bytes < 1024) return `${bytes} B`;
+    return `${(bytes / 1024).toFixed(bytes < 100 * 1024 ? 1 : 0)} KB`;
+  }
+
+  function assertCloudDataSize() {
+    const bytes = cloudDataSizeBytes();
+    if (bytes <= FIRESTORE_SAFE_MAX_BYTES) return bytes;
+    throw new Error(
+      `클라우드 동기화 데이터가 ${formatDataSize(bytes)}로 너무 커요. ` +
+        "사진이 큰 와인을 수정해 사진을 줄이거나 제거한 뒤 다시 동기화해 주세요. 로컬 데이터는 그대로 보존돼요."
+    );
   }
 
   const $ = (sel, root) => (root || document).querySelector(sel);
@@ -1584,7 +1827,13 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     )}.${String(d.getDate()).padStart(2, "0")}`;
   }
 
-  const today = () => new Date().toISOString().slice(0, 10);
+  function localCalendarDate(date = new Date()) {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
+      date.getDate()
+    ).padStart(2, "0")}`;
+  }
+
+  const today = () => localCalendarDate();
 
   function daysBetween(a, b) {
     if (!a || !b) return null;
@@ -1789,19 +2038,28 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       ${[1, 2, 3, 4, 5]
         .map(
           (i) =>
-            `<button type="button" class="s" data-v="${i}" aria-label="${i}점">★</button>`
+            `<button type="button" class="s" data-v="${i}" aria-label="${i}점" title="왼쪽 절반은 ${(
+              i - 0.5
+            ).toFixed(1)}점, 오른쪽 절반은 ${i}점">★</button>`
         )
         .join("")}
     </div>`;
   }
 
+  function starRatingFromPointer(value, clientX, left, width) {
+    const full = Number(value);
+    if (!Number.isFinite(clientX) || !Number.isFinite(left) || !(width > 0)) return full;
+    return clientX < left + width / 2 ? full - 0.5 : full;
+  }
+
   function bindStarInput(root, initialRating, selector) {
     let picked = Number(initialRating) || 0;
     const stars = () => root.querySelectorAll(`${selector || "#starInput"} .s`);
-    const pickValue = (star) => {
+    const pickValue = (star, event) => {
       const value = Number(star.dataset.v);
-      const half = value - 0.5;
-      return picked === half ? value : half;
+      if (!event || typeof event.clientX !== "number") return value;
+      const rect = star.getBoundingClientRect();
+      return starRatingFromPointer(value, event.clientX, rect.left, rect.width);
     };
     const paint = () => {
       stars().forEach((s) => {
@@ -1815,12 +2073,13 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     let lastPointerAt = 0;
     stars().forEach((s) => {
       const select = () => {
-        picked = pickValue(s);
+        picked = Number(s.dataset.v);
         paint();
       };
       s.addEventListener("pointerdown", (e) => {
         lastPointerAt = Date.now();
-        select();
+        picked = pickValue(s, e);
+        paint();
         e.preventDefault();
       });
       s.addEventListener("click", () => {
@@ -1832,31 +2091,41 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     return () => picked;
   }
 
-  /* Image: read a file, downscale, return JPEG data URL via callback */
-  function processImage(file, cb) {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        const max = 760;
-        let w = img.width;
-        let h = img.height;
-        if (w > h && w > max) {
-          h = Math.round((h * max) / w);
-          w = max;
-        } else if (h >= w && h > max) {
-          w = Math.round((w * max) / h);
-          h = max;
-        }
-        const canvas = document.createElement("canvas");
-        canvas.width = w;
-        canvas.height = h;
-        canvas.getContext("2d").drawImage(img, 0, 0, w, h);
-        cb(canvas.toDataURL("image/jpeg", 0.72));
+  /* Image: read a file, downscale, and resolve a JPEG data URL. */
+  function processImage(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error("사진 파일을 읽지 못했어요."));
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onerror = () => reject(new Error("지원하지 않는 사진 형식이에요."));
+        img.onload = () => {
+          try {
+            const max = 760;
+            let w = img.width;
+            let h = img.height;
+            if (w > h && w > max) {
+              h = Math.round((h * max) / w);
+              w = max;
+            } else if (h >= w && h > max) {
+              w = Math.round((w * max) / h);
+              h = max;
+            }
+            const canvas = document.createElement("canvas");
+            canvas.width = w;
+            canvas.height = h;
+            const context = canvas.getContext("2d");
+            if (!context) throw new Error("사진을 처리하지 못했어요.");
+            context.drawImage(img, 0, 0, w, h);
+            resolve(canvas.toDataURL("image/jpeg", 0.72));
+          } catch (error) {
+            reject(error);
+          }
+        };
+        img.src = e.target.result;
       };
-      img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
+      reader.readAsDataURL(file);
+    });
   }
 
   function wineSnapshot(w) {
@@ -2063,6 +2332,11 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       updateSyncButton();
       return;
     }
+    if (!initialCloudSyncReady) {
+      syncQueuedUntilInitial = true;
+      setSyncStatus("syncing", "서버의 최신 셀러 확인 후 변경사항을 저장할게요.");
+      return;
+    }
     if (syncDebounce) clearTimeout(syncDebounce);
     syncDebounce = setTimeout(() => {
       syncDebounce = null;
@@ -2096,7 +2370,10 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
 
   async function writeCloudWines() {
     if (!currentUser || !firebaseReady) return false;
-    state.wines = normalizeWines(state.wines);
+    const deletedSeedIds = new Set(state.deletedSeedIds);
+    state.wines = normalizeWines(state.wines).filter((wine) => !deletedSeedIds.has(wine.id));
+    state.deletedSeedIds = sanitizeDeletedSeedIds(state.deletedSeedIds);
+    assertCloudDataSize();
     await firebaseApi.setDoc(
       cellarDocRef(),
       {
@@ -2105,6 +2382,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
         updatedAt: firebaseApi.serverTimestamp(),
         updatedBy: currentUser.uid,
         wines: state.wines,
+        deletedSeedIds: state.deletedSeedIds,
       },
       { merge: true }
     );
@@ -2114,6 +2392,10 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
 
   async function syncPush() {
     if (!currentUser || !firebaseReady) return false;
+    if (!initialCloudSyncReady) {
+      syncQueuedUntilInitial = true;
+      return false;
+    }
     try {
       setSyncStatus("syncing", "Firebase에 저장하는 중");
       await writeCloudWines();
@@ -2149,14 +2431,62 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     await firebaseApi.signOut(auth);
   }
 
+  function isServerConfirmedSnapshot(snapshot) {
+    const metadata = snapshot && snapshot.metadata;
+    return !(metadata && (metadata.fromCache || metadata.hasPendingWrites));
+  }
+
+  function releaseInitialCloudSyncBarrier() {
+    if (initialCloudSyncReady) return;
+    initialCloudSyncReady = true;
+    if (syncQueuedUntilInitial) {
+      syncQueuedUntilInitial = false;
+      queueSyncPush(0);
+    }
+  }
+
   async function startCellarListener(user) {
     const api = await loadFirebase();
     if (unsubscribeCellar) unsubscribeCellar();
+    let awaitingInitialServerSnapshot = true;
     unsubscribeCellar = api.onSnapshot(
       cellarDocRef(),
+      { includeMetadataChanges: true },
       (snapshot) => {
+        if (awaitingInitialServerSnapshot && !isServerConfirmedSnapshot(snapshot)) {
+          setSyncStatus("syncing", "서버의 최신 셀러 데이터를 확인하는 중");
+          return;
+        }
+
+        const initialServerSnapshot = awaitingInitialServerSnapshot;
+        if (initialServerSnapshot) awaitingInitialServerSnapshot = false;
         if (!snapshot.exists()) {
-          setSyncStatus("synced", "클라우드 데이터가 아직 없어요.");
+          if (initialServerSnapshot && state.wines.length) {
+            const backupSaved = backupLocalBeforeFirstSync([]);
+            if (!backupSaved) {
+              setSyncStatus(
+                "error",
+                "동기화 전 백업 공간이 부족해 최초 업로드를 중단했어요. 저장 공간을 정리한 뒤 다시 로그인해 주세요."
+              );
+              return;
+            }
+            if (!cloudBackfillInFlight) {
+              cloudBackfillInFlight = true;
+              setSyncStatus("syncing", "기존 로컬 셀러를 클라우드에 처음 저장하는 중");
+              writeCloudWines()
+                .then(() => {
+                  releaseInitialCloudSyncBarrier();
+                  setSyncStatus("synced", "기존 로컬 셀러를 클라우드에 저장했어요.");
+                })
+                .catch(handleSyncError)
+                .finally(() => {
+                  cloudBackfillInFlight = false;
+                });
+            }
+          } else {
+            if (initialServerSnapshot) releaseInitialCloudSyncBarrier();
+            setSyncStatus("synced", "클라우드 데이터가 아직 없어요.");
+          }
           return;
         }
         const data = snapshot.data() || {};
@@ -2164,41 +2494,103 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
           setSyncStatus("error", "클라우드 데이터 형식이 올바르지 않아요.");
           return;
         }
-        const normalizedWines = normalizeWines(data.wines);
+        const incomingDeletedSeedIds = sanitizeDeletedSeedIds(
+          (Array.isArray(data.deletedSeedIds) ? data.deletedSeedIds : []).concat(
+            inferDeletedSeedIds(data.wines, data.seedVersion)
+          )
+        );
+        const mergedDeletedSeedIds = sanitizeDeletedSeedIds(
+          state.deletedSeedIds.concat(incomingDeletedSeedIds)
+        );
+        const deletedSeedIds = new Set(mergedDeletedSeedIds);
+        let normalizedWines = normalizeWines(data.wines).filter(
+          (wine) => !deletedSeedIds.has(wine.id)
+        );
+        const cloudWinesBeforeMerge = normalizedWines.slice();
+        let didInitialMerge = false;
+        let backupSaved = true;
+        if (
+          initialServerSnapshot &&
+          state.wines.length &&
+          stableStringify(state.wines) !== stableStringify(normalizedWines)
+        ) {
+          backupSaved = backupLocalBeforeFirstSync(cloudWinesBeforeMerge);
+          if (!backupSaved) {
+            setSyncStatus(
+              "error",
+              "동기화 전 백업 공간이 부족해 로컬 목록과 클라우드 목록을 변경하지 않았어요."
+            );
+            return;
+          }
+          normalizedWines = mergeInitialCloudWines(
+            state.wines.filter((wine) => !deletedSeedIds.has(wine.id)),
+            normalizedWines
+          ).filter((wine) => !deletedSeedIds.has(wine.id));
+          didInitialMerge = true;
+        }
         const incomingSignature = stableStringify(normalizedWines);
-        const shouldRender = stableStringify(state.wines) !== incomingSignature;
-        const shouldBackfillCloud = stableStringify(data.wines) !== incomingSignature;
+        const shouldRender =
+          stableStringify(state.wines) !== incomingSignature ||
+          stableStringify(state.deletedSeedIds) !== stableStringify(mergedDeletedSeedIds);
+        const shouldBackfillCloud =
+          didInitialMerge ||
+          stableStringify(data.wines) !== incomingSignature ||
+          stableStringify(incomingDeletedSeedIds) !== stableStringify(mergedDeletedSeedIds);
+        const previousWines = state.wines;
+        const previousDeletedSeedIds = state.deletedSeedIds;
         applyingRemote = true;
+        state.deletedSeedIds = mergedDeletedSeedIds;
         if (shouldRender) {
           state.wines = normalizedWines;
-          if (!persistLocalOnly()) quotaAlert();
+          if (!persistLocalOnly()) {
+            state.wines = previousWines;
+            state.deletedSeedIds = previousDeletedSeedIds;
+            applyingRemote = false;
+            setSyncStatus("error", "저장 공간이 부족해 클라우드 변경을 적용하지 못했어요.");
+            quotaAlert();
+            return;
+          }
         }
         applyingRemote = false;
         if (shouldRender) render();
-        if (shouldBackfillCloud && !cloudBackfillInFlight) {
+        if (shouldBackfillCloud && backupSaved && !cloudBackfillInFlight) {
           cloudBackfillInFlight = true;
           writeCloudWines()
+            .then(() => {
+              if (initialServerSnapshot) releaseInitialCloudSyncBarrier();
+            })
             .catch(handleSyncError)
             .finally(() => {
               cloudBackfillInFlight = false;
             });
+        } else if (initialServerSnapshot) {
+          releaseInitialCloudSyncBarrier();
         }
-        setSyncStatus("synced", "실시간 동기화 중");
+        setSyncStatus(
+          "synced",
+          didInitialMerge
+            ? backupSaved
+              ? "로컬 데이터를 백업하고 클라우드 목록과 안전하게 병합했어요."
+              : "로컬 목록은 유지했지만 백업 공간 부족으로 클라우드 반영을 중단했어요."
+            : "실시간 동기화 중"
+        );
       },
       (error) => {
         applyingRemote = false;
         handleSyncError(error);
       }
     );
-    const snapshot = await api.getDoc(cellarDocRef());
-    if (!snapshot.exists()) {
-      setSyncStatus("synced", "클라우드 데이터가 아직 없어요.");
-    }
   }
 
   function stopCellarListener() {
     if (unsubscribeCellar) unsubscribeCellar();
     unsubscribeCellar = null;
+    initialCloudSyncReady = false;
+    syncQueuedUntilInitial = false;
+    if (syncDebounce) {
+      clearTimeout(syncDebounce);
+      syncDebounce = null;
+    }
   }
 
   async function setupSync() {
@@ -3687,6 +4079,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
   let lockedScrollY = 0;
   let sheetCloseTimer = 0;
   let sheetDrag = null;
+  let sheetReturnFocus = null;
   const SHEET_DRAG_ACTIVATE_DISTANCE = 4;
   const SHEET_SCROLL_TOP_TOLERANCE = 12;
   const SHEET_DISMISS_DISTANCE = 76;
@@ -3715,6 +4108,35 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     backdrop.style.opacity = "";
   }
 
+  function focusableElements(root) {
+    return Array.from(
+      root.querySelectorAll(
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      )
+    ).filter((element) => !element.hidden && element.getClientRects().length > 0);
+  }
+
+  function setModalBackgroundInert(inert) {
+    [document.querySelector(".app"), document.querySelector(".tabs"), document.querySelector(".fab")]
+      .filter(Boolean)
+      .forEach((element) => {
+        if (inert) element.setAttribute("inert", "");
+        else element.removeAttribute("inert");
+      });
+  }
+
+  function labelSheet() {
+    const title = sheet.querySelector(".sheet__title, h1, h2, h3, .detail__title");
+    if (title) {
+      if (!title.id) title.id = `sheetTitle_${Date.now()}`;
+      sheet.setAttribute("aria-labelledby", title.id);
+      sheet.removeAttribute("aria-label");
+    } else {
+      sheet.removeAttribute("aria-labelledby");
+      sheet.setAttribute("aria-label", "셀러 대화상자");
+    }
+  }
+
   function openSheet(html) {
     if (sheetCloseTimer) {
       clearTimeout(sheetCloseTimer);
@@ -3722,8 +4144,15 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     }
     sheetDrag = null;
     clearSheetDragStyles();
+    sheetReturnFocus =
+      document.activeElement && !sheet.contains(document.activeElement)
+        ? document.activeElement
+        : sheetReturnFocus;
     lockPageScroll();
+    setModalBackgroundInert(true);
     sheet.innerHTML = '<div class="sheet__handle" data-sheet-handle></div>' + html;
+    sheet.setAttribute("tabindex", "-1");
+    labelSheet();
     sheet.hidden = false;
     backdrop.hidden = false;
     sheet.scrollTop = 0;
@@ -3732,6 +4161,8 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       sheet.scrollTop = 0;
       sheet.classList.add("is-open");
       backdrop.classList.add("is-open");
+      const initialFocus = sheet.querySelector("[autofocus]") || focusableElements(sheet)[0] || sheet;
+      initialFocus.focus({ preventScroll: true });
     });
     sheetOpen = true;
   }
@@ -3755,6 +4186,9 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       clearSheetDragStyles();
     }
     unlockPageScroll();
+    setModalBackgroundInert(false);
+    const focusToRestore = sheetReturnFocus;
+    sheetReturnFocus = null;
     sheetCloseTimer = setTimeout(() => {
       sheet.hidden = true;
       backdrop.hidden = true;
@@ -3762,12 +4196,47 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       sheet.scrollTop = 0;
       clearSheetDragStyles();
       sheetCloseTimer = 0;
+      if (focusToRestore && focusToRestore.isConnected) {
+        focusToRestore.focus({ preventScroll: true });
+      }
     }, 260);
+  }
+
+  function onSheetKeyDown(event) {
+    if (!sheetOpen || document.querySelector(".app-confirm")) return;
+    if (event.key === "Escape") {
+      event.preventDefault();
+      closeSheet();
+      return;
+    }
+    if (event.key !== "Tab") return;
+    const focusables = focusableElements(sheet);
+    if (!focusables.length) {
+      event.preventDefault();
+      sheet.focus();
+      return;
+    }
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
   }
 
   function openConfirmDialog({ title, message, tone = "default" }) {
     return new Promise((resolve) => {
       const root = document.createElement("div");
+      const returnFocus = document.activeElement;
+      const sheetWasInert = sheet.hasAttribute("inert");
+      const previousSheetAriaHidden = sheet.getAttribute("aria-hidden");
+      if (sheetOpen) {
+        sheet.setAttribute("inert", "");
+        sheet.setAttribute("aria-hidden", "true");
+      }
       const titleId = `confirmTitle_${Date.now()}`;
       const messageId = `confirmMessage_${Date.now()}`;
       root.className = `app-confirm app-confirm--${tone}`;
@@ -3789,11 +4258,34 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
         done = true;
         document.removeEventListener("keydown", onKeyDown);
         root.classList.remove("is-open");
-        setTimeout(() => root.remove(), 180);
+        setTimeout(() => {
+          root.remove();
+          if (!sheetWasInert) sheet.removeAttribute("inert");
+          if (previousSheetAriaHidden === null) sheet.removeAttribute("aria-hidden");
+          else sheet.setAttribute("aria-hidden", previousSheetAriaHidden);
+          if (returnFocus && returnFocus.isConnected) returnFocus.focus({ preventScroll: true });
+        }, 180);
         resolve(confirmed);
       };
       const onKeyDown = (e) => {
-        if (e.key === "Escape") finish(false);
+        if (e.key === "Escape") {
+          e.preventDefault();
+          e.stopPropagation();
+          finish(false);
+          return;
+        }
+        if (e.key !== "Tab") return;
+        const focusables = focusableElements(root);
+        if (!focusables.length) return;
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
       };
 
       root
@@ -4203,33 +4695,35 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     let lastAutoVariety = initialVariety;
     let aiBusy = false;
     let aiStatus = "";
+    let photoProcessing = false;
+    let photoRemoved = !!(existing && existing.photoRemoved);
 
     openSheet(`
       <form id="wineForm">
         <div class="form-section">
-          <div class="form-section__title">와인 정보</div>
+          <h2 class="form-section__title" id="wineFormTitle">와인 정보</h2>
         <div class="field field--photo">
-          <label class="field__label">와인 사진 <span class="opt">(선택 · 병 사진)</span></label>
+          <label class="field__label" for="photoInput">와인 사진 <span class="opt">(선택 · 병 사진)</span></label>
           <label class="photo-drop" id="photoDrop"></label>
           <div class="photo-assist" id="photoAssist" aria-live="polite"></div>
         </div>
 
         <div class="field">
-          <label class="field__label">와인 이름</label>
-          <input class="input" name="name" placeholder="예: Château Margaux" value="${esc(
+          <label class="field__label" for="wineName">와인 이름</label>
+          <input class="input" id="wineName" name="name" placeholder="예: Château Margaux" value="${esc(
             w.name || ""
           )}" required />
         </div>
 
         <div class="row-2">
           <div class="field">
-            <label class="field__label">빈티지 <span class="opt">(선택)</span></label>
-            <input class="input" name="vintage" inputmode="numeric" placeholder="예: 2018" value="${esc(
+            <label class="field__label" for="wineVintage">빈티지 <span class="opt">(선택)</span></label>
+            <input class="input" id="wineVintage" name="vintage" inputmode="numeric" placeholder="예: 2018" value="${esc(
               w.vintage || ""
             )}" />
           </div>
           <div class="field field--variety">
-            <label class="field__label">품종 <span class="opt">(선택)</span></label>
+            <label class="field__label" for="varietyInput">품종 <span class="opt">(선택)</span></label>
             <input class="input" name="variety" id="varietyInput" autocomplete="off" placeholder="예: 샤르도네" value="${esc(
               initialVariety
             )}" />
@@ -4239,8 +4733,8 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
 
         <div class="row-2">
           <div class="field">
-            <label class="field__label">국가</label>
-            <select class="select" name="country">
+            <label class="field__label" for="wineCountry">국가</label>
+            <select class="select" id="wineCountry" name="country">
               <option value="">국가 선택</option>
               ${COUNTRIES.map(
                 (c) =>
@@ -4251,30 +4745,32 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
             </select>
           </div>
           <div class="field">
-            <label class="field__label">구입 가격 <span class="opt">(원)</span></label>
-            <input class="input" name="price" inputmode="numeric" placeholder="예: 85000" value="${
+            <label class="field__label" for="winePrice">구입 가격 <span class="opt">(원)</span></label>
+            <input class="input" id="winePrice" name="price" inputmode="numeric" placeholder="예: 85000" value="${
               w.price != null ? esc(w.price) : ""
             }" />
           </div>
         </div>
 
         <div class="field">
-          <label class="field__label">종류</label>
-          <div class="choices" id="typeChoices">
+          <span class="field__label" id="wineTypeLabel">종류</span>
+          <div class="choices" id="typeChoices" role="group" aria-labelledby="wineTypeLabel">
             ${formTypes().map(
               (t) =>
                 `<button type="button" class="choice ${
                   selectedType === t.id ? "is-active" : ""
-                }" data-type="${t.id}">${formTypeLabel(t.id)}</button>`
+                }" data-type="${t.id}" aria-pressed="${
+                  selectedType === t.id ? "true" : "false"
+                }">${formTypeLabel(t.id)}</button>`
             ).join("")}
           </div>
           <input type="hidden" name="type" value="${selectedType}" />
         </div>
 
         <div class="field">
-          <label class="field__label">구입일</label>
+          <label class="field__label" for="winePurchaseDate">구입일</label>
           <div class="date-row">
-            <input class="input" name="purchaseDate" type="date" value="${esc(
+            <input class="input" id="winePurchaseDate" name="purchaseDate" type="date" value="${esc(
               w.purchaseDate || ""
             )}" />
             <button type="button" class="date-clear" data-clear-date="purchaseDate" aria-label="구입일 비우기" title="구입일 비우기">-</button>
@@ -4293,7 +4789,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
 
         <div class="btn-stack">
           <button type="button" class="btn btn--quiet" data-close>취소</button>
-          <button type="submit" class="btn btn--dark">${
+          <button type="submit" class="btn btn--dark" id="wineSubmitBtn">${
             isEdit ? "저장" : "등록"
           }</button>
         </div>
@@ -4308,11 +4804,20 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     const typeInput = form.elements.type;
     const varietyInput = form.elements.variety;
 
+    function updateFormBusyState() {
+      if (!form.isConnected) return;
+      const busy = photoProcessing || aiBusy;
+      form.setAttribute("aria-busy", busy ? "true" : "false");
+      const submit = form.querySelector("#wineSubmitBtn");
+      if (submit) submit.disabled = busy;
+    }
+
     function setFormType(type) {
       if (!FORM_TYPE_IDS.includes(type)) return false;
       typeInput.value = type;
       sheet.querySelectorAll("[data-type]").forEach((b) => {
         b.classList.toggle("is-active", b.dataset.type === type);
+        b.setAttribute("aria-pressed", b.dataset.type === type ? "true" : "false");
       });
       return true;
     }
@@ -4360,7 +4865,9 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       const assist = sheet.querySelector("#photoAssist");
       if (!assist) return;
       if (!photo) {
-        assist.innerHTML = "";
+        assist.innerHTML = aiStatus
+          ? `<span class="photo-assist__status">${esc(aiStatus)}</span>`
+          : "";
         return;
       }
       const status = aiStatus
@@ -4368,7 +4875,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
         : "";
       assist.innerHTML = `
         <button type="button" class="photo-assist__btn" id="photoAiBtn" ${
-          aiBusy ? "disabled" : ""
+          aiBusy || photoProcessing ? "disabled" : ""
         }>${aiBusy ? "분석 중..." : "사진으로 자동 입력"}</button>
         ${status}
       `;
@@ -4376,6 +4883,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
         if (aiBusy || !photo) return;
         aiBusy = true;
         aiStatus = "사진 라벨 분석 중";
+        updateFormBusyState();
         renderPhotoAssistant();
         try {
           const suggestion = await analyzeWineLabelPhoto(photo);
@@ -4389,7 +4897,10 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
           aiStatus = aiErrorMessage(error);
         } finally {
           aiBusy = false;
-          renderPhotoAssistant();
+          if (form.isConnected) {
+            updateFormBusyState();
+            renderPhotoAssistant();
+          }
         }
       });
     }
@@ -4404,22 +4915,46 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
            <button type="button" class="photo-remove" id="photoRemove" aria-label="사진 삭제">✕</button>`
         : `<input type="file" accept="image/*" id="photoInput" hidden />
            <span>📷 와인 병 사진 찍기 / 선택</span>`;
-      drop.querySelector("#photoInput").addEventListener("change", (e) => {
+      const photoInput = drop.querySelector("#photoInput");
+      photoInput.disabled = photoProcessing;
+      photoInput.addEventListener("change", async (e) => {
+        if (photoProcessing) return;
         const file = e.target.files && e.target.files[0];
         if (!file) return;
-        processImage(file, (url) => {
+        photoProcessing = true;
+        aiStatus = "사진 처리 중...";
+        updateFormBusyState();
+        renderPhoto();
+        renderPhotoAssistant();
+        try {
+          const url = await processImage(file);
+          if (!form.isConnected || !sheet.contains(form)) return;
           photo = url;
+          photoRemoved = false;
           aiStatus = "";
           renderPhoto();
           renderPhotoAssistant();
-        });
+        } catch (error) {
+          if (!form.isConnected || !sheet.contains(form)) return;
+          aiStatus = error && error.message ? error.message : "사진을 처리하지 못했어요.";
+          renderPhotoAssistant();
+        } finally {
+          if (form.isConnected && sheet.contains(form)) {
+            photoProcessing = false;
+            updateFormBusyState();
+            renderPhoto();
+            renderPhotoAssistant();
+          }
+        }
       });
       const rm = drop.querySelector("#photoRemove");
       if (rm)
         rm.addEventListener("click", (e) => {
           e.preventDefault();
           e.stopPropagation();
+          if (photoProcessing) return;
           photo = null;
+          photoRemoved = true;
           aiStatus = "";
           renderPhoto();
           renderPhotoAssistant();
@@ -4433,8 +4968,12 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       btn.addEventListener("click", () => {
         sheet
           .querySelectorAll("[data-type]")
-          .forEach((b) => b.classList.remove("is-active"));
+          .forEach((b) => {
+            b.classList.remove("is-active");
+            b.setAttribute("aria-pressed", "false");
+          });
         btn.classList.add("is-active");
+        btn.setAttribute("aria-pressed", "true");
         sheet.querySelector('[name="type"]').value = btn.dataset.type;
       });
     });
@@ -4618,6 +5157,10 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     // ----- submit -----
     $("#wineForm").addEventListener("submit", (e) => {
       e.preventDefault();
+      if (photoProcessing || aiBusy) {
+        alert("사진 처리가 끝난 뒤 저장해 주세요.");
+        return;
+      }
       const f = e.target;
       const name = f.name.value.trim();
       if (!name) return;
@@ -4631,6 +5174,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
         price: f.price.value.replace(/[^\d]/g, "") || null,
         purchaseDate: f.purchaseDate.value || "",
         photo: photo || null,
+        photoRemoved: !photo && photoRemoved,
       };
       if (isDrunkEdit) {
         data.tastings = collectTastingsFromForm(f, tastingRatingGetters);
@@ -4643,15 +5187,21 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
 
       if (isEdit) {
         const backup = Object.assign({}, existing);
-        Object.assign(existing, data);
+        Object.assign(existing, data, {
+          userModified: true,
+          clientUpdatedAt: new Date().toISOString(),
+        });
         if (isDrunkEdit) syncLegacyTastingFields(existing);
         if (!persist(makeAuditLog("update", backup, existing))) {
-          Object.assign(existing, backup);
+          restoreObject(existing, backup);
           quotaAlert();
           return;
         }
       } else {
-        const wine = Object.assign({ id: uid(), status: "cellar" }, data);
+        const wine = Object.assign(
+          { id: uid(), status: "cellar", clientUpdatedAt: new Date().toISOString() },
+          data
+        );
         state.wines.push(wine);
         if (!persist(makeAuditLog("create", null, wine))) {
           state.wines.pop();
@@ -4771,8 +5321,9 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       delete w.drunkDate;
       delete w.tastings;
       delete w.featuredTasterId;
+      markWineModified(w);
       if (!persist(makeAuditLog("undoDrunk", backup, w))) {
-        Object.assign(w, backup);
+        restoreObject(w, backup);
         quotaAlert();
         return;
       }
@@ -4789,8 +5340,18 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
         });
         if (!confirmed) return;
         const backup = Object.assign({}, w);
+        const previousWines = state.wines;
+        const previousDeletedSeedIds = state.deletedSeedIds.slice();
         state.wines = state.wines.filter((x) => x.id !== w.id);
-        persist(makeAuditLog("delete", backup, null));
+        if (/^seed-\d{3}$/.test(w.id || "")) {
+          state.deletedSeedIds = sanitizeDeletedSeedIds(state.deletedSeedIds.concat(w.id));
+        }
+        if (!persist(makeAuditLog("delete", backup, null))) {
+          state.wines = previousWines;
+          state.deletedSeedIds = previousDeletedSeedIds;
+          quotaAlert();
+          return;
+        }
         closeSheet();
         render();
       });
@@ -4904,8 +5465,9 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
         return;
       }
       updateWineTastings(w, nextTastings, collectFeaturedTasterFromForm(f, nextTastings));
+      markWineModified(w);
       if (!persist(makeAuditLog("markDrunk", backup, w))) {
-        Object.assign(w, backup);
+        restoreObject(w, backup);
         quotaAlert();
         return;
       }
@@ -4938,6 +5500,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
   $("#addBtn").addEventListener("click", () => openForm(null));
   setupTabSwipeNavigation();
   backdrop.addEventListener("click", closeSheet);
+  document.addEventListener("keydown", onSheetKeyDown);
   sheet.addEventListener("touchstart", onSheetTouchStart, { passive: true });
   sheet.addEventListener("touchmove", onSheetTouchMove, { passive: false });
   sheet.addEventListener("touchend", onSheetTouchEnd);
