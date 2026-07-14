@@ -1674,7 +1674,7 @@ body.is-refreshing .pull-refresh__ring {
 /* Pill-choice group (wine type) */
 .choices {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 4px;
 }
 .choice {
@@ -1700,6 +1700,22 @@ body.is-refreshing .pull-refresh__ring {
   color: var(--off-white);
   border-color: var(--wine);
   box-shadow: rgba(130, 49, 61, 0.22) 0 7px 16px;
+}
+
+.btn:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* Star input */
