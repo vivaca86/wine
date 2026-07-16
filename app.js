@@ -75,19 +75,16 @@
   const SEED_KEY = "wine-cellar-seed-version";
   const SEED_VERSION = "user-wine-list-2026-06-29-english-wine-names";
   const TAB_ORDER = ["cellar", "drunk", "stats"];
-  const TAB_SWIPE_NEXT_MIN_X = 36;
-  const TAB_SWIPE_PREV_MIN_X = 28;
-  const TAB_SWIPE_NEXT_FLICK_MIN_X = 24;
-  const TAB_SWIPE_PREV_FLICK_MIN_X = 18;
-  const TAB_SWIPE_NEXT_VELOCITY = 0.3;
-  const TAB_SWIPE_PREV_VELOCITY = 0.24;
-  const TAB_SWIPE_NEXT_LOCK_RATIO = 0.78;
-  const TAB_SWIPE_PREV_LOCK_RATIO = 0.58;
-  const TAB_SWIPE_NEXT_FINISH_RATIO = 0.78;
-  const TAB_SWIPE_PREV_FINISH_RATIO = 0.58;
-  const TAB_SWIPE_VERTICAL_CANCEL_Y = 34;
-  const TAB_SWIPE_NEXT_VERTICAL_CANCEL_RATIO = 1.55;
-  const TAB_SWIPE_PREV_VERTICAL_CANCEL_RATIO = 1.9;
+  // Swipe feel. Left and right are deliberately symmetric: an earlier version
+  // tuned prev and next separately, which only masked the real problems
+  // (a janky first frame and a whole-gesture average velocity) and made the
+  // two directions respond differently to the same flick.
+  const TAB_SWIPE_START_SLOP = 10; // px before we decide the axis
+  const TAB_SWIPE_LOCK_RATIO = 0.7; // |dx| must beat |dy| * this to own the gesture
+  const TAB_SWIPE_DISTANCE_RATIO = 0.28; // fraction of width that commits on release
+  const TAB_SWIPE_FLICK_MIN_X = 20; // px, minimum travel for a flick to count
+  const TAB_SWIPE_FLICK_VELOCITY = 0.35; // px/ms, measured over the last moves only
+  const TAB_SWIPE_VELOCITY_WINDOW_MS = 100; // only recent motion feeds velocity
   const TAB_SWIPE_EDGE_MAX = 54;
   const TAB_TRANSITION_MS = 280;
   const SEED_TSV = `status	type	country_code	country_name	name	vintage
@@ -2707,24 +2704,29 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     let suppressClickTimer = 0;
     let swipeReturnTimer = 0;
 
-    const swipeSettings = (dx) => {
-      const isPrev = dx > 0;
-      return {
-        minX: isPrev ? TAB_SWIPE_PREV_MIN_X : TAB_SWIPE_NEXT_MIN_X,
-        flickMinX: isPrev
-          ? TAB_SWIPE_PREV_FLICK_MIN_X
-          : TAB_SWIPE_NEXT_FLICK_MIN_X,
-        velocity: isPrev ? TAB_SWIPE_PREV_VELOCITY : TAB_SWIPE_NEXT_VELOCITY,
-        lockRatio: isPrev
-          ? TAB_SWIPE_PREV_LOCK_RATIO
-          : TAB_SWIPE_NEXT_LOCK_RATIO,
-        finishRatio: isPrev
-          ? TAB_SWIPE_PREV_FINISH_RATIO
-          : TAB_SWIPE_NEXT_FINISH_RATIO,
-        verticalCancelRatio: isPrev
-          ? TAB_SWIPE_PREV_VERTICAL_CANCEL_RATIO
-          : TAB_SWIPE_NEXT_VERTICAL_CANCEL_RATIO,
-      };
+    /**
+     * Velocity over the last TAB_SWIPE_VELOCITY_WINDOW_MS only.
+     *
+     * Averaging across the whole gesture made an identical flick commit or not
+     * depending on how long the finger had rested beforehand: pause for half a
+     * second, flick 30px, and the average lands near 0.04 px/ms — far under any
+     * sane flick threshold, so the swipe was silently ignored.
+     */
+    const recentVelocity = () => {
+      const samples = gesture?.samples;
+      if (!samples || samples.length < 2) return 0;
+      const last = samples[samples.length - 1];
+      // Oldest sample still inside the window, never one outside it: reaching
+      // past the window would drag a stale pre-pause sample into the baseline
+      // and dilute the flick right back to the average this replaced.
+      let first = samples[samples.length - 2];
+      for (let i = samples.length - 2; i >= 0; i -= 1) {
+        if (last.t - samples[i].t > TAB_SWIPE_VELOCITY_WINDOW_MS) break;
+        first = samples[i];
+      }
+      const dt = last.t - first.t;
+      if (dt <= 0) return 0;
+      return Math.abs(last.x - first.x) / dt;
     };
 
     const tabsNav = document.querySelector(".tabs");
@@ -2935,16 +2937,30 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       if (tabsNav) tabsNav.style.setProperty("--tab-settle-ms", `${duration}ms`);
       track.el.classList.add("is-settling");
       setTrackX(track, finalX, true);
-      swipeReturnTimer = setTimeout(() => {
-        swipeReturnTimer = 0;
-        clearSwipeProps();
-        if (commit) {
-          settleSwipeToTab(track);
-        } else {
-          restoreSwipeToCurrent(track);
+
+      // Land when the transform actually finishes rather than on a timer that
+      // guessed at the duration; the timer drifted from the animation and let
+      // the pane swap show through. The timeout is only a safety net for when
+      // transitionend never fires (interrupted transition, hidden tab).
+      let landed = false;
+      const land = () => {
+        if (landed) return;
+        landed = true;
+        track.el.removeEventListener("transitionend", onEnd);
+        if (swipeReturnTimer) {
+          clearTimeout(swipeReturnTimer);
+          swipeReturnTimer = 0;
         }
+        clearSwipeProps();
+        if (commit) settleSwipeToTab(track);
+        else restoreSwipeToCurrent(track);
         clearTabIndicator();
-      }, duration + 40);
+      };
+      const onEnd = (event) => {
+        if (event.target === track.el && event.propertyName === "transform") land();
+      };
+      track.el.addEventListener("transitionend", onEnd);
+      swipeReturnTimer = setTimeout(land, duration + 120);
     };
 
     const buildSwipeTrack = (nextTab, direction) => {
@@ -3080,6 +3096,7 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
         scroller,
         startedAt: Date.now(),
         lastMoveAt: Date.now(),
+        samples: [{ x: point.clientX, t: performance.now() }],
         pointerId,
         active: false,
         track: null,
@@ -3093,25 +3110,27 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       const absX = Math.abs(dx);
       const absY = Math.abs(dy);
 
+      gesture.samples.push({ x: point.clientX, t: performance.now() });
+      if (gesture.samples.length > 8) gesture.samples.shift();
+
       if (!gesture.active) {
-        if (absX < 10 && absY < 10) return;
-        const settings = swipeSettings(dx);
-        const verticalDominant =
-          absY >= TAB_SWIPE_VERTICAL_CANCEL_Y &&
-          absY > absX * settings.verticalCancelRatio;
-        if (verticalDominant) {
-          clearSwipeVisual(false);
+        // Decide the axis once, on the first movement past the slop radius, and
+        // never revisit it. Re-deciding mid-gesture is what made the swipe feel
+        // like it was fighting the finger.
+        if (absX < TAB_SWIPE_START_SLOP && absY < TAB_SWIPE_START_SLOP) return;
+        if (absX < absY * TAB_SWIPE_LOCK_RATIO) {
+          // Vertical wins: hand the gesture back to the scroller for good.
           gesture = null;
           return;
         }
-        if (absX >= 10 && absX > absY * settings.lockRatio) {
-          gesture.active = true;
-          holdSwipeScroll();
-          if (gesture.pointerId != null && view.setPointerCapture) {
-            try {
-              view.setPointerCapture(gesture.pointerId);
-            } catch (err) {}
-          }
+        gesture.active = true;
+        // Once, to undo any scroll that leaked through during the slop phase.
+        // Doing this on every move forced a synchronous layout each frame.
+        holdSwipeScroll();
+        if (gesture.pointerId != null && view.setPointerCapture) {
+          try {
+            view.setPointerCapture(gesture.pointerId);
+          } catch (err) {}
         }
       }
 
@@ -3119,7 +3138,6 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       gesture.lastX = point.clientX;
       gesture.lastY = point.clientY;
       gesture.lastMoveAt = Date.now();
-      holdSwipeScroll();
       setSwipeVisual(dx);
       e.preventDefault();
     };
@@ -3127,24 +3145,22 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
     const finish = (point, e) => {
       if (!gesture) return;
       const dx = (point?.clientX ?? gesture.lastX) - gesture.startX;
-      const dy = (point?.clientY ?? gesture.lastY) - gesture.startY;
       const absX = Math.abs(dx);
-      const absY = Math.abs(dy);
-      const elapsed = Math.max(1, Date.now() - gesture.startedAt);
-      const velocity = absX / elapsed;
-      const settings = swipeSettings(dx);
-      const isFlick =
-        absX >= settings.flickMinX && velocity >= settings.velocity;
-      const horizontalIntent =
-        gesture.active && absX > absY * settings.finishRatio;
       const track = gesture.track;
+      const velocity = recentVelocity();
+      // Commit on either a decisive flick or having dragged far enough that the
+      // next tab is more visible than not. Distance is relative to the pane
+      // width, so the gesture means the same thing on any screen size.
+      const isFlick = absX >= TAB_SWIPE_FLICK_MIN_X && velocity >= TAB_SWIPE_FLICK_VELOCITY;
+      const draggedFar = absX >= (track?.width ?? view.offsetWidth ?? 320) * TAB_SWIPE_DISTANCE_RATIO;
       const directionConsistent =
         !track || (track.direction === "next" ? dx < 0 : dx > 0);
       const shouldSwitch =
-        horizontalIntent && directionConsistent && (absX >= settings.minX || isFlick);
+        gesture.active && directionConsistent && (isFlick || draggedFar);
       const nextTab = shouldSwitch
         ? track?.nextTab || adjacentTabFromSwipe(dx)
         : null;
+      const horizontalIntent = gesture.active;
 
       if (horizontalIntent && absX >= 18) {
         suppressNextClick();

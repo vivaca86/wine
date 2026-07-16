@@ -458,6 +458,10 @@ body.is-refreshing .pull-refresh__ring {
   min-width: 0;
   max-width: 100%;
   text-align: left;
+  /* Skip layout for offscreen cards. A tab swipe mounts the whole next tab at
+     once, and laying out every card cost ~16ms of the gesture's first frame. */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 70px;
   background: rgba(255, 250, 242, 0.92);
   border: 1px solid var(--border);
   border-radius: var(--r-card);
