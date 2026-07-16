@@ -79,13 +79,13 @@
   // tuned prev and next separately, which only masked the real problems
   // (a janky first frame and a whole-gesture average velocity) and made the
   // two directions respond differently to the same flick.
-  const TAB_SWIPE_START_SLOP = 10; // px before we decide the axis
-  const TAB_SWIPE_LOCK_RATIO = 0.7; // |dx| must beat |dy| * this to own the gesture
-  const TAB_SWIPE_VERTICAL_GIVE_UP = 30; // px of |dy| before vertical can win
-  const TAB_SWIPE_VERTICAL_RATIO = 1.4; // and |dy| must beat |dx| * this too
-  const TAB_SWIPE_DISTANCE_RATIO = 0.28; // fraction of width that commits on release
-  const TAB_SWIPE_FLICK_MIN_X = 20; // px, minimum travel for a flick to count
-  const TAB_SWIPE_FLICK_VELOCITY = 0.35; // px/ms, measured over the last moves only
+  const TAB_SWIPE_START_SLOP = 8; // px before we decide the axis
+  const TAB_SWIPE_LOCK_RATIO = 0.5; // |dx| must beat |dy| * this to own the gesture
+  const TAB_SWIPE_VERTICAL_GIVE_UP = 34; // px of |dy| before vertical can win
+  const TAB_SWIPE_VERTICAL_RATIO = 1.6; // and |dy| must beat |dx| * this too
+  const TAB_SWIPE_DISTANCE_RATIO = 0.2; // fraction of width that commits on release
+  const TAB_SWIPE_FLICK_MIN_X = 14; // px, minimum travel for a flick to count
+  const TAB_SWIPE_FLICK_VELOCITY = 0.22; // px/ms, measured over the last moves only
   const TAB_SWIPE_VELOCITY_WINDOW_MS = 100; // only recent motion feeds velocity
   const TAB_SWIPE_EDGE_MAX = 54;
   const TAB_TRANSITION_MS = 280;
@@ -3145,6 +3145,13 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       gesture.lastX = point.clientX;
       gesture.lastY = point.clientY;
       gesture.lastMoveAt = Date.now();
+      // Pin the scroller for the whole gesture, not just at lock. touch-action
+      // pan-y lets the browser own vertical panning and preventDefault cannot
+      // take it back, so a thumb arcing up as it sweeps left scrolls the list
+      // under the swipe. Correcting once at lock only turned that drift into a
+      // visible snap. This costs a forced layout per move, which is affordable
+      // now that offscreen cards skip layout.
+      holdSwipeScroll();
       setSwipeVisual(dx);
       e.preventDefault();
     };
