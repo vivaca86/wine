@@ -3096,7 +3096,11 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
         scroller,
         startedAt: Date.now(),
         lastMoveAt: Date.now(),
-        samples: [{ x: point.clientX, t: performance.now() }],
+        // Seeded on first movement, never here: a finger resting before it
+        // flicks emits no pointermove, so a sample taken at touch-down carries
+        // the whole dwell in its timestamp. Used as a velocity baseline it
+        // turns a 60px-in-20ms flick into 60px-in-320ms and loses the flick.
+        samples: [],
         pointerId,
         active: false,
         track: null,
@@ -3147,6 +3151,9 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       const dx = (point?.clientX ?? gesture.lastX) - gesture.startX;
       const absX = Math.abs(dx);
       const track = gesture.track;
+      // The lift itself is a sample. A fast flick emits few pointermoves, so
+      // without this the release position never reaches the velocity window.
+      if (point) gesture.samples.push({ x: point.clientX, t: performance.now() });
       const velocity = recentVelocity();
       // Commit on either a decisive flick or having dragged far enough that the
       // next tab is more visible than not. Distance is relative to the pane
