@@ -81,6 +81,8 @@
   // two directions respond differently to the same flick.
   const TAB_SWIPE_START_SLOP = 10; // px before we decide the axis
   const TAB_SWIPE_LOCK_RATIO = 0.7; // |dx| must beat |dy| * this to own the gesture
+  const TAB_SWIPE_VERTICAL_GIVE_UP = 30; // px of |dy| before vertical can win
+  const TAB_SWIPE_VERTICAL_RATIO = 1.4; // and |dy| must beat |dx| * this too
   const TAB_SWIPE_DISTANCE_RATIO = 0.28; // fraction of width that commits on release
   const TAB_SWIPE_FLICK_MIN_X = 20; // px, minimum travel for a flick to count
   const TAB_SWIPE_FLICK_VELOCITY = 0.35; // px/ms, measured over the last moves only
@@ -3118,19 +3120,20 @@ drunk	sparkling	FR	프랑스	도츠 브뤼 클래식`;
       if (gesture.samples.length > 8) gesture.samples.shift();
 
       if (!gesture.active) {
-        // Decide the axis once, on the first movement past the slop radius, and
-        // never revisit it. Re-deciding mid-gesture is what made the swipe feel
-        // like it was fighting the finger.
         if (absX < TAB_SWIPE_START_SLOP && absY < TAB_SWIPE_START_SLOP) return;
-        if (absX < absY * TAB_SWIPE_LOCK_RATIO) {
-          // Vertical wins: hand the gesture back to the scroller for good.
+        // Give up only once the gesture is unmistakably vertical. Judging on
+        // the first sample past the slop killed real swipes: a finger starting
+        // sideways rolls downward first, so that sample often reads (3, 11) and
+        // the swipe was declared vertical and dropped for good while the finger
+        // was still on its way across.
+        if (absY >= TAB_SWIPE_VERTICAL_GIVE_UP && absY > absX * TAB_SWIPE_VERTICAL_RATIO) {
           gesture = null;
           return;
         }
+        // Not yet horizontal enough to claim, but not vertical either: keep
+        // watching rather than deciding early.
+        if (absX < TAB_SWIPE_START_SLOP || absX <= absY * TAB_SWIPE_LOCK_RATIO) return;
         gesture.active = true;
-        // Once, to undo any scroll that leaked through during the slop phase.
-        // Doing this on every move forced a synchronous layout each frame.
-        holdSwipeScroll();
         if (gesture.pointerId != null && view.setPointerCapture) {
           try {
             view.setPointerCapture(gesture.pointerId);
